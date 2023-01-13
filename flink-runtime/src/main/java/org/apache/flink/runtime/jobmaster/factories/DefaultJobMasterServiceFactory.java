@@ -87,18 +87,27 @@ public class DefaultJobMasterServiceFactory implements JobMasterServiceFactory {
     }
 
     @Override
-    public CompletableFuture<JobMasterService> createJobMasterService(
-            UUID leaderSessionId, OnCompletionActions onCompletionActions) {
+    public CompletableFuture<JobMasterService> createJobMasterService(UUID leaderSessionId, OnCompletionActions onCompletionActions) {
 
         return CompletableFuture.supplyAsync(
                 FunctionUtils.uncheckedSupplier(
-                        () -> internalCreateJobMasterService(leaderSessionId, onCompletionActions)),
+                        () -> internalCreateJobMasterService(leaderSessionId, onCompletionActions)
+                ),
                 executor);
     }
 
-    private JobMasterService internalCreateJobMasterService(
-            UUID leaderSessionId, OnCompletionActions onCompletionActions) throws Exception {
+    /**
+     * 这里是启动jobmaster服务的主要入口方法
+     * 在创建jobmaster内部实现了jobgraph到executiongraph的转换工作
+     *
+     * @param leaderSessionId
+     * @param onCompletionActions
+     * @return
+     * @throws Exception
+     */
+    private JobMasterService internalCreateJobMasterService(UUID leaderSessionId, OnCompletionActions onCompletionActions) throws Exception {
 
+//        1 创建jobmaster服务
         final JobMaster jobMaster =
                 new JobMaster(
                         rpcService,
@@ -115,15 +124,14 @@ public class DefaultJobMasterServiceFactory implements JobMasterServiceFactory {
                         fatalErrorHandler,
                         userCodeClassloader,
                         shuffleMaster,
-                        lookup ->
-                                new JobMasterPartitionTrackerImpl(
-                                        jobGraph.getJobID(), shuffleMaster, lookup),
+                        lookup -> new JobMasterPartitionTrackerImpl(jobGraph.getJobID(), shuffleMaster, lookup),
                         new DefaultExecutionDeploymentTracker(),
                         DefaultExecutionDeploymentReconciler::new,
-                        BlocklistUtils.loadBlocklistHandlerFactory(
-                                jobMasterConfiguration.getConfiguration()),
-                        initializationTimestamp);
+                        BlocklistUtils.loadBlocklistHandlerFactory(jobMasterConfiguration.getConfiguration()),
+                        initializationTimestamp
+                );
 
+//        启动jobmaster服务
         jobMaster.start();
 
         return jobMaster;

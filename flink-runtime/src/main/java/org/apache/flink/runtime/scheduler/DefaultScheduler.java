@@ -131,6 +131,7 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
             final ExecutionDeployer.Factory executionDeployerFactory)
             throws Exception {
 
+        // 在父类实现jobgraph到executiongraph转换
         super(
                 log,
                 jobGraph,
@@ -210,7 +211,10 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
         log.info(
                 "Starting scheduling with scheduling strategy [{}]",
                 schedulingStrategy.getClass().getName());
+
         transitionToRunning();
+
+//        开始调度
         schedulingStrategy.startScheduling();
     }
 
@@ -434,10 +438,14 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
     // SchedulerOperations
     // ------------------------------------------------------------------------
 
+    /**
+     * jobmaster 调度服务启动入口类
+     *
+     * @param verticesToDeploy The execution vertices to deploy
+     */
     @Override
     public void allocateSlotsAndDeploy(final List<ExecutionVertexID> verticesToDeploy) {
-        final Map<ExecutionVertexID, ExecutionVertexVersion> requiredVersionByVertex =
-                executionVertexVersioner.recordVertexModifications(verticesToDeploy);
+        final Map<ExecutionVertexID, ExecutionVertexVersion> requiredVersionByVertex = executionVertexVersioner.recordVertexModifications(verticesToDeploy);
 
         final List<Execution> executionsToDeploy =
                 verticesToDeploy.stream()

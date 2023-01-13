@@ -305,22 +305,32 @@ public class StreamGraphGenerator {
         this.savepointRestoreSettings = savepointRestoreSettings;
     }
 
+    /**
+     * 生成用户编写job为StreamGraph
+     *
+     * @return
+     */
     public StreamGraph generate() {
+//        生成StreamGraph对象
         streamGraph = new StreamGraph(executionConfig, checkpointConfig, savepointRestoreSettings);
-        streamGraph.setEnableCheckpointsAfterTasksFinish(
-                configuration.get(
-                        ExecutionCheckpointingOptions.ENABLE_CHECKPOINTS_AFTER_TASKS_FINISH));
+        streamGraph.setEnableCheckpointsAfterTasksFinish(configuration.get(ExecutionCheckpointingOptions.ENABLE_CHECKPOINTS_AFTER_TASKS_FINISH));
         shouldExecuteInBatchMode = shouldExecuteInBatchMode();
+//        设置参数到StreamGraph中
         configureStreamGraph(streamGraph);
 
+//        初始化已经转化过的transform对象集合
         alreadyTransformed = new IdentityHashMap<>();
 
+        /**
+         * 转换Transformation为
+         */
         for (Transformation<?> transformation : transformations) {
             transform(transformation);
         }
 
         streamGraph.setSlotSharingGroupResource(slotSharingGroupResources);
 
+//        设置执行模式
         setFineGrainedGlobalStreamExchangeMode(streamGraph);
 
         for (StreamNode node : streamGraph.getStreamNodes()) {
@@ -335,6 +345,8 @@ public class StreamGraphGenerator {
 
         alreadyTransformed.clear();
         alreadyTransformed = null;
+
+//        设置StreamGraph = null，防止多次执行execute()重复执行相同任务
         streamGraph = null;
 
         return builtStreamGraph;
@@ -352,8 +364,7 @@ public class StreamGraphGenerator {
         graph.setUserArtifacts(userArtifacts);
         graph.setTimeCharacteristic(timeCharacteristic);
         graph.setVertexDescriptionMode(configuration.get(PipelineOptions.VERTEX_DESCRIPTION_MODE));
-        graph.setVertexNameIncludeIndexPrefix(
-                configuration.get(PipelineOptions.VERTEX_NAME_INCLUDE_INDEX_PREFIX));
+        graph.setVertexNameIncludeIndexPrefix(configuration.get(PipelineOptions.VERTEX_NAME_INCLUDE_INDEX_PREFIX));
 
         if (shouldExecuteInBatchMode) {
             configureStreamGraphBatch(graph);
@@ -506,6 +517,7 @@ public class StreamGraphGenerator {
      * delegates to one of the transformation specific methods.
      */
     private Collection<Integer> transform(Transformation<?> transform) {
+
         if (alreadyTransformed.containsKey(transform)) {
             return alreadyTransformed.get(transform);
         }
@@ -522,22 +534,28 @@ public class StreamGraphGenerator {
             }
         }
 
+        /**
+         * Optional.ifPresent() 如果存在值，则返回true；
+         * 反之，返回false。
+         * 如果所包含的对象不为null，则返回true，反之返回false。
+         * 通常在对对象执行任何其他操作之前，先在Optional上调用此方法。
+         *
+         * Optional.ifPresent(instance) 如果实例非空 则调用lambda表达式
+         */
+
         transform
                 .getSlotSharingGroup()
                 .ifPresent(
                         slotSharingGroup -> {
-                            final ResourceSpec resourceSpec =
-                                    SlotSharingGroupUtils.extractResourceSpec(slotSharingGroup);
+//                            资源描述
+                            final ResourceSpec resourceSpec = SlotSharingGroupUtils.extractResourceSpec(slotSharingGroup);
                             if (!resourceSpec.equals(ResourceSpec.UNKNOWN)) {
                                 slotSharingGroupResources.compute(
                                         slotSharingGroup.getName(),
                                         (name, profile) -> {
                                             if (profile == null) {
-                                                return ResourceProfile.fromResourceSpec(
-                                                        resourceSpec, MemorySize.ZERO);
-                                            } else if (!ResourceProfile.fromResourceSpec(
-                                                            resourceSpec, MemorySize.ZERO)
-                                                    .equals(profile)) {
+                                                return ResourceProfile.fromResourceSpec(resourceSpec, MemorySize.ZERO);
+                                            } else if (!ResourceProfile.fromResourceSpec(resourceSpec, MemorySize.ZERO).equals(profile)) {
                                                 throw new IllegalArgumentException(
                                                         "The slot sharing group "
                                                                 + slotSharingGroup.getName()
@@ -558,6 +576,9 @@ public class StreamGraphGenerator {
                         translatorMap.get(transform.getClass());
 
         Collection<Integer> transformedIds;
+        /**
+         * 调用transform 直到将算子转换为 StreamNode
+         */
         if (translator != null) {
             transformedIds = translate(translator, transform);
         } else {
@@ -593,8 +614,7 @@ public class StreamGraphGenerator {
             streamGraph.setTransformationUID(transform.getId(), transform.getUid());
         }
         if (transform.getUserProvidedNodeHash() != null) {
-            streamGraph.setTransformationUserHash(
-                    transform.getId(), transform.getUserProvidedNodeHash());
+            streamGraph.setTransformationUserHash(transform.getId(), transform.getUserProvidedNodeHash());
         }
 
         if (!streamGraph.getExecutionConfig().hasAutoGeneratedUIDsEnabled()) {
@@ -808,6 +828,9 @@ public class StreamGraphGenerator {
         checkNotNull(translator);
         checkNotNull(transform);
 
+        /**
+         * 递归处理父对象
+         */
         final List<Collection<Integer>> allInputIds = getParentInputIds(transform.getInputs());
 
         // the recursive call might have already transformed this
@@ -829,7 +852,7 @@ public class StreamGraphGenerator {
 
         return shouldExecuteInBatchMode
                 ? translator.translateForBatch(transform, context)
-                : translator.translateForStreaming(transform, context);
+                : translator.translateForStreaming(transform, context); // 执行流式转换，translateForStreaming有一堆的重载对象实现，不同类型需要调用不同的重载对象实现
     }
 
     /**

@@ -174,8 +174,7 @@ public class CheckpointStorageLoader {
             // us to pass this value to the CheckpointStorage instance
             // where it is needed at runtime while keeping its API logically
             // separated for users.
-            config.set(
-                    CheckpointingOptions.SAVEPOINT_DIRECTORY, defaultSavepointDirectory.toString());
+            config.set(CheckpointingOptions.SAVEPOINT_DIRECTORY, defaultSavepointDirectory.toString());
         }
 
         // Legacy state backends always take precedence for backwards compatibility.

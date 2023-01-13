@@ -219,6 +219,7 @@ public class PackagedProgram implements AutoCloseable {
     public void invokeInteractiveModeForExecution() throws ProgramInvocationException {
         FlinkSecurityManager.monitorUserSystemExitForCurrentThread();
         try {
+            // 调用程序
             callMainMethod(mainClass, args);
         } finally {
             FlinkSecurityManager.unmonitorUserSystemExitForCurrentThread();
@@ -320,8 +321,14 @@ public class PackagedProgram implements AutoCloseable {
                 && Modifier.isPublic(mainMethod.getModifiers());
     }
 
-    private static void callMainMethod(Class<?> entryClass, String[] args)
-            throws ProgramInvocationException {
+    /**
+     * 调用执行指定的main方法
+     *
+     * @param entryClass
+     * @param args
+     * @throws ProgramInvocationException
+     */
+    private static void callMainMethod(Class<?> entryClass, String[] args) throws ProgramInvocationException {
         Method mainMethod;
         if (!Modifier.isPublic(entryClass.getModifiers())) {
             throw new ProgramInvocationException(
@@ -352,6 +359,10 @@ public class PackagedProgram implements AutoCloseable {
         }
 
         try {
+            /**
+             * 反射方式调用执行main方法
+             * 这个方法调用成功后就进入到了我们自己编写程序的main方法，即SocketWindowWordCount.main()
+             */
             mainMethod.invoke(null, (Object) args);
         } catch (IllegalArgumentException e) {
             throw new ProgramInvocationException(

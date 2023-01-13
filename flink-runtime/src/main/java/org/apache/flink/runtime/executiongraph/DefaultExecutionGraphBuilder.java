@@ -70,6 +70,35 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  */
 public class DefaultExecutionGraphBuilder {
 
+    /**
+     * 编译executiongraph
+     *
+     * @param jobGraph
+     * @param jobManagerConfig
+     * @param futureExecutor
+     * @param ioExecutor
+     * @param classLoader
+     * @param completedCheckpointStore
+     * @param checkpointsCleaner
+     * @param checkpointIdCounter
+     * @param rpcTimeout
+     * @param blobWriter
+     * @param log
+     * @param shuffleMaster
+     * @param partitionTracker
+     * @param partitionLocationConstraint
+     * @param executionDeploymentListener
+     * @param executionStateUpdateListener
+     * @param initializationTimestamp
+     * @param vertexAttemptNumberStore
+     * @param vertexParallelismStore
+     * @param checkpointStatsTrackerFactory
+     * @param isDynamicGraph
+     * @param executionJobVertexFactory
+     * @return
+     * @throws JobExecutionException
+     * @throws JobException
+     */
     public static DefaultExecutionGraph buildGraph(
             JobGraph jobGraph,
             Configuration jobManagerConfig,
@@ -92,8 +121,7 @@ public class DefaultExecutionGraphBuilder {
             VertexParallelismStore vertexParallelismStore,
             Supplier<CheckpointStatsTracker> checkpointStatsTrackerFactory,
             boolean isDynamicGraph,
-            ExecutionJobVertex.Factory executionJobVertexFactory)
-            throws JobExecutionException, JobException {
+            ExecutionJobVertex.Factory executionJobVertexFactory)  throws JobExecutionException, JobException {
 
         checkNotNull(jobGraph, "job graph cannot be null");
 
@@ -113,11 +141,10 @@ public class DefaultExecutionGraphBuilder {
                 jobManagerConfig.getInteger(JobManagerOptions.MAX_ATTEMPTS_HISTORY_SIZE);
 
         final PartitionGroupReleaseStrategy.Factory partitionGroupReleaseStrategyFactory =
-                PartitionGroupReleaseStrategyFactoryLoader.loadPartitionGroupReleaseStrategyFactory(
-                        jobManagerConfig);
+                PartitionGroupReleaseStrategyFactoryLoader.loadPartitionGroupReleaseStrategyFactory(jobManagerConfig);
 
         // create a new execution graph, if none exists so far
-        final DefaultExecutionGraph executionGraph;
+        final DefaultExecutionGraph executionGraph; // 创建executiongraph
         try {
             executionGraph =
                     new DefaultExecutionGraph(
@@ -147,6 +174,7 @@ public class DefaultExecutionGraphBuilder {
         // set the basic properties
 
         try {
+            // 将jobgrap转换成json格式
             executionGraph.setJsonPlan(JsonPlanGenerator.generatePlan(jobGraph));
         } catch (Throwable t) {
             log.warn("Cannot create JSON plan for job", t);
@@ -160,6 +188,9 @@ public class DefaultExecutionGraphBuilder {
         final long initMasterStart = System.nanoTime();
         log.info("Running initialization on master for job {} ({}).", jobName, jobId);
 
+        /**
+         * 检查 设置一些配置信息
+         */
         for (JobVertex vertex : jobGraph.getVertices()) {
             String executableClass = vertex.getInvokableClassName();
             if (executableClass == null || executableClass.isEmpty()) {
@@ -192,6 +223,7 @@ public class DefaultExecutionGraphBuilder {
                 (System.nanoTime() - initMasterStart) / 1_000_000);
 
         // topologically sort the job vertices and attach the graph to the existing one
+        // 对作业顶点进行拓扑排序，并将图附加到现有的图上
         List<JobVertex> sortedTopology = jobGraph.getVerticesSortedTopologicallyFromSources();
         if (log.isDebugEnabled()) {
             log.debug(
@@ -200,6 +232,8 @@ public class DefaultExecutionGraphBuilder {
                     jobName,
                     jobId);
         }
+
+//        执行准换 ***
         executionGraph.attachJobGraph(sortedTopology);
 
         if (log.isDebugEnabled()) {

@@ -626,8 +626,7 @@ public class DataStream<T> {
      * @param <R> output type
      * @return The transformed {@link DataStream}.
      */
-    public <R> SingleOutputStreamOperator<R> flatMap(
-            FlatMapFunction<T, R> flatMapper, TypeInformation<R> outputType) {
+    public <R> SingleOutputStreamOperator<R> flatMap(FlatMapFunction<T, R> flatMapper, TypeInformation<R> outputType) {
         return transform("Flat Map", outputType, new StreamFlatMap<>(clean(flatMapper)));
     }
 

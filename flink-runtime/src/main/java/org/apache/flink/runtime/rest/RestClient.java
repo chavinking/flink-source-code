@@ -301,8 +301,7 @@ public class RestClient implements AutoCloseableAsync {
                     R request,
                     Collection<FileUpload> fileUploads)
                     throws IOException {
-        Collection<? extends RestAPIVersion> supportedAPIVersions =
-                messageHeaders.getSupportedAPIVersions();
+        Collection<? extends RestAPIVersion> supportedAPIVersions = messageHeaders.getSupportedAPIVersions();
         return sendRequest(
                 targetAddress,
                 targetPort,
@@ -466,6 +465,10 @@ public class RestClient implements AutoCloseableAsync {
 
     private <P extends ResponseBody> CompletableFuture<P> submitRequest(
             String targetAddress, int targetPort, Request httpRequest, JavaType responseType) {
+
+        /**
+         * RestClient在启动时已经初始化好了netty客户端
+         */
         final ChannelFuture connectFuture = bootstrap.connect(targetAddress, targetPort);
 
         final CompletableFuture<Channel> channelFuture = new CompletableFuture<>();
@@ -492,6 +495,7 @@ public class RestClient implements AutoCloseableAsync {
                                     throw new IOException(
                                             "Netty pipeline was not properly initialized.");
                                 } else {
+//                                    将请求发送到WebMonitorEndpoints服务端
                                     httpRequest.writeTo(channel);
                                     future = handler.getJsonFuture();
                                     success = true;

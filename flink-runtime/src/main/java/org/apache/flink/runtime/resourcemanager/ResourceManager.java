@@ -129,7 +129,10 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
     /** Service to retrieve the job leader ids. */
     private final JobLeaderIdService jobLeaderIdService;
 
-    /** All currently registered TaskExecutors with there framework specific worker information. */
+    /**
+     * All currently registered TaskExecutors with there framework specific worker information.
+     * taskExecutors 用来管理所有注册到rm上的taskExecutor信息
+     */
     private final Map<ResourceID, WorkerRegistration<WorkerType>> taskExecutors;
 
     /** Ongoing registration of TaskExecutors per resource ID. */
@@ -466,9 +469,14 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                 ioExecutor);
     }
 
+    /**
+     * rm 处理 tm注册请求
+     * @param taskExecutorRegistration the task executor registration.
+     * @param timeout The timeout for the response.
+     * @return
+     */
     @Override
-    public CompletableFuture<RegistrationResponse> registerTaskExecutor(
-            final TaskExecutorRegistration taskExecutorRegistration, final Time timeout) {
+    public CompletableFuture<RegistrationResponse> registerTaskExecutor(final TaskExecutorRegistration taskExecutorRegistration, final Time timeout) {
 
         CompletableFuture<TaskExecutorGateway> taskExecutorGatewayFuture =
                 getRpcService()
@@ -486,8 +494,10 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                         if (throwable != null) {
                             return new RegistrationResponse.Failure(throwable);
                         } else {
-                            return registerTaskExecutorInternal(
-                                    taskExecutorGateway, taskExecutorRegistration);
+                            /**
+                             * 处理注册的服务方法
+                             */
+                            return registerTaskExecutorInternal(taskExecutorGateway, taskExecutorRegistration);
                         }
                     } else {
                         log.debug(
@@ -499,6 +509,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                 },
                 getMainThreadExecutor());
     }
+
 
     @Override
     public CompletableFuture<Acknowledge> sendSlotReport(
@@ -557,9 +568,18 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
         }
     }
 
+    /**
+     * rm开始处理申请请求
+     *
+     * @param jobMasterId id of the JobMaster
+     * @param resourceRequirements resource requirements
+     * @param timeout
+     * @return
+     */
     @Override
-    public CompletableFuture<Acknowledge> declareRequiredResources(
-            JobMasterId jobMasterId, ResourceRequirements resourceRequirements, Time timeout) {
+    public CompletableFuture<Acknowledge> declareRequiredResources(JobMasterId jobMasterId, ResourceRequirements resourceRequirements, Time timeout) {
+
+        // 拿到jobmater id和注册对象
         final JobID jobId = resourceRequirements.getJobId();
         final JobManagerRegistration jobManagerRegistration = jobManagerRegistrations.get(jobId);
 
@@ -569,7 +589,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                         .thenApply(
                                 acknowledge -> {
                                     validateRunsInMainThread();
-                                    slotManager.processResourceRequirements(resourceRequirements);
+                                    slotManager.processResourceRequirements(resourceRequirements); // rm slotmanager服务处理资源请求
                                     return null;
                                 });
             } else {
@@ -971,6 +991,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
     /**
      * Registers a new TaskExecutor.
      *
+     * rm注册tm的内部实现方法
+     *
      * @param taskExecutorRegistration task executor registration parameters
      * @return RegistrationResponse
      */
@@ -978,8 +1000,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
             TaskExecutorGateway taskExecutorGateway,
             TaskExecutorRegistration taskExecutorRegistration) {
         ResourceID taskExecutorResourceId = taskExecutorRegistration.getResourceId();
-        WorkerRegistration<WorkerType> oldRegistration =
-                taskExecutors.remove(taskExecutorResourceId);
+        WorkerRegistration<WorkerType> oldRegistration = taskExecutors.remove(taskExecutorResourceId);
         if (oldRegistration != null) {
             // TODO :: suggest old taskExecutor to stop itself
             log.debug(
@@ -995,6 +1016,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                                     taskExecutorResourceId.getStringWithMetadata())));
         }
 
+
         final WorkerType newWorker = workerStarted(taskExecutorResourceId);
 
         String taskExecutorAddress = taskExecutorRegistration.getTaskExecutorAddress();
@@ -1007,6 +1029,9 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
             return new TaskExecutorRegistrationRejection(
                     "The ResourceManager does not recognize this TaskExecutor.");
         } else {
+            /**
+             * 将 TaskExecutorRegistration 转换为 WorkerRegistration 对象
+             */
             WorkerRegistration<WorkerType> registration =
                     new WorkerRegistration<>(
                             taskExecutorGateway,
@@ -1023,13 +1048,23 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                     "Registering TaskManager with ResourceID {} ({}) at ResourceManager",
                     taskExecutorResourceId.getStringWithMetadata(),
                     taskExecutorAddress);
+
+            /**
+             * 将taskExecutor加入到taskExecutors，完成tm注册
+             */
             taskExecutors.put(taskExecutorResourceId, registration);
 
-            taskManagerHeartbeatManager.monitorTarget(
-                    taskExecutorResourceId, new TaskExecutorHeartbeatSender(taskExecutorGateway));
+            /**
+             * rm开始向tm发送心跳服务
+             *  实现类 TaskExecutorHeartbeatSender 进行消息调度
+             *  monitorTarget ： 将心跳服务加入集合调度
+             */
+            taskManagerHeartbeatManager.monitorTarget(taskExecutorResourceId, new TaskExecutorHeartbeatSender(taskExecutorGateway));
 
-            return new TaskExecutorRegistrationSuccess(
-                    registration.getInstanceID(), resourceId, clusterInformation);
+            /**
+             * 返回注册成功消息
+             */
+            return new TaskExecutorRegistrationSuccess(registration.getInstanceID(), resourceId, clusterInformation);
         }
     }
 
@@ -1338,6 +1373,12 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
             this.taskExecutorGateway = taskExecutorGateway;
         }
 
+        /**
+         * rm向tm发送心跳服务
+         * @param resourceID Resource ID identifying the machine issuing the heartbeat request.
+         * @param payload Payload of the heartbeat request. Null indicates an empty payload.
+         * @return
+         */
         @Override
         public CompletableFuture<Void> requestHeartbeat(ResourceID resourceID, Void payload) {
             return taskExecutorGateway.heartbeatFromResourceManager(resourceID);

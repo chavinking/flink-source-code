@@ -1694,8 +1694,7 @@ public class StreamExecutionEnvironment implements AutoCloseable {
     @PublicEvolving
     public DataStreamSource<String> socketTextStream(
             String hostname, int port, String delimiter, long maxRetry) {
-        return addSource(
-                new SocketTextStreamFunction(hostname, port, delimiter, maxRetry), "Socket Stream");
+        return addSource(new SocketTextStreamFunction(hostname, port, delimiter, maxRetry), "Socket Stream");
     }
 
     /**
@@ -1925,8 +1924,7 @@ public class StreamExecutionEnvironment implements AutoCloseable {
      * @param typeInfo the user defined type information for the stream
      * @return the data stream constructed
      */
-    public <OUT> DataStreamSource<OUT> addSource(
-            SourceFunction<OUT> function, String sourceName, TypeInformation<OUT> typeInfo) {
+    public <OUT> DataStreamSource<OUT> addSource(SourceFunction<OUT> function, String sourceName, TypeInformation<OUT> typeInfo) {
         return addSource(function, sourceName, typeInfo, Boundedness.CONTINUOUS_UNBOUNDED);
     }
 
@@ -1947,8 +1945,7 @@ public class StreamExecutionEnvironment implements AutoCloseable {
         clean(function);
 
         final StreamSource<OUT, ?> sourceOperator = new StreamSource<>(function);
-        return new DataStreamSource<>(
-                this, resolvedTypeInfo, sourceOperator, isParallel, sourceName, boundedness);
+        return new DataStreamSource<>(this, resolvedTypeInfo, sourceOperator, isParallel, sourceName, boundedness);
     }
 
     /**
@@ -2039,13 +2036,21 @@ public class StreamExecutionEnvironment implements AutoCloseable {
      * @throws Exception which occurs during job execution.
      */
     public JobExecutionResult execute(String jobName) throws Exception {
+        /**
+         * 把算子集合复制一份出来
+         */
         final List<Transformation<?>> originalTransformations = new ArrayList<>(transformations);
+
+        /**
+         * 生成流图
+         */
         StreamGraph streamGraph = getStreamGraph();
         if (jobName != null) {
             streamGraph.setJobName(jobName);
         }
 
         try {
+//            执行流图
             return execute(streamGraph);
         } catch (Throwable t) {
             Optional<ClusterDatasetCorruptedException> clusterDatasetCorruptedException =
@@ -2072,6 +2077,8 @@ public class StreamExecutionEnvironment implements AutoCloseable {
      */
     @Internal
     public JobExecutionResult execute(StreamGraph streamGraph) throws Exception {
+
+//        这个为主要的方法
         final JobClient jobClient = executeAsync(streamGraph);
 
         try {
@@ -2083,8 +2090,7 @@ public class StreamExecutionEnvironment implements AutoCloseable {
                 jobExecutionResult = new DetachedJobExecutionResult(jobClient.getJobID());
             }
 
-            jobListeners.forEach(
-                    jobListener -> jobListener.onJobExecuted(jobExecutionResult, null));
+            jobListeners.forEach(jobListener -> jobListener.onJobExecuted(jobExecutionResult, null));
 
             return jobExecutionResult;
         } catch (Throwable t) {
@@ -2182,8 +2188,14 @@ public class StreamExecutionEnvironment implements AutoCloseable {
     @Internal
     public JobClient executeAsync(StreamGraph streamGraph) throws Exception {
         checkNotNull(streamGraph, "StreamGraph cannot be null.");
+
+
         final PipelineExecutor executor = getPipelineExecutor();
 
+        /**
+         * 重要方法
+         * 跳转到 AbstractSessionClusterExecutor.execute()方法执行
+         */
         CompletableFuture<JobClient> jobClientFuture =
                 executor.execute(streamGraph, configuration, userClassloader);
 
@@ -2221,6 +2233,8 @@ public class StreamExecutionEnvironment implements AutoCloseable {
      * registered {@link Transformation transformations}. Clearing the transformations allows, for
      * example, to not re-execute the same operations when calling {@link #execute()} multiple
      * times.
+     *
+     * 流作业的{@link StreamGraph}的Getter，带有清除先前注册的{@link Transformation转换}的选项。例如，清除转换允许在多次调用{@link #execute()}时不重新执行相同的操作。
      *
      * @param clearTransformations Whether or not to clear previously registered transformations
      * @return The stream graph representing the transformations
@@ -2275,8 +2289,7 @@ public class StreamExecutionEnvironment implements AutoCloseable {
 
         // We copy the transformation so that newly added transformations cannot intervene with the
         // stream graph generation.
-        return new StreamGraphGenerator(
-                        new ArrayList<>(transformations), config, checkpointCfg, configuration)
+        return new StreamGraphGenerator(new ArrayList<>(transformations), config, checkpointCfg, configuration)
                 .setStateBackend(defaultStateBackend)
                 .setChangelogStateBackendEnabled(changelogStateBackendEnabled)
                 .setSavepointDir(defaultSavepointDirectory)

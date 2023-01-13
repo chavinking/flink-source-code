@@ -153,7 +153,9 @@ public final class ResourceCounter {
      * @return new ResourceCounter containing the new value
      */
     public ResourceCounter subtract(ResourceProfile resourceProfile, int decrement) {
+
         final Map<ResourceProfile, Integer> newValues = new HashMap<>(resources);
+
         final int newValue = resources.getOrDefault(resourceProfile, 0) - decrement;
 
         updateNewValue(newValues, resourceProfile, newValue);

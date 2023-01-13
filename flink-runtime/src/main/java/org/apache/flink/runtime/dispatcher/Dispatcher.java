@@ -430,8 +430,7 @@ public abstract class Dispatcher extends FencedRpcEndpoint<DispatcherId>
 
     @Override
     public CompletableFuture<Acknowledge> submitJob(JobGraph jobGraph, Time timeout) {
-        log.info(
-                "Received JobGraph submission '{}' ({}).", jobGraph.getName(), jobGraph.getJobID());
+        log.info("Received JobGraph submission '{}' ({}).", jobGraph.getName(), jobGraph.getJobID());
 
         try {
             if (isDuplicateJob(jobGraph.getJobID())) {
@@ -531,13 +530,22 @@ public abstract class Dispatcher extends FencedRpcEndpoint<DispatcherId>
 
     private CompletableFuture<Acknowledge> internalSubmitJob(JobGraph jobGraph) {
         log.info("Submitting job '{}' ({}).", jobGraph.getName(), jobGraph.getJobID());
-        return waitForTerminatingJob(jobGraph.getJobID(), jobGraph, this::persistAndRunJob)
-                .handle((ignored, throwable) -> handleTermination(jobGraph.getJobID(), throwable))
-                .thenCompose(Function.identity());
+
+//        提交job，提交代码方法 persistAndRunJob
+        return waitForTerminatingJob(
+                jobGraph.getJobID(),
+                jobGraph,
+                this::persistAndRunJob
+        )
+                .handle(
+                        (ignored, throwable) -> handleTermination(jobGraph.getJobID(), throwable)
+                )
+                .thenCompose(
+                        Function.identity()
+                );
     }
 
-    private CompletableFuture<Acknowledge> handleTermination(
-            JobID jobId, @Nullable Throwable terminationThrowable) {
+    private CompletableFuture<Acknowledge> handleTermination(JobID jobId, @Nullable Throwable terminationThrowable) {
         if (terminationThrowable != null) {
             return globalResourceCleaner
                     .cleanupAsync(jobId)
@@ -565,13 +573,28 @@ public abstract class Dispatcher extends FencedRpcEndpoint<DispatcherId>
         return CompletableFuture.completedFuture(Acknowledge.get());
     }
 
+    // --------------------------
     private void persistAndRunJob(JobGraph jobGraph) throws Exception {
+//        保存jobGraph信息,默认空实现
         jobGraphWriter.putJobGraph(jobGraph);
-        runJob(createJobMasterRunner(jobGraph), ExecutionType.SUBMISSION);
+//        1 创建jobmaster【createJobMasterRunner(jobGraph)】
+//        2 运行jobGraph【runJob】
+        runJob(
+                createJobMasterRunner(jobGraph),  // 创建JobManagerRunner[实际上 JobMasterServiceLeadershipRunner 实例]
+                ExecutionType.SUBMISSION
+        );
     }
 
+    /**
+     * 创建jobmaster 并且将jobgraph转换为executorgraph
+     *
+     * @param jobGraph
+     * @return
+     * @throws Exception
+     */
     private JobManagerRunner createJobMasterRunner(JobGraph jobGraph) throws Exception {
         Preconditions.checkState(!jobManagerRunnerRegistry.isRegistered(jobGraph.getJobID()));
+
         return jobManagerRunnerFactory.createJobManagerRunner(
                 jobGraph,
                 configuration,
@@ -595,13 +618,23 @@ public abstract class Dispatcher extends FencedRpcEndpoint<DispatcherId>
 
     /**
      * 运行job的主要实现方法，同时也是处理我们在客户端提交任务的主要实现方法
+     * 1.16版本主要方法都在这个方法内实现的
      *
      * @param jobManagerRunner
      * @param executionType
      * @throws Exception
      */
     private void runJob(JobManagerRunner jobManagerRunner, ExecutionType executionType) throws Exception {
+
+        /**
+         * 启动jobmanagerrunner
+         * 这是启动jobmaster并且调度任务执行的主要方法，后面代码都是围绕核心进行各种设置，此处代码内部实现jobmaster创建，jobgraph到executiongraph的转化
+         * 以及注册和心跳服务处理
+         */
         jobManagerRunner.start();
+
+
+
         jobManagerRunnerRegistry.register(jobManagerRunner);
 
         final JobID jobId = jobManagerRunner.getJobID();
@@ -1106,6 +1139,7 @@ public abstract class Dispatcher extends FencedRpcEndpoint<DispatcherId>
                     terminalJobStatus);
         }
 
+//        保存executiongraph
         writeToExecutionGraphInfoStore(executionGraphInfo);
 
         if (!terminalJobStatus.isGloballyTerminalState()) {
@@ -1274,8 +1308,7 @@ public abstract class Dispatcher extends FencedRpcEndpoint<DispatcherId>
         return optionalJobInformation;
     }
 
-    private CompletableFuture<Void> waitForTerminatingJob(
-            JobID jobId, JobGraph jobGraph, ThrowingConsumer<JobGraph, ?> action) {
+    private CompletableFuture<Void> waitForTerminatingJob(JobID jobId, JobGraph jobGraph, ThrowingConsumer<JobGraph, ?> action) {
         final CompletableFuture<Void> jobManagerTerminationFuture =
                 getJobTerminationFuture(jobId)
                         .exceptionally(
@@ -1299,8 +1332,7 @@ public abstract class Dispatcher extends FencedRpcEndpoint<DispatcherId>
 
     @VisibleForTesting
     CompletableFuture<Void> getJobTerminationFuture(JobID jobId) {
-        return jobManagerRunnerTerminationFutures.getOrDefault(
-                jobId, CompletableFuture.completedFuture(null));
+        return jobManagerRunnerTerminationFutures.getOrDefault(jobId, CompletableFuture.completedFuture(null));
     }
 
     private void registerDispatcherMetrics(MetricGroup jobManagerMetricGroup) {

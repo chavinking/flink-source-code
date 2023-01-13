@@ -80,8 +80,7 @@ public interface SlotSelectionStrategy {
             return taskExecutorUtilization;
         }
 
-        public static SlotInfoAndResources fromSingleSlot(
-                @Nonnull SlotInfoWithUtilization slotInfoWithUtilization) {
+        public static SlotInfoAndResources fromSingleSlot(@Nonnull SlotInfoWithUtilization slotInfoWithUtilization) {
             return new SlotInfoAndResources(
                     slotInfoWithUtilization,
                     slotInfoWithUtilization.getResourceProfile(),

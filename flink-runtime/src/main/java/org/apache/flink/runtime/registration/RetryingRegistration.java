@@ -226,6 +226,7 @@ public abstract class RetryingRegistration<
                     timeoutMillis);
 
 
+//            调用注册
             CompletableFuture<RegistrationResponse> registrationFuture = invokeRegistration(gateway, fencingToken, timeoutMillis);
 
             // if the registration was successful, let the TaskExecutor know
@@ -233,6 +234,7 @@ public abstract class RetryingRegistration<
                     registrationFuture.thenAcceptAsync(
                             (RegistrationResponse result) -> {
                                 if (!isCanceled()) {
+//                                    注册成功
                                     if (result instanceof RegistrationResponse.Success) {
                                         log.debug(
                                                 "Registration with {} at {} was successful.",
@@ -242,6 +244,11 @@ public abstract class RetryingRegistration<
                                         completionFuture.complete(
                                                 RetryingRegistrationResult.success(
                                                         gateway, success));
+
+                                        /**
+                                         * 走到此处tm已经向rm注册成功，注册成功后需要间隔发心跳，但tm并没有在这里有向rm发心跳的动作，原因在于flink和其他集群不一样，
+                                         * flink心跳机制是rm向tm发消息，然后tm相应消息，用来检测rm到tm的连接有效性
+                                         */
                                     } else if (result instanceof RegistrationResponse.Rejection) {
                                         log.debug(
                                                 "Registration with {} at {} was rejected.",
@@ -269,6 +276,8 @@ public abstract class RetryingRegistration<
                                                 "Pausing and re-attempting registration in {} ms",
                                                 retryingRegistrationConfiguration
                                                         .getRefusedDelayMillis());
+
+//                                        如果失败了，隔一会重新注册
                                         registerLater(
                                                 gateway,
                                                 1,
@@ -284,9 +293,9 @@ public abstract class RetryingRegistration<
             // upon failure, retry
             registrationAcceptFuture.whenCompleteAsync(
                     (Void v, Throwable failure) -> {
+//                        这里再次处理注册失败的情况，以发起重新注册方式进行恢复
                         if (failure != null && !isCanceled()) {
-                            if (ExceptionUtils.stripCompletionException(failure)
-                                    instanceof TimeoutException) {
+                            if (ExceptionUtils.stripCompletionException(failure) instanceof TimeoutException) {
                                 // we simply have not received a response in time. maybe the timeout
                                 // was
                                 // very low (initial fast registration attempts), maybe the target
@@ -306,6 +315,8 @@ public abstract class RetryingRegistration<
                                                 2 * timeoutMillis,
                                                 retryingRegistrationConfiguration
                                                         .getMaxRegistrationTimeoutMillis());
+
+//                                如果超时异常，增加超时时间，重试注册
                                 register(gateway, attempt + 1, newTimeoutMillis);
                             } else {
                                 // a serious failure occurred. we still should not give up, but keep
@@ -318,6 +329,7 @@ public abstract class RetryingRegistration<
                                         "Pausing and re-attempting registration in {} ms",
                                         retryingRegistrationConfiguration.getErrorDelayMillis());
 
+//                                不是超时异常，晚会继续发起注册
                                 registerLater(
                                         gateway,
                                         1,

@@ -62,23 +62,43 @@ public class AbstractSessionClusterExecutor<
         this.clusterClientFactory = checkNotNull(clusterClientFactory);
     }
 
+    /**
+     * 1 转换StreamGraph 为 jobGraph
+     * 2 提交jobGraph到集群
+     *
+     * @param pipeline the {@link Pipeline} to execute
+     * @param configuration the {@link Configuration} with the required execution parameters
+     * @param userCodeClassloader the {@link ClassLoader} to deserialize usercode
+     * @return
+     * @throws Exception
+     */
     @Override
     public CompletableFuture<JobClient> execute(
             @Nonnull final Pipeline pipeline,
             @Nonnull final Configuration configuration,
-            @Nonnull final ClassLoader userCodeClassloader)
-            throws Exception {
-        final JobGraph jobGraph =
-                PipelineExecutorUtils.getJobGraph(pipeline, configuration, userCodeClassloader);
+            @Nonnull final ClassLoader userCodeClassloader) throws Exception {
 
-        try (final ClusterDescriptor<ClusterID> clusterDescriptor =
-                clusterClientFactory.createClusterDescriptor(configuration)) {
+        /**
+         * ChavinKing 1: 从StreamGraph生成JobGraph
+         */
+        final JobGraph jobGraph = PipelineExecutorUtils.getJobGraph(pipeline, configuration, userCodeClassloader);
+
+        /**
+         * 提交job到集群运行
+         */
+        try (final ClusterDescriptor<ClusterID> clusterDescriptor = clusterClientFactory.createClusterDescriptor(configuration)) {
             final ClusterID clusterID = clusterClientFactory.getClusterId(configuration);
             checkState(clusterID != null);
 
-            final ClusterClientProvider<ClusterID> clusterClientProvider =
-                    clusterDescriptor.retrieve(clusterID);
+            final ClusterClientProvider<ClusterID> clusterClientProvider = clusterDescriptor.retrieve(clusterID);
+//            获取cluster客户端对象
             ClusterClient<ClusterID> clusterClient = clusterClientProvider.getClusterClient();
+
+            /**
+             * ChavinKing 2: cluster客户端对象提交jobGraph到集群运行
+             *      clusterClient.submitJob(jobGraph) 提交代码
+             * 同时异步获取运行结果
+             */
             return clusterClient
                     .submitJob(jobGraph)
                     .thenApplyAsync(

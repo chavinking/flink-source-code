@@ -73,8 +73,7 @@ public class JobGraph implements Serializable {
     // --- job and configuration ---
 
     /** List of task vertices included in this job graph. */
-    private final Map<JobVertexID, JobVertex> taskVertices =
-            new LinkedHashMap<JobVertexID, JobVertex>();
+    private final Map<JobVertexID, JobVertex> taskVertices = new LinkedHashMap<JobVertexID, JobVertex>();
 
     /** The job configuration attached to this job. */
     private final Configuration jobConfiguration = new Configuration();
@@ -413,8 +412,7 @@ public class JobGraph implements Serializable {
     //  Topological Graph Access
     // --------------------------------------------------------------------------------------------
 
-    public List<JobVertex> getVerticesSortedTopologicallyFromSources()
-            throws InvalidProgramException {
+    public List<JobVertex> getVerticesSortedTopologicallyFromSources() throws InvalidProgramException {
         // early out on empty lists
         if (this.taskVertices.isEmpty()) {
             return Collections.emptyList();
@@ -455,8 +453,7 @@ public class JobGraph implements Serializable {
         return sorted;
     }
 
-    private void addNodesThatHaveNoNewPredecessors(
-            JobVertex start, List<JobVertex> target, Set<JobVertex> remaining) {
+    private void addNodesThatHaveNoNewPredecessors(JobVertex start, List<JobVertex> target, Set<JobVertex> remaining) {
 
         // forward traverse over all produced data sets and all their consumers
         for (IntermediateDataSet dataSet : start.getProducedDataSets()) {

@@ -152,10 +152,10 @@ public class TaskExecutorToResourceManagerConnection
         protected CompletableFuture<RegistrationResponse> invokeRegistration(
                 ResourceManagerGateway resourceManager,
                 ResourceManagerId fencingToken,
-                long timeoutMillis)
-                throws Exception {
+                long timeoutMillis) throws Exception {
 
             Time timeout = Time.milliseconds(timeoutMillis);
+//            调用注册，tm向rm注册
             return resourceManager.registerTaskExecutor(taskExecutorRegistration, timeout);
         }
     }

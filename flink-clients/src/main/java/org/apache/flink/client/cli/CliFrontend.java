@@ -210,6 +210,8 @@ public class CliFrontend {
     /**
      * Executions the run action.
      *
+     * 运行flink程序
+     *
      * @param args Command line arguments for the run action.
      */
     protected void run(String[] args) throws Exception {
@@ -237,6 +239,7 @@ public class CliFrontend {
         LOG.debug("Effective executor configuration: {}", effectiveConfiguration);
 
         try (PackagedProgram program = getPackagedProgram(programOptions, effectiveConfiguration)) {
+//            执行打包好的程序
             executeProgram(effectiveConfiguration, program);
         }
     }
@@ -841,8 +844,7 @@ public class CliFrontend {
     //  Interaction with programs and JobManager
     // --------------------------------------------------------------------------------------------
 
-    protected void executeProgram(final Configuration configuration, final PackagedProgram program)
-            throws ProgramInvocationException {
+    protected void executeProgram(final Configuration configuration, final PackagedProgram program) throws ProgramInvocationException {
         ClientUtils.executeProgram(
                 new DefaultExecutorServiceLoader(), configuration, program, false, false);
     }
@@ -1077,10 +1079,10 @@ public class CliFrontend {
             return 1;
         }
 
-        // get action
+        // get action 即 run
         String action = args[0];
 
-        // remove action from parameters
+        // remove action from parameters 即 标识去除run后的参数数组
         final String[] params = Arrays.copyOfRange(args, 1, args.length);
 
         try {
@@ -1145,18 +1147,20 @@ public class CliFrontend {
         }
     }
 
-    /** Submits the job based on the arguments. */
+    /** Submits the job based on the arguments.
+     * 提交应用入口
+     * */
     public static void main(final String[] args) {
         EnvironmentInformation.logEnvironmentInfo(LOG, "Command Line Client", args);
 
-        // 1. find the configuration directory
+        // 1. find the configuration directory，发现配置目录
         final String configurationDirectory = getConfigurationDirectoryFromEnv();
 
-        // 2. load the global configuration
+        // 2. load the global configuration，从flink-yaml.conf加载配置
         final Configuration configuration =
                 GlobalConfiguration.loadConfiguration(configurationDirectory);
 
-        // 3. load the custom command lines
+        // 3. load the custom command lines，加载命令行配置参数
         final List<CustomCommandLine> customCommandLines =
                 loadCustomCommandLines(configuration, configurationDirectory);
 
@@ -1165,6 +1169,7 @@ public class CliFrontend {
             final CliFrontend cli = new CliFrontend(configuration, customCommandLines);
 
             SecurityUtils.install(new SecurityConfiguration(cli.configuration));
+            // 运行flink程序
             retCode = SecurityUtils.getInstalledContext().runSecured(() -> cli.parseAndRun(args));
         } catch (Throwable t) {
             final Throwable strippedThrowable =

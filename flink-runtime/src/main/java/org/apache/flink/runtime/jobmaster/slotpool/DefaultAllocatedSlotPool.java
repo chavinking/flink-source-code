@@ -163,6 +163,7 @@ public class DefaultAllocatedSlotPool implements AllocatedSlotPool {
                 freeSlotsSince.remove(allocationId) != null,
                 "The slot with id %s was not free.",
                 allocationId);
+//        从已经注册的slot中获取一个
         return registeredSlots.get(allocationId);
     }
 

@@ -36,8 +36,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
      * @param currentRetryDelay the current delay between retries
      * @param maxRetryDelay the max delay between retries
      */
-    public ExponentialBackoffRetryStrategy(
-            int remainingRetries, Duration currentRetryDelay, Duration maxRetryDelay) {
+    public ExponentialBackoffRetryStrategy(int remainingRetries, Duration currentRetryDelay, Duration maxRetryDelay) {
         Preconditions.checkArgument(
                 remainingRetries >= 0, "The number of retries must be greater or equal to 0.");
         this.remainingRetries = remainingRetries;

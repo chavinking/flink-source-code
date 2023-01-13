@@ -78,11 +78,20 @@ public final class JobSubmitHandler
         this.configuration = configuration;
     }
 
+    /**
+     * Netty服务端处理客户端发送过来的请求
+     *      客户端提交JobGraph过来到集群执行
+     *
+     * @param request request that should be handled
+     * @param gateway leader gateway
+     * @return
+     * @throws RestHandlerException
+     */
     @Override
     protected CompletableFuture<JobSubmitResponseBody> handleRequest(
             @Nonnull HandlerRequest<JobSubmitRequestBody> request,
-            @Nonnull DispatcherGateway gateway)
-            throws RestHandlerException {
+            @Nonnull DispatcherGateway gateway) throws RestHandlerException {
+
         final Collection<File> uploadedFiles = request.getUploadedFiles();
         final Map<String, Path> nameToFile =
                 uploadedFiles.stream()
@@ -108,23 +117,29 @@ public final class JobSubmitHandler
                     HttpResponseStatus.BAD_REQUEST);
         }
 
+//        从文件恢复jobgraph
         CompletableFuture<JobGraph> jobGraphFuture = loadJobGraph(requestBody, nameToFile);
 
+//        得到jars文件集合
         Collection<Path> jarFiles = getJarFilesToUpload(requestBody.jarFileNames, nameToFile);
 
-        Collection<Tuple2<String, Path>> artifacts =
-                getArtifactFilesToUpload(requestBody.artifactFileNames, nameToFile);
+//        得到运行依赖文件集合
+        Collection<Tuple2<String, Path>> artifacts = getArtifactFilesToUpload(requestBody.artifactFileNames, nameToFile);
 
+//        将jobgraph，jar包，依赖文件打包，发送各个任务节点
         CompletableFuture<JobGraph> finalizedJobGraphFuture =
                 uploadJobGraphFiles(gateway, jobGraphFuture, jarFiles, artifacts, configuration);
 
+        /**
+         * 提交任务到 Dispatcher ，gateway就表示的是 Dispatcher 实例
+         */
         CompletableFuture<Acknowledge> jobSubmissionFuture =
-                finalizedJobGraphFuture.thenCompose(
-                        jobGraph -> gateway.submitJob(jobGraph, timeout));
+                finalizedJobGraphFuture.thenCompose(jobGraph -> gateway.submitJob(jobGraph, timeout));
 
         return jobSubmissionFuture.thenCombine(
                 jobGraphFuture,
                 (ack, jobGraph) -> new JobSubmitResponseBody("/jobs/" + jobGraph.getJobID()));
+
     }
 
     private CompletableFuture<JobGraph> loadJobGraph(

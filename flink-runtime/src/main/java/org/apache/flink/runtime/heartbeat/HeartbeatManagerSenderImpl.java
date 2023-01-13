@@ -82,7 +82,15 @@ public class HeartbeatManagerSenderImpl<I, O> extends HeartbeatManagerImpl<I, O>
     public void run() {
         if (!stopped) {
             log.debug("Trigger heartbeat request.");
+            /**
+             * 在tm向rm注册成功后，这个线程会循环调用 heartbeatTargets 集合，向tm发送消息
+             *
+             * 那这个线程由谁调用的呢？
+             *  由下边线程调用run运行 getMainThreadExecutor().schedule(this, heartbeatPeriod, TimeUnit.MILLISECONDS);
+             *
+             */
             for (HeartbeatMonitor<O> heartbeatMonitor : getHeartbeatTargets().values()) {
+//                rm向tm发送心跳消息
                 requestHeartbeat(heartbeatMonitor);
             }
 
@@ -94,6 +102,9 @@ public class HeartbeatManagerSenderImpl<I, O> extends HeartbeatManagerImpl<I, O>
         O payload = getHeartbeatListener().retrievePayload(heartbeatMonitor.getHeartbeatTargetId());
         final HeartbeatTarget<O> heartbeatTarget = heartbeatMonitor.getHeartbeatTarget();
 
+        /**
+         * rm向tm发送消息
+         */
         heartbeatTarget
                 .requestHeartbeat(getOwnResourceID(), payload)
                 .whenCompleteAsync(

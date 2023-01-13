@@ -160,10 +160,16 @@ public class HeartbeatMonitorImpl<O> implements HeartbeatMonitor<O>, Runnable {
         return state.get() == State.CANCELED;
     }
 
+    /**
+     * 重设超时检查
+     *
+     * @param heartbeatTimeout
+     */
     void resetHeartbeatTimeout(long heartbeatTimeout) {
         if (state.get() == State.RUNNING) {
             cancelTimeout();
 
+//            重新调度
             futureTimeout =
                     scheduledExecutor.schedule(this, heartbeatTimeout, TimeUnit.MILLISECONDS);
 

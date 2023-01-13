@@ -56,8 +56,7 @@ class JobScopedResourceTracker {
         this.jobId = Preconditions.checkNotNull(jobId);
     }
 
-    public void notifyResourceRequirements(
-            Collection<ResourceRequirement> newResourceRequirements) {
+    public void notifyResourceRequirements(Collection<ResourceRequirement> newResourceRequirements) {
         Preconditions.checkNotNull(newResourceRequirements);
 
         resourceRequirements = ResourceCounter.empty();
@@ -65,9 +64,15 @@ class JobScopedResourceTracker {
             resourceRequirements =
                     resourceRequirements.add(
                             newResourceRequirement.getResourceProfile(),
-                            newResourceRequirement.getNumberOfRequiredSlots());
+                            newResourceRequirement.getNumberOfRequiredSlots()
+                    );
         }
+
+
+//        找到多余的slot资源
         findExcessSlots();
+
+//        尝试分配slot资源
         tryAssigningExcessSlots();
     }
 
@@ -170,23 +175,29 @@ class JobScopedResourceTracker {
         return resourceRequirements.isEmpty();
     }
 
+    /**
+     * 查找多余的slot资源
+     */
     private void findExcessSlots() {
+
+        // 声明存储多余的资源的列表
         final Collection<ExcessResource> excessResources = new ArrayList<>();
 
-        for (ResourceProfile requirementProfile :
-                resourceToRequirementMapping.getAllRequirementProfiles()) {
-            int numTotalRequiredResources =
-                    resourceRequirements.getResourceCount(requirementProfile);
-            int numTotalAcquiredResources =
-                    resourceToRequirementMapping.getNumFulfillingResources(requirementProfile);
 
-            if (numTotalAcquiredResources > numTotalRequiredResources) {
-                int numExcessResources = numTotalAcquiredResources - numTotalRequiredResources;
+        /**
+         * resourceToRequirementMapping 资源到请求的映射
+         */
+        for (ResourceProfile requirementProfile : resourceToRequirementMapping.getAllRequirementProfiles()) {
 
-                for (Map.Entry<ResourceProfile, Integer> acquiredResource :
-                        resourceToRequirementMapping
-                                .getResourcesFulfilling(requirementProfile)
-                                .getResourcesWithCount()) {
+            int numTotalRequiredResources = resourceRequirements.getResourceCount(requirementProfile); // 总请求资源数
+            int numTotalAcquiredResources = resourceToRequirementMapping.getNumFulfillingResources(requirementProfile); // 总可以获得的资源数
+
+            if (numTotalAcquiredResources > numTotalRequiredResources) { // 如果可以获得资源数量大于请求资源数量
+
+                int numExcessResources = numTotalAcquiredResources - numTotalRequiredResources; // 剩余资源数
+
+                for (Map.Entry<ResourceProfile, Integer> acquiredResource : resourceToRequirementMapping.getResourcesFulfilling(requirementProfile).getResourcesWithCount()) {
+
                     ResourceProfile acquiredResourceProfile = acquiredResource.getKey();
                     int numAcquiredResources = acquiredResource.getValue();
 
@@ -212,18 +223,28 @@ class JobScopedResourceTracker {
 
         if (!excessResources.isEmpty()) {
             LOG.debug("Detected excess resources for job {}: {}", jobId, excessResources);
+
+            /**
+             * 遍历多余的资源列表
+             */
             for (ExcessResource excessResource : excessResources) {
+
+//                从资源到需求的集合中删除申请到的资源内容
                 resourceToRequirementMapping.decrementCount(
                         excessResource.requirementProfile,
                         excessResource.resourceProfile,
                         excessResource.numExcessResources);
-                this.excessResources =
-                        this.excessResources.add(
-                                excessResource.resourceProfile, excessResource.numExcessResources);
+
+//                将申请的资源内容加入到集合
+                this.excessResources = this.excessResources.add(excessResource.resourceProfile, excessResource.numExcessResources);
             }
         }
     }
 
+    /**
+     * chavinking 1 尝试分配多余的资源
+     *
+     */
     private void tryAssigningExcessSlots() {
         if (LOG.isTraceEnabled()) {
             LOG.trace(
@@ -232,28 +253,32 @@ class JobScopedResourceTracker {
                     jobId);
         }
 
+//        匹配的集合
         ResourceCounter assignedResources = ResourceCounter.empty();
-        for (Map.Entry<ResourceProfile, Integer> excessResource :
-                excessResources.getResourcesWithCount()) {
+
+        for (Map.Entry<ResourceProfile, Integer> excessResource : excessResources.getResourcesWithCount()) {
+
             for (int i = 0; i < excessResource.getValue(); i++) {
+
                 final ResourceProfile resourceProfile = excessResource.getKey();
-                final Optional<ResourceProfile> matchingRequirement =
-                        findMatchingRequirement(resourceProfile);
+                // 发现匹配的
+                final Optional<ResourceProfile> matchingRequirement = findMatchingRequirement(resourceProfile);
+
                 if (matchingRequirement.isPresent()) {
-                    resourceToRequirementMapping.incrementCount(
-                            matchingRequirement.get(), resourceProfile, 1);
+
+//                    如果发现了匹配的就把他存入集合
+                    resourceToRequirementMapping.incrementCount(matchingRequirement.get(), resourceProfile, 1);
                     assignedResources = assignedResources.add(resourceProfile, 1);
+
                 } else {
                     break;
                 }
+
             }
         }
 
-        for (Map.Entry<ResourceProfile, Integer> assignedResource :
-                assignedResources.getResourcesWithCount()) {
-            excessResources =
-                    excessResources.subtract(
-                            assignedResource.getKey(), assignedResource.getValue());
+        for (Map.Entry<ResourceProfile, Integer> assignedResource : assignedResources.getResourcesWithCount()) {
+            excessResources = excessResources.subtract(assignedResource.getKey(), assignedResource.getValue());
         }
 
         if (LOG.isTraceEnabled()) {

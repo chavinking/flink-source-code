@@ -986,6 +986,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     @Override
     public CompletableFuture<Void> heartbeatFromResourceManager(ResourceID resourceID) {
+        /**
+         * tm接收到了rm发送的心跳请求，接下来处理rm心跳请求
+         * 向rm发送心跳消息
+         */
         return resourceManagerHeartbeatManager.requestHeartbeat(resourceID, null);
     }
 

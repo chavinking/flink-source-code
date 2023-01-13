@@ -202,6 +202,9 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
         this.deploymentStateTimeMetrics =
                 new DeploymentStateTimeMetrics(jobGraph.getJobType(), jobStatusMetricsSettings);
 
+        /**
+         * jobGraph转换为executionGraph
+         */
         this.executionGraph =
                 createAndRestoreExecutionGraph(
                         completedCheckpointStore,
@@ -211,6 +214,7 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
                         mainThreadExecutor,
                         jobStatusListener,
                         vertexParallelismStore);
+
 
         this.schedulingTopology = executionGraph.getSchedulingTopology();
 
@@ -347,6 +351,19 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
         return computeVertexParallelismStore(jobGraph.getVertices());
     }
 
+    /**
+     * 转换jobgraph 到 executiongraph
+     *
+     * @param completedCheckpointStore
+     * @param checkpointsCleaner
+     * @param checkpointIdCounter
+     * @param initializationTimestamp
+     * @param mainThreadExecutor
+     * @param jobStatusListener
+     * @param vertexParallelismStore
+     * @return
+     * @throws Exception
+     */
     private ExecutionGraph createAndRestoreExecutionGraph(
             CompletedCheckpointStore completedCheckpointStore,
             CheckpointsCleaner checkpointsCleaner,
@@ -354,8 +371,7 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
             long initializationTimestamp,
             ComponentMainThreadExecutor mainThreadExecutor,
             JobStatusListener jobStatusListener,
-            VertexParallelismStore vertexParallelismStore)
-            throws Exception {
+            VertexParallelismStore vertexParallelismStore) throws Exception {
 
         final ExecutionGraph newExecutionGraph =
                 executionGraphFactory.createAndRestoreExecutionGraph(
@@ -602,6 +618,8 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
                 executionGraph::registerJobStatusListener,
                 executionGraph.getStatusTimestamp(JobStatus.INITIALIZING),
                 jobStatusMetricsSettings);
+
+//        开启所有的协调组件
         operatorCoordinatorHandler.startAllOperatorCoordinators();
         startSchedulingInternal();
     }

@@ -28,8 +28,10 @@ import java.util.Set;
 
 /** A bi-directional mapping between required and acquired resources. */
 class BiDirectionalResourceToRequirementMapping {
+    // 需要的资源
     private final Map<ResourceProfile, ResourceCounter> requirementToFulfillingResources =
             new HashMap<>();
+    // 满足的资源
     private final Map<ResourceProfile, ResourceCounter> resourceToFulfilledRequirement =
             new HashMap<>();
 
@@ -38,15 +40,17 @@ class BiDirectionalResourceToRequirementMapping {
         Preconditions.checkNotNull(requirement);
         Preconditions.checkNotNull(resource);
         Preconditions.checkArgument(increment > 0);
+
         internalIncrementCount(requirementToFulfillingResources, requirement, resource, increment);
         internalIncrementCount(resourceToFulfilledRequirement, resource, requirement, increment);
     }
 
-    public void decrementCount(
-            ResourceProfile requirement, ResourceProfile resource, int decrement) {
+    public void decrementCount(ResourceProfile requirement, ResourceProfile resource, int decrement) {
+
         Preconditions.checkNotNull(requirement);
         Preconditions.checkNotNull(resource);
         Preconditions.checkArgument(decrement > 0);
+
         internalDecrementCount(requirementToFulfillingResources, requirement, resource, decrement);
         internalDecrementCount(resourceToFulfilledRequirement, resource, requirement, decrement);
     }
@@ -80,8 +84,7 @@ class BiDirectionalResourceToRequirementMapping {
                             "Attempting to decrement count of %s->%s, but primary key was unknown.",
                             resourceProfile,
                             secondaryKey);
-                    final ResourceCounter newCounter =
-                            resourceCounter.subtract(secondaryKey, decrement);
+                    final ResourceCounter newCounter = resourceCounter.subtract(secondaryKey, decrement);
                     return newCounter.isEmpty() ? null : newCounter;
                 });
     }

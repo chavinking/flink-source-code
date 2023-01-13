@@ -34,8 +34,7 @@ public interface PhysicalSlotProvider {
      * @param physicalSlotRequest slot requirements
      * @return a future of the allocated slot
      */
-    CompletableFuture<PhysicalSlotRequest.Result> allocatePhysicalSlot(
-            PhysicalSlotRequest physicalSlotRequest);
+    CompletableFuture<PhysicalSlotRequest.Result> allocatePhysicalSlot(PhysicalSlotRequest physicalSlotRequest);
 
     /**
      * Cancels the slot request with the given {@link SlotRequestId}.

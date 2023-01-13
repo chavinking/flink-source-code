@@ -133,6 +133,13 @@ public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
     // HeartbeatManager methods
     // ----------------------------------------------------------------------------------------------
 
+    /**
+     * 管理心跳方法
+     *
+     * @param resourceID Resource ID identifying the heartbeat target
+     * @param heartbeatTarget Interface to send heartbeat requests and responses to the heartbeat
+     *     target
+     */
     @Override
     public void monitorTarget(ResourceID resourceID, HeartbeatTarget<O> heartbeatTarget) {
         if (!stopped) {
@@ -150,6 +157,11 @@ public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
                                 heartbeatTimeoutIntervalMs,
                                 failedRpcRequestsUntilUnreachable);
 
+                /**
+                 * 将心跳服务加入到heartbeatTargets集合
+                 * 加入后由谁去调用呢？
+                 * 这里猜测肯定有某个方法会对heartbeatTargets进行遍历调用 即 getHeartbeatTargets方法
+                 */
                 heartbeatTargets.put(resourceID, heartbeatMonitor);
 
                 // check if we have stopped in the meantime (concurrent stop operation)
@@ -208,6 +220,10 @@ public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
             ResourceID heartbeatOrigin, I heartbeatPayload) {
         if (!stopped) {
             log.debug("Received heartbeat from {}.", heartbeatOrigin);
+
+            /**
+             * tm发送心跳汇报
+             */
             reportHeartbeat(heartbeatOrigin);
 
             if (heartbeatPayload != null) {
@@ -219,8 +235,7 @@ public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
     }
 
     @Override
-    public CompletableFuture<Void> requestHeartbeat(
-            final ResourceID requestOrigin, I heartbeatPayload) {
+    public CompletableFuture<Void> requestHeartbeat(final ResourceID requestOrigin, I heartbeatPayload) {
         if (!stopped) {
             log.debug("Received heartbeat request from {}.", requestOrigin);
 
@@ -228,9 +243,11 @@ public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
 
             if (heartbeatTarget != null) {
                 if (heartbeatPayload != null) {
+                    // rm向tm发送心跳
                     heartbeatListener.reportPayload(requestOrigin, heartbeatPayload);
                 }
 
+                // rm接受tm返回消息
                 heartbeatTarget
                         .receiveHeartbeat(
                                 getOwnResourceID(),
@@ -279,6 +296,9 @@ public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
     HeartbeatTarget<O> reportHeartbeat(ResourceID resourceID) {
         if (heartbeatTargets.containsKey(resourceID)) {
             HeartbeatMonitor<O> heartbeatMonitor = heartbeatTargets.get(resourceID);
+            /**
+             * 汇报心跳
+             */
             heartbeatMonitor.reportHeartbeat();
 
             return heartbeatMonitor.getHeartbeatTarget();

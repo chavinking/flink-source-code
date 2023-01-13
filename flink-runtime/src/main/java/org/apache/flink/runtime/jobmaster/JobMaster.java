@@ -221,6 +221,30 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
 
     // ------------------------------------------------------------------------
 
+    /**
+     * 创建jobmaster ，同时生成executiongraph
+     *
+     * @param rpcService
+     * @param jobMasterId
+     * @param jobMasterConfiguration
+     * @param resourceId
+     * @param jobGraph
+     * @param highAvailabilityService
+     * @param slotPoolServiceSchedulerFactory
+     * @param jobManagerSharedServices
+     * @param heartbeatServices
+     * @param jobMetricGroupFactory
+     * @param jobCompletionActions
+     * @param fatalErrorHandler
+     * @param userCodeLoader
+     * @param shuffleMaster
+     * @param partitionTrackerFactory
+     * @param executionDeploymentTracker
+     * @param executionDeploymentReconcilerFactory
+     * @param blocklistHandlerFactory
+     * @param initializationTimestamp
+     * @throws Exception
+     */
     public JobMaster(
             RpcService rpcService,
             JobMasterId jobMasterId,
@@ -240,8 +264,7 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
             ExecutionDeploymentTracker executionDeploymentTracker,
             ExecutionDeploymentReconciler.Factory executionDeploymentReconcilerFactory,
             BlocklistHandler.Factory blocklistHandlerFactory,
-            long initializationTimestamp)
-            throws Exception {
+            long initializationTimestamp) throws Exception {
 
         super(rpcService, RpcServiceUtils.createRandomName(JOB_MANAGER_NAME), jobMasterId);
 
@@ -249,8 +272,7 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                 new ExecutionDeploymentReconciliationHandler() {
 
                     @Override
-                    public void onMissingDeploymentsOf(
-                            Collection<ExecutionAttemptID> executionAttemptIds, ResourceID host) {
+                    public void onMissingDeploymentsOf(Collection<ExecutionAttemptID> executionAttemptIds, ResourceID host) {
                         log.debug(
                                 "Failing deployments {} due to no longer being deployed.",
                                 executionAttemptIds);
@@ -267,15 +289,13 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                     }
 
                     @Override
-                    public void onUnknownDeploymentsOf(
-                            Collection<ExecutionAttemptID> executionAttemptIds, ResourceID host) {
+                    public void onUnknownDeploymentsOf(Collection<ExecutionAttemptID> executionAttemptIds, ResourceID host) {
                         log.debug(
                                 "Canceling left-over deployments {} on task executor {}.",
                                 executionAttemptIds,
                                 host);
                         for (ExecutionAttemptID executionAttemptId : executionAttemptIds) {
-                            TaskManagerRegistration taskManagerRegistration =
-                                    registeredTaskManagers.get(host);
+                            TaskManagerRegistration taskManagerRegistration = registeredTaskManagers.get(host);
                             if (taskManagerRegistration != null) {
                                 taskManagerRegistration
                                         .getTaskExecutorGateway()
@@ -286,9 +306,7 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                 };
 
         this.executionDeploymentTracker = executionDeploymentTracker;
-        this.executionDeploymentReconciler =
-                executionDeploymentReconcilerFactory.create(executionStateReconciliationHandler);
-
+        this.executionDeploymentReconciler = executionDeploymentReconcilerFactory.create(executionStateReconciliationHandler);
         this.jobMasterConfiguration = checkNotNull(jobMasterConfiguration);
         this.resourceId = checkNotNull(resourceId);
         this.jobGraph = checkNotNull(jobGraph);
@@ -305,30 +323,26 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                 jobMasterConfiguration
                         .getConfiguration()
                         .getBoolean(JobManagerOptions.RETRIEVE_TASK_MANAGER_HOSTNAME);
-
         final String jobName = jobGraph.getName();
         final JobID jid = jobGraph.getJobID();
-
         log.info("Initializing job '{}' ({}).", jobName, jid);
 
-        resourceManagerLeaderRetriever =
-                highAvailabilityServices.getResourceManagerLeaderRetriever();
-
+        resourceManagerLeaderRetriever = highAvailabilityServices.getResourceManagerLeaderRetriever();
         this.registeredTaskManagers = new HashMap<>();
+
         this.blocklistHandler =
                 blocklistHandlerFactory.create(
                         new JobMasterBlocklistContext(),
                         this::getNodeIdOfTaskManager,
                         getMainThreadExecutor(),
-                        log);
-
+                        log
+                );
         this.slotPoolService =
                 checkNotNull(slotPoolServiceSchedulerFactory)
                         .createSlotPoolService(
                                 jid,
                                 createDeclarativeSlotPoolFactory(
                                         jobMasterConfiguration.getConfiguration()));
-
         this.partitionTracker =
                 checkNotNull(partitionTrackerFactory)
                         .create(
@@ -339,9 +353,13 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                                 });
 
         this.shuffleMaster = checkNotNull(shuffleMaster);
-
         this.jobManagerJobMetricGroup = jobMetricGroupFactory.create(jobGraph);
         this.jobStatusListener = new JobManagerJobStatusListener();
+
+        /**
+         * 在这里实现 jobgraph到executiongraph的转换
+         *
+         */
         this.schedulerNG =
                 createScheduler(
                         slotPoolServiceSchedulerFactory,
@@ -352,10 +370,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         this.heartbeatServices = checkNotNull(heartbeatServices);
         this.taskManagerHeartbeatManager = NoOpHeartbeatManager.getInstance();
         this.resourceManagerHeartbeatManager = NoOpHeartbeatManager.getInstance();
-
         this.resourceManagerConnection = null;
         this.establishedResourceManagerConnection = null;
-
         this.accumulators = new HashMap<>();
     }
 
@@ -363,8 +379,7 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
             SlotPoolServiceSchedulerFactory slotPoolServiceSchedulerFactory,
             ExecutionDeploymentTracker executionDeploymentTracker,
             JobManagerJobMetricGroup jobManagerJobMetricGroup,
-            JobStatusListener jobStatusListener)
-            throws Exception {
+            JobStatusListener jobStatusListener)  throws Exception {
         final SchedulerNG scheduler =
                 slotPoolServiceSchedulerFactory.createScheduler(
                         log,
@@ -952,6 +967,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         JobShuffleContext context = new JobShuffleContextImpl(jobGraph.getJobID(), this);
         shuffleMaster.registerJob(context);
 
+//        启动jobmaster服务，注册心跳和创建监听服务
+//        向rm注册，维持心跳服务（两个心跳服务：1-和rm的心跳 2-和tm的心跳）
         startJobMasterServices();
 
         log.info(
@@ -960,16 +977,19 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                 jobGraph.getJobID(),
                 getFencingToken());
 
+//        开始调度
         startScheduling();
     }
 
     private void startJobMasterServices() throws Exception {
         try {
+
+//            创建两个心跳服务
             this.taskManagerHeartbeatManager = createTaskManagerHeartbeatManager(heartbeatServices);
-            this.resourceManagerHeartbeatManager =
-                    createResourceManagerHeartbeatManager(heartbeatServices);
+            this.resourceManagerHeartbeatManager = createResourceManagerHeartbeatManager(heartbeatServices);
 
             // start the slot pool make sure the slot pool now accepts messages for this leader
+//            启动slotpool服务
             slotPoolService.start(getFencingToken(), getAddress(), getMainThreadExecutor());
 
             // job is ready to go, try to establish connection with resource manager
@@ -1042,6 +1062,9 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         resourceManagerHeartbeatManager.stop();
     }
 
+    /**
+     * 开始申请资源调度任务执行
+     */
     private void startScheduling() {
         schedulerNG.startScheduling();
     }
@@ -1110,8 +1133,10 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
 
     private void notifyOfNewResourceManagerLeader(
             final String newResourceManagerAddress, final ResourceManagerId resourceManagerId) {
+//        连接rm
         resourceManagerAddress =
                 createResourceManagerAddress(newResourceManagerAddress, resourceManagerId);
+
 
         reconnectToResourceManager(
                 new FlinkException(

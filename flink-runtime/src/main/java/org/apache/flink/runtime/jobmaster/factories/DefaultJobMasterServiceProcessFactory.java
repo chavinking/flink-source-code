@@ -57,7 +57,8 @@ public class DefaultJobMasterServiceProcessFactory implements JobMasterServicePr
                 jobId,
                 leaderSessionId,
                 jobMasterServiceFactory,
-                cause -> createArchivedExecutionGraph(JobStatus.FAILED, cause));
+                cause -> createArchivedExecutionGraph(JobStatus.FAILED, cause)
+        );
     }
 
     @Override
@@ -66,9 +67,14 @@ public class DefaultJobMasterServiceProcessFactory implements JobMasterServicePr
     }
 
     @Override
-    public ArchivedExecutionGraph createArchivedExecutionGraph(
-            JobStatus jobStatus, @Nullable Throwable cause) {
+    public ArchivedExecutionGraph createArchivedExecutionGraph(JobStatus jobStatus, @Nullable Throwable cause) {
         return ArchivedExecutionGraph.createSparseArchivedExecutionGraph(
-                jobId, jobName, jobStatus, cause, checkpointingSettings, initializationTimestamp);
+                jobId,
+                jobName,
+                jobStatus,
+                cause,
+                checkpointingSettings,
+                initializationTimestamp
+        );
     }
 }

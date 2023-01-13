@@ -52,9 +52,14 @@ public class PhysicalSlotProviderImpl implements PhysicalSlotProvider {
         slotPool.disableBatchSlotRequestTimeoutCheck();
     }
 
+    /**
+     * 申请物理slot
+     *
+     * @param physicalSlotRequest slot requirements
+     * @return
+     */
     @Override
-    public CompletableFuture<PhysicalSlotRequest.Result> allocatePhysicalSlot(
-            PhysicalSlotRequest physicalSlotRequest) {
+    public CompletableFuture<PhysicalSlotRequest.Result> allocatePhysicalSlot(PhysicalSlotRequest physicalSlotRequest) {
         SlotRequestId slotRequestId = physicalSlotRequest.getSlotRequestId();
         SlotProfile slotProfile = physicalSlotRequest.getSlotProfile();
         ResourceProfile resourceProfile = slotProfile.getPhysicalSlotResourceProfile();
@@ -64,55 +69,88 @@ public class PhysicalSlotProviderImpl implements PhysicalSlotProvider {
                 slotRequestId,
                 resourceProfile);
 
-        Optional<PhysicalSlot> availablePhysicalSlot =
-                tryAllocateFromAvailable(slotRequestId, slotProfile);
 
+
+
+        /**
+         * 1 先尝试从slotpool中进行申请
+         */
+        Optional<PhysicalSlot> availablePhysicalSlot = tryAllocateFromAvailable(slotRequestId, slotProfile);
+
+
+
+        /**
+         * 2 如果没有可用，再尝试申请新的slot
+         */
         CompletableFuture<PhysicalSlot> slotFuture;
         slotFuture =
                 availablePhysicalSlot
                         .map(CompletableFuture::completedFuture)
                         .orElseGet(
                                 () ->
-                                        requestNewSlot(
+                                        requestNewSlot( // 申请新的slot
                                                 slotRequestId,
                                                 resourceProfile,
                                                 slotProfile.getPreferredAllocations(),
-                                                physicalSlotRequest
-                                                        .willSlotBeOccupiedIndefinitely()));
+                                                physicalSlotRequest.willSlotBeOccupiedIndefinitely()
+                                        )
+                        );
+
 
         return slotFuture.thenApply(
-                physicalSlot -> new PhysicalSlotRequest.Result(slotRequestId, physicalSlot));
+                physicalSlot -> new PhysicalSlotRequest.Result(slotRequestId, physicalSlot)
+        );
     }
 
-    private Optional<PhysicalSlot> tryAllocateFromAvailable(
-            SlotRequestId slotRequestId, SlotProfile slotProfile) {
+    /**
+     * 尝试从slotpool获取slot
+     *
+     * @param slotRequestId
+     * @param slotProfile
+     * @return
+     */
+    private Optional<PhysicalSlot> tryAllocateFromAvailable(SlotRequestId slotRequestId, SlotProfile slotProfile) {
+
+//        可以申请的slot列表
         Collection<SlotSelectionStrategy.SlotInfoAndResources> slotInfoList =
                 slotPool.getAvailableSlotsInformation().stream()
                         .map(SlotSelectionStrategy.SlotInfoAndResources::fromSingleSlot)
                         .collect(Collectors.toList());
 
+//        定义获得最好的slot策略
         Optional<SlotSelectionStrategy.SlotInfoAndLocality> selectedAvailableSlot =
                 slotSelectionStrategy.selectBestSlotForProfile(slotInfoList, slotProfile);
 
         return selectedAvailableSlot.flatMap(
                 slotInfoAndLocality ->
+//                        分配slot
                         slotPool.allocateAvailableSlot(
                                 slotRequestId,
                                 slotInfoAndLocality.getSlotInfo().getAllocationId(),
                                 slotProfile.getPhysicalSlotResourceProfile()));
     }
 
+
+
+    /**
+     * 申请新的slot资源
+     *
+     * @param slotRequestId
+     * @param resourceProfile
+     * @param preferredAllocations
+     * @param willSlotBeOccupiedIndefinitely
+     * @return
+     */
     private CompletableFuture<PhysicalSlot> requestNewSlot(
             SlotRequestId slotRequestId,
             ResourceProfile resourceProfile,
             Collection<AllocationID> preferredAllocations,
             boolean willSlotBeOccupiedIndefinitely) {
+
         if (willSlotBeOccupiedIndefinitely) {
-            return slotPool.requestNewAllocatedSlot(
-                    slotRequestId, resourceProfile, preferredAllocations, null);
+            return slotPool.requestNewAllocatedSlot(slotRequestId, resourceProfile, preferredAllocations, null);
         } else {
-            return slotPool.requestNewAllocatedBatchSlot(
-                    slotRequestId, resourceProfile, preferredAllocations);
+            return slotPool.requestNewAllocatedBatchSlot(slotRequestId, resourceProfile, preferredAllocations);
         }
     }
 

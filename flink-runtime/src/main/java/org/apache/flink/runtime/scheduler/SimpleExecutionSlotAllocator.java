@@ -65,18 +65,30 @@ public class SimpleExecutionSlotAllocator implements ExecutionSlotAllocator {
     }
 
     @Override
-    public List<ExecutionSlotAssignment> allocateSlotsFor(
-            List<ExecutionAttemptID> executionAttemptIds) {
+    public List<ExecutionSlotAssignment> allocateSlotsFor(List<ExecutionAttemptID> executionAttemptIds) {
         return executionAttemptIds.stream()
-                .map(id -> new ExecutionSlotAssignment(id, allocateSlotFor(id)))
+                .map(id -> new ExecutionSlotAssignment( // 为每个ID分配一个slot
+                        id,
+                        allocateSlotFor(id) // 为每个executionvertex申请一个slot
+                ))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 返回的事 LogicalSlot
+     *
+     * @param executionAttemptId
+     * @return LogicalSlot 可以封装成 ExecutionSlotAssignment
+     */
     private CompletableFuture<LogicalSlot> allocateSlotFor(ExecutionAttemptID executionAttemptId) {
+
         if (requestedPhysicalSlots.containsKeyA(executionAttemptId)) {
             return requestedPhysicalSlots.getValueByKeyA(executionAttemptId);
         }
+
+//        创建一个申请iD
         final SlotRequestId slotRequestId = new SlotRequestId();
+
         final ResourceProfile resourceProfile = resourceProfileRetriever.apply(executionAttemptId);
         final SlotProfile slotProfile =
                 SlotProfile.priorAllocation(
@@ -85,23 +97,27 @@ public class SimpleExecutionSlotAllocator implements ExecutionSlotAllocator {
                         Collections.emptyList(),
                         Collections.emptyList(),
                         Collections.emptySet());
-        final PhysicalSlotRequest request =
-                new PhysicalSlotRequest(slotRequestId, slotProfile, slotWillBeOccupiedIndefinitely);
+
+        final PhysicalSlotRequest request = new PhysicalSlotRequest(slotRequestId, slotProfile, slotWillBeOccupiedIndefinitely);
         final CompletableFuture<LogicalSlot> slotFuture =
-                slotProvider
-                        .allocatePhysicalSlot(request)
+                slotProvider // slot提供者
+                        .allocatePhysicalSlot(request) // 分配物理slot，将申请资源封装成了PhysicalSlotRequest.Result
                         .thenApply(
                                 physicalSlotRequest ->
                                         allocateLogicalSlotFromPhysicalSlot(
                                                 slotRequestId,
                                                 physicalSlotRequest.getPhysicalSlot(),
-                                                slotWillBeOccupiedIndefinitely));
+                                                slotWillBeOccupiedIndefinitely
+                                        )
+                        );
+
         slotFuture.exceptionally(
                 throwable -> {
                     this.requestedPhysicalSlots.removeKeyA(executionAttemptId);
                     this.slotProvider.cancelSlotRequest(slotRequestId, throwable);
                     return null;
                 });
+
         this.requestedPhysicalSlots.put(executionAttemptId, slotRequestId, slotFuture);
         return slotFuture;
     }

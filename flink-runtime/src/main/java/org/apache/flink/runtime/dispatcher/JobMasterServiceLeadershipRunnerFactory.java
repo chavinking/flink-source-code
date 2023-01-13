@@ -56,8 +56,7 @@ public enum JobMasterServiceLeadershipRunnerFactory implements JobManagerRunnerF
             JobManagerSharedServices jobManagerServices,
             JobManagerJobMetricGroupFactory jobManagerJobMetricGroupFactory,
             FatalErrorHandler fatalErrorHandler,
-            long initializationTimestamp)
-            throws Exception {
+            long initializationTimestamp) throws Exception {
 
         checkArgument(jobGraph.getNumberOfVertices() > 0, "The given job is empty");
 
@@ -70,11 +69,9 @@ public enum JobMasterServiceLeadershipRunnerFactory implements JobManagerRunnerF
                 highAvailabilityServices.getJobManagerLeaderElectionService(jobGraph.getJobID());
 
         final SlotPoolServiceSchedulerFactory slotPoolServiceSchedulerFactory =
-                DefaultSlotPoolServiceSchedulerFactory.fromConfiguration(
-                        configuration, jobGraph.getJobType());
+                DefaultSlotPoolServiceSchedulerFactory.fromConfiguration(configuration, jobGraph.getJobType());
 
-        if (jobMasterConfiguration.getConfiguration().get(JobManagerOptions.SCHEDULER_MODE)
-                == SchedulerExecutionMode.REACTIVE) {
+        if (jobMasterConfiguration.getConfiguration().get(JobManagerOptions.SCHEDULER_MODE) == SchedulerExecutionMode.REACTIVE) {
             Preconditions.checkState(
                     slotPoolServiceSchedulerFactory.getSchedulerType()
                             == JobManagerOptions.SchedulerType.Adaptive,
@@ -88,9 +85,10 @@ public enum JobMasterServiceLeadershipRunnerFactory implements JobManagerRunnerF
 
         final ClassLoader userCodeClassLoader =
                 classLoaderLease
-                        .getOrResolveClassLoader(
-                                jobGraph.getUserJarBlobKeys(), jobGraph.getClasspaths())
+                        .getOrResolveClassLoader(jobGraph.getUserJarBlobKeys(), jobGraph.getClasspaths())
                         .asClassLoader();
+
+
 
         final DefaultJobMasterServiceFactory jobMasterServiceFactory =
                 new DefaultJobMasterServiceFactory(
@@ -115,6 +113,7 @@ public enum JobMasterServiceLeadershipRunnerFactory implements JobManagerRunnerF
                         initializationTimestamp,
                         jobMasterServiceFactory);
 
+//        创建jobmaster方法
         return new JobMasterServiceLeadershipRunner(
                 jobMasterServiceProcessFactory,
                 jobManagerLeaderElectionService,

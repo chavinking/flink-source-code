@@ -106,7 +106,9 @@ public class SourceStreamTask<
                 null,
                 FatalExitExceptionHandler.INSTANCE,
                 StreamTaskActionExecutor.synchronizedExecutor(lock));
+
         this.lock = Preconditions.checkNotNull(lock);
+        // 用来接收数据的线程
         this.sourceThread = new LegacySourceFunctionThread();
 
         getEnvironment().getMetricGroup().getIOMetricGroup().setEnableBusyTime(false);

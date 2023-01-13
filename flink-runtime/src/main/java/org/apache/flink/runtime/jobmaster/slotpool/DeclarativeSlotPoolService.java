@@ -88,8 +88,7 @@ public class DeclarativeSlotPoolService implements SlotPoolService {
         this.registeredTaskManagers = new HashSet<>();
 
         this.declarativeSlotPool =
-                declarativeSlotPoolFactory.create(
-                        jobId, this::declareResourceRequirements, idleSlotTimeout, rpcTimeout);
+                declarativeSlotPoolFactory.create(jobId, this::declareResourceRequirements, idleSlotTimeout, rpcTimeout);
     }
 
     protected DeclarativeSlotPool getDeclarativeSlotPool() {
@@ -289,10 +288,13 @@ public class DeclarativeSlotPoolService implements SlotPoolService {
     public void connectToResourceManager(ResourceManagerGateway resourceManagerGateway) {
         assertHasBeenStarted();
 
+        /**
+         * 连接rm
+         */
         resourceRequirementServiceConnectionManager.connect(
                 resourceRequirements ->
-                        resourceManagerGateway.declareRequiredResources(
-                                jobMasterId, resourceRequirements, rpcTimeout));
+                        resourceManagerGateway.declareRequiredResources(jobMasterId, resourceRequirements, rpcTimeout)
+        );
 
         declareResourceRequirements(declarativeSlotPool.getResourceRequirements());
     }
@@ -301,7 +303,8 @@ public class DeclarativeSlotPoolService implements SlotPoolService {
         assertHasBeenStarted();
 
         resourceRequirementServiceConnectionManager.declareResourceRequirements(
-                ResourceRequirements.create(jobId, jobManagerAddress, resourceRequirements));
+                ResourceRequirements.create(jobId, jobManagerAddress, resourceRequirements)
+        );
     }
 
     @Override

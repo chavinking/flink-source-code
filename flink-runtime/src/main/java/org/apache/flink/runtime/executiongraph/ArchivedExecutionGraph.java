@@ -362,16 +362,16 @@ public class ArchivedExecutionGraph implements AccessExecutionGraph, Serializabl
             @Nullable Throwable throwable,
             @Nullable JobCheckpointingSettings checkpointingSettings,
             long initializationTimestamp) {
+
         Map<JobVertexID, ArchivedExecutionJobVertex> archivedTasks = Collections.emptyMap();
         List<ArchivedExecutionJobVertex> archivedVerticesInCreationOrder = Collections.emptyList();
-        final Map<String, SerializedValue<OptionalFailure<Object>>> serializedUserAccumulators =
-                Collections.emptyMap();
-        StringifiedAccumulatorResult[] archivedUserAccumulators =
-                new StringifiedAccumulatorResult[] {};
+        final Map<String, SerializedValue<OptionalFailure<Object>>> serializedUserAccumulators = Collections.emptyMap();
+        StringifiedAccumulatorResult[] archivedUserAccumulators = new StringifiedAccumulatorResult[] {};
 
         final long[] timestamps = new long[JobStatus.values().length];
         timestamps[JobStatus.INITIALIZING.ordinal()] = initializationTimestamp;
 
+//        用来存储jobgraph的json表示json串
         String jsonPlan = "{}";
 
         ErrorInfo failureInfo = null;

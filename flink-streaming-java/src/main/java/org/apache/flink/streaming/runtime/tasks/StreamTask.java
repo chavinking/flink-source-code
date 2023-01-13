@@ -374,6 +374,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
             StreamTaskActionExecutor actionExecutor,
             TaskMailbox mailbox)
             throws Exception {
+
         // The registration of all closeable resources. The order of registration is important.
         resourceCloser = new AutoCloseableRegistry();
         try {
@@ -393,9 +394,9 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
                     .getIOMetricGroup()
                     .registerMailboxSizeSupplier(() -> mailbox.size());
 
+            // 初始化mailboxProcessor
             this.mailboxProcessor =
-                    new MailboxProcessor(
-                            this::processInput, mailbox, actionExecutor, mailboxMetricsControl);
+                    new MailboxProcessor(this::processInput, mailbox, actionExecutor, mailboxMetricsControl);
 
             // Should be closed last.
             resourceCloser.registerCloseable(mailboxProcessor);
@@ -405,6 +406,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
                             new ExecutorThreadFactory("channel-state-unspilling"));
             resourceCloser.registerCloseable(channelIOExecutor::shutdown);
 
+//            初始化recordWriter，其完成想resultPartition写入数据功能
             this.recordWriter = createRecordWriterDelegate(configuration, environment);
             // Release the output resources. this method should never fail.
             resourceCloser.registerCloseable(this::releaseOutputResources);
@@ -417,8 +419,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
             this.asyncExceptionHandler = new StreamTaskAsyncExceptionHandler(environment);
 
             this.asyncOperationsThreadPool =
-                    Executors.newCachedThreadPool(
-                            new ExecutorThreadFactory("AsyncOperations", uncaughtExceptionHandler));
+                    Executors.newCachedThreadPool(new ExecutorThreadFactory("AsyncOperations", uncaughtExceptionHandler));
 
             // Register all asynchronous checkpoint threads.
             resourceCloser.registerCloseable(this::shutdownAsyncThreads);
@@ -427,8 +428,12 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
             environment.setMainMailboxExecutor(mainMailboxExecutor);
             environment.setAsyncOperationsThreadPool(asyncOperationsThreadPool);
 
+            // 初始化状态后端，用来完成任务执行过程中的状态管理功能
             this.stateBackend = createStateBackend();
+
+            // 创建checkpointStorage
             this.checkpointStorage = createCheckpointStorage(stateBackend);
+
             this.changelogWriterAvailabilityProvider =
                     environment.getTaskStateManager().getStateChangelogStorage() == null
                             ? null
@@ -488,6 +493,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
             }
             throw ex;
         }
+
     }
 
     private TimerService createTimerService(String timerThreadName) {
@@ -1469,8 +1475,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
         final Optional<Boolean> isChangelogEnabledOptional =
                 environment
                         .getJobConfiguration()
-                        .getOptional(
-                                StateChangelogOptionsInternal.ENABLE_CHANGE_LOG_FOR_APPLICATION);
+                        .getOptional(StateChangelogOptionsInternal.ENABLE_CHANGE_LOG_FOR_APPLICATION);
         final TernaryBoolean isChangelogStateBackendEnableFromApplication =
                 isChangelogEnabledOptional.isPresent()
                         ? TernaryBoolean.fromBoolean(isChangelogEnabledOptional.get())
@@ -1578,8 +1583,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
     @VisibleForTesting
     public static <OUT>
             RecordWriterDelegate<SerializationDelegate<StreamRecord<OUT>>>
-                    createRecordWriterDelegate(
-                            StreamConfig configuration, Environment environment) {
+                    createRecordWriterDelegate(StreamConfig configuration, Environment environment) {
         List<RecordWriter<SerializationDelegate<StreamRecord<OUT>>>> recordWrites =
                 createRecordWriters(configuration, environment);
         if (recordWrites.size() == 1) {
@@ -1592,13 +1596,11 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
     }
 
     private static <OUT>
-            List<RecordWriter<SerializationDelegate<StreamRecord<OUT>>>> createRecordWriters(
-                    StreamConfig configuration, Environment environment) {
+            List<RecordWriter<SerializationDelegate<StreamRecord<OUT>>>> createRecordWriters(StreamConfig configuration, Environment environment) {
         List<RecordWriter<SerializationDelegate<StreamRecord<OUT>>>> recordWriters =
                 new ArrayList<>();
         List<NonChainedOutput> outputsInOrder =
-                configuration.getVertexNonChainedOutputs(
-                        environment.getUserCodeClassLoader().asClassLoader());
+                configuration.getVertexNonChainedOutputs(environment.getUserCodeClassLoader().asClassLoader());
 
         int index = 0;
         for (NonChainedOutput streamOutput : outputsInOrder) {

@@ -241,6 +241,14 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
         fulfilledRequests.put(slotRequestId, allocationId);
     }
 
+    /**
+     * 分配存在的slot
+     *
+     * @param slotRequestId identifying the requested slot
+     * @param allocationID the allocation id of the requested available slot
+     * @param requirementProfile resource profile of the requirement for which to allocate the slot
+     * @return
+     */
     @Override
     public Optional<PhysicalSlot> allocateAvailableSlot(
             @Nonnull SlotRequestId slotRequestId,
@@ -264,15 +272,26 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
             AllocationID allocationId,
             ResourceProfile requiredSlotProfile) {
         getDeclarativeSlotPool()
-                .increaseResourceRequirementsBy(
-                        ResourceCounter.withResource(requiredSlotProfile, 1));
+                .increaseResourceRequirementsBy(ResourceCounter.withResource(requiredSlotProfile, 1));
+
         final PhysicalSlot physicalSlot =
                 getDeclarativeSlotPool().reserveFreeSlot(allocationId, requiredSlotProfile);
+
         fulfilledRequests.put(slotRequestId, allocationId);
 
         return physicalSlot;
     }
 
+    /**
+     * 申请新的slot资源
+     *
+     * @param slotRequestId identifying the requested slot
+     * @param resourceProfile resource profile that specifies the resource requirements for the
+     *     requested slot
+     * @param preferredAllocations preferred allocations for the new allocated slot
+     * @param timeout timeout for the allocation procedure
+     * @return
+     */
     @Override
     @Nonnull
     public CompletableFuture<PhysicalSlot> requestNewAllocatedSlot(
@@ -287,10 +306,15 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
                 slotRequestId,
                 resourceProfile);
 
+        /**
+         * 创建PendingRequest
+         */
         final PendingRequest pendingRequest =
-                PendingRequest.createNormalRequest(
-                        slotRequestId, resourceProfile, preferredAllocations);
+                PendingRequest.createNormalRequest(slotRequestId, resourceProfile, preferredAllocations);
 
+        /**
+         * 想rm申请资源
+         */
         return internalRequestNewSlot(pendingRequest, timeout);
     }
 
@@ -314,8 +338,18 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
         return internalRequestNewSlot(pendingRequest, null);
     }
 
-    private CompletableFuture<PhysicalSlot> internalRequestNewSlot(
-            PendingRequest pendingRequest, @Nullable Time timeout) {
+    /**
+     * 申请新的slot
+     *
+     * @param pendingRequest
+     * @param timeout
+     * @return
+     */
+    private CompletableFuture<PhysicalSlot> internalRequestNewSlot(PendingRequest pendingRequest, @Nullable Time timeout) {
+
+        /**
+         * 内部方法申请新的可以获取的slot资源
+         */
         internalRequestNewAllocatedSlot(pendingRequest);
 
         if (timeout == null) {
@@ -329,6 +363,7 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
                     .whenComplete(
                             (physicalSlot, throwable) -> {
                                 if (throwable instanceof TimeoutException) {
+//                                    处理超时请求
                                     timeoutPendingSlotRequest(pendingRequest.getSlotRequestId());
                                 }
                             });
@@ -341,13 +376,24 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
                 new TimeoutException("Pending slot request timed out in slot pool."));
     }
 
+    /**
+     * 向rm申请slot
+     *
+     * @param pendingRequest
+     */
     private void internalRequestNewAllocatedSlot(PendingRequest pendingRequest) {
         pendingRequests.put(pendingRequest.getSlotRequestId(), pendingRequest);
 
+//        将申请到的资源加入集合
         getDeclarativeSlotPool()
                 .increaseResourceRequirementsBy(
-                        ResourceCounter.withResource(pendingRequest.getResourceProfile(), 1));
+                        ResourceCounter.withResource(
+                                pendingRequest.getResourceProfile(),
+                                1
+                        )
+                );
     }
+
 
     @Override
     protected void onFailAllocation(ResourceCounter previouslyFulfilledRequirements) {

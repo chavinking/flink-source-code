@@ -62,6 +62,11 @@ class DefaultDeclareResourceRequirementServiceConnectionManager
         this.scheduledExecutor = scheduledExecutor;
     }
 
+    /**
+     * 远程服务请求
+     *
+     * @param resourceRequirements resourceRequirements to declare at the connected service
+     */
     @Override
     public void declareResourceRequirements(ResourceRequirements resourceRequirements) {
         synchronized (lock) {
@@ -69,6 +74,9 @@ class DefaultDeclareResourceRequirementServiceConnectionManager
             if (isConnected()) {
                 currentResourceRequirements = resourceRequirements;
 
+                /**
+                 * 提交资源申请
+                 */
                 triggerResourceRequirementsSubmission(
                         Duration.ofMillis(1L),
                         Duration.ofMillis(10000L),
@@ -77,22 +85,31 @@ class DefaultDeclareResourceRequirementServiceConnectionManager
         }
     }
 
+    /**
+     * 提交资源申请
+     *
+     * @param sleepOnError
+     * @param maxSleepOnError
+     * @param resourceRequirementsToSend
+     */
     @GuardedBy("lock")
     private void triggerResourceRequirementsSubmission(
             Duration sleepOnError,
             Duration maxSleepOnError,
             ResourceRequirements resourceRequirementsToSend) {
 
+        /**
+         * 发起重试请求
+         */
         FutureUtils.retryWithDelay(
-                () -> sendResourceRequirements(resourceRequirementsToSend),
-                new ExponentialBackoffRetryStrategy(
-                        Integer.MAX_VALUE, sleepOnError, maxSleepOnError),
+                () -> sendResourceRequirements(resourceRequirementsToSend), // 发送申请求
+                new ExponentialBackoffRetryStrategy(Integer.MAX_VALUE, sleepOnError, maxSleepOnError),
                 throwable -> !(throwable instanceof CancellationException),
-                scheduledExecutor);
+                scheduledExecutor
+        );
     }
 
-    private CompletableFuture<Acknowledge> sendResourceRequirements(
-            ResourceRequirements resourceRequirementsToSend) {
+    private CompletableFuture<Acknowledge> sendResourceRequirements(ResourceRequirements resourceRequirementsToSend) {
         synchronized (lock) {
             if (isConnected()) {
                 if (resourceRequirementsToSend == currentResourceRequirements) {

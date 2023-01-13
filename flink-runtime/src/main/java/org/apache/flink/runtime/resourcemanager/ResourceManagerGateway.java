@@ -90,6 +90,8 @@ public interface ResourceManagerGateway
     /**
      * Register a {@link TaskExecutor} at the resource manager.
      *
+     * rm处理tm注册请求
+     *
      * @param taskExecutorRegistration the task executor registration.
      * @param timeout The timeout for the response.
      * @return The future to the response by the ResourceManager.

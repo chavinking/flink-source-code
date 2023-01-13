@@ -88,8 +88,9 @@ public class DefaultJobMasterServiceProcess
             Function<Throwable, ArchivedExecutionGraph> failedArchivedExecutionGraphFactory) {
         this.jobId = jobId;
         this.leaderSessionId = leaderSessionId;
-        this.jobMasterServiceFuture =
-                jobMasterServiceFactory.createJobMasterService(leaderSessionId, this);
+
+//        *** 创建jobmster服务 ***
+        this.jobMasterServiceFuture = jobMasterServiceFactory.createJobMasterService(leaderSessionId, this);
 
         jobMasterServiceFuture.whenComplete(
                 (jobMasterService, throwable) -> {

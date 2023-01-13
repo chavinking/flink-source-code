@@ -126,6 +126,8 @@ public class DefaultDeclarativeSlotPool implements DeclarativeSlotPool {
         if (increment.isEmpty()) {
             return;
         }
+
+//        将返回结果加入集合
         totalResourceRequirements = totalResourceRequirements.add(increment);
 
         declareResourceRequirements();
@@ -148,7 +150,11 @@ public class DefaultDeclarativeSlotPool implements DeclarativeSlotPool {
         declareResourceRequirements();
     }
 
+    /**
+     * 在这里向rm发起申请资源请求
+     */
     private void declareResourceRequirements() {
+        //
         final Collection<ResourceRequirement> resourceRequirements = getResourceRequirements();
 
         log.debug(
@@ -158,6 +164,10 @@ public class DefaultDeclarativeSlotPool implements DeclarativeSlotPool {
                 resourceRequirements,
                 System.lineSeparator(),
                 fulfilledResourceRequirements);
+
+        /**
+         * 这里需要反向追踪rpc调用，这里需要反向追踪notifyNewResourceRequirements，找到它对应的方法
+         */
         notifyNewResourceRequirements.accept(resourceRequirements);
     }
 
@@ -165,11 +175,8 @@ public class DefaultDeclarativeSlotPool implements DeclarativeSlotPool {
     public Collection<ResourceRequirement> getResourceRequirements() {
         final Collection<ResourceRequirement> currentResourceRequirements = new ArrayList<>();
 
-        for (Map.Entry<ResourceProfile, Integer> resourceRequirement :
-                totalResourceRequirements.getResourcesWithCount()) {
-            currentResourceRequirements.add(
-                    ResourceRequirement.create(
-                            resourceRequirement.getKey(), resourceRequirement.getValue()));
+        for (Map.Entry<ResourceProfile, Integer> resourceRequirement : totalResourceRequirements.getResourcesWithCount()) {
+            currentResourceRequirements.add(ResourceRequirement.create(resourceRequirement.getKey(), resourceRequirement.getValue()));
         }
 
         return currentResourceRequirements;
@@ -336,9 +343,11 @@ public class DefaultDeclarativeSlotPool implements DeclarativeSlotPool {
                 allocationId);
     }
 
+//    释放自由的slot
     @Override
-    public PhysicalSlot reserveFreeSlot(
-            AllocationID allocationId, ResourceProfile requiredSlotProfile) {
+    public PhysicalSlot reserveFreeSlot(AllocationID allocationId, ResourceProfile requiredSlotProfile) {
+
+//        为申请ID分配slot资源
         final AllocatedSlot allocatedSlot = slotPool.reserveFreeSlot(allocationId);
 
         Preconditions.checkState(

@@ -36,21 +36,17 @@ public class DefaultRequirementMatcher implements RequirementMatcher {
             Function<ResourceProfile, Integer> numAssignedResourcesLookup) {
         // Short-cut for fine-grained resource management. If there is already exactly equal
         // requirement, we can directly match with it.
-        if (totalRequirements.getResourceCount(resourceProfile)
-                > numAssignedResourcesLookup.apply(resourceProfile)) {
+        if (totalRequirements.getResourceCount(resourceProfile) > numAssignedResourcesLookup.apply(resourceProfile)) {
             return Optional.of(resourceProfile);
         }
 
-        for (Map.Entry<ResourceProfile, Integer> requirementCandidate :
-                totalRequirements.getResourcesWithCount()) {
+        for (Map.Entry<ResourceProfile, Integer> requirementCandidate : totalRequirements.getResourcesWithCount()) {
             ResourceProfile requirementProfile = requirementCandidate.getKey();
 
             // beware the order when matching resources to requirements, because
             // ResourceProfile.UNKNOWN (which only
             // occurs as a requirement) does not match any resource!
-            if (resourceProfile.isMatching(requirementProfile)
-                    && requirementCandidate.getValue()
-                            > numAssignedResourcesLookup.apply(requirementProfile)) {
+            if (resourceProfile.isMatching(requirementProfile) && requirementCandidate.getValue() > numAssignedResourcesLookup.apply(requirementProfile)) {
                 return Optional.of(requirementProfile);
             }
         }

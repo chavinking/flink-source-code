@@ -68,8 +68,8 @@ public enum ClientUtils {
             Configuration configuration,
             PackagedProgram program,
             boolean enforceSingleJobExecution,
-            boolean suppressSysout)
-            throws ProgramInvocationException {
+            boolean suppressSysout) throws ProgramInvocationException {
+
         checkNotNull(executorServiceLoader);
         final ClassLoader userCodeClassLoader = program.getUserCodeClassLoader();
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -95,6 +95,7 @@ public enum ClientUtils {
                     suppressSysout);
 
             try {
+//                以反射的方式调用程序
                 program.invokeInteractiveModeForExecution();
             } finally {
                 ContextEnvironment.unsetAsContext();

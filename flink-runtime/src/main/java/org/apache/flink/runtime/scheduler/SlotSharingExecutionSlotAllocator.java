@@ -100,13 +100,12 @@ class SlotSharingExecutionSlotAllocator implements ExecutionSlotAllocator {
     }
 
     @Override
-    public List<ExecutionSlotAssignment> allocateSlotsFor(
-            List<ExecutionAttemptID> executionAttemptIds) {
+    public List<ExecutionSlotAssignment> allocateSlotsFor(List<ExecutionAttemptID> executionAttemptIds) {
 
         final Map<ExecutionVertexID, ExecutionAttemptID> vertexIdToExecutionId = new HashMap<>();
         executionAttemptIds.forEach(
-                executionId ->
-                        vertexIdToExecutionId.put(executionId.getExecutionVertexId(), executionId));
+                executionId -> vertexIdToExecutionId.put(executionId.getExecutionVertexId(), executionId)
+        );
 
         checkState(
                 vertexIdToExecutionId.size() == executionAttemptIds.size(),
@@ -121,9 +120,10 @@ class SlotSharingExecutionSlotAllocator implements ExecutionSlotAllocator {
                 .map(
                         vertexAssignment ->
                                 new ExecutionSlotAssignment(
-                                        vertexIdToExecutionId.get(
-                                                vertexAssignment.getExecutionVertexId()),
-                                        vertexAssignment.getLogicalSlotFuture()))
+                                        vertexIdToExecutionId.get(vertexAssignment.getExecutionVertexId()),
+                                        vertexAssignment.getLogicalSlotFuture()
+                                )
+                )
                 .collect(Collectors.toList());
     }
 
@@ -150,25 +150,16 @@ class SlotSharingExecutionSlotAllocator implements ExecutionSlotAllocator {
      *
      * @param executionVertexIds Execution vertices to allocate slots for
      */
-    private List<SlotExecutionVertexAssignment> allocateSlotsForVertices(
-            List<ExecutionVertexID> executionVertexIds) {
+    private List<SlotExecutionVertexAssignment> allocateSlotsForVertices(List<ExecutionVertexID> executionVertexIds) {
 
-        SharedSlotProfileRetriever sharedSlotProfileRetriever =
-                sharedSlotProfileRetrieverFactory.createFromBulk(new HashSet<>(executionVertexIds));
+        SharedSlotProfileRetriever sharedSlotProfileRetriever = sharedSlotProfileRetrieverFactory.createFromBulk(new HashSet<>(executionVertexIds));
         Map<ExecutionSlotSharingGroup, List<ExecutionVertexID>> executionsByGroup =
-                executionVertexIds.stream()
-                        .collect(
-                                Collectors.groupingBy(
-                                        slotSharingStrategy::getExecutionSlotSharingGroup));
+                executionVertexIds.stream().collect(Collectors.groupingBy(slotSharingStrategy::getExecutionSlotSharingGroup));
         Map<ExecutionSlotSharingGroup, SharedSlot> slots =
                 executionsByGroup.keySet().stream()
                         .map(group -> getOrAllocateSharedSlot(group, sharedSlotProfileRetriever))
-                        .collect(
-                                Collectors.toMap(
-                                        SharedSlot::getExecutionSlotSharingGroup,
-                                        Function.identity()));
-        Map<ExecutionVertexID, SlotExecutionVertexAssignment> assignments =
-                allocateLogicalSlotsFromSharedSlots(slots, executionsByGroup);
+                        .collect(Collectors.toMap(SharedSlot::getExecutionSlotSharingGroup, Function.identity()));
+        Map<ExecutionVertexID, SlotExecutionVertexAssignment> assignments = allocateLogicalSlotsFromSharedSlots(slots, executionsByGroup);
 
         // we need to pass the slots map to the createBulk method instead of using the allocator's
         // 'sharedSlots'

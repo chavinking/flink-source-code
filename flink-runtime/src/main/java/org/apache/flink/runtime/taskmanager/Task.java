@@ -385,7 +385,10 @@ public class Task
                 shuffleEnvironment.createShuffleIOOwnerContext(
                         taskNameWithSubtaskAndId, executionId, metrics.getIOMetricGroup());
 
-        // produced intermediate result partitions
+        /**
+         * produced intermediate result partitions
+         * 数据输出：初始化ResultPartition和SubResultPartition对象
+         */
         final ResultPartitionWriter[] resultPartitionWriters =
                 shuffleEnvironment
                         .createResultPartitionWriters(
@@ -394,7 +397,10 @@ public class Task
 
         this.partitionWriters = resultPartitionWriters;
 
-        // consumed intermediate result partitions
+        /**
+         * consumed intermediate result partitions
+         * 数据输入：初始化inputGate和inputChannel
+         */
         final IndexedInputGate[] gates =
                 shuffleEnvironment
                         .createInputGates(taskShuffleContext, this, inputGateDeploymentDescriptors)
@@ -636,6 +642,9 @@ public class Task
 
             LOG.debug("Registering task at network: {}.", this);
 
+            /**
+             * 启动partition和gate ，主要设置buffer
+             */
             setupPartitionsAndGates(partitionWriters, inputGates);
 
             for (ResultPartitionWriter partitionWriter : partitionWriters) {
@@ -709,10 +718,13 @@ public class Task
             // monitored for system exit (in addition to invoking thread itself monitored below).
             FlinkSecurityManager.monitorUserSystemExitForCurrentThread();
             try {
-                // now load and instantiate the task's invokable code
-                invokable =
-                        loadAndInstantiateInvokable(
-                                userCodeClassLoader.asClassLoader(), nameOfInvokableClass, env);
+                /**
+                 * now load and instantiate the task's invokable code
+                 * 这里是最重要的代码入口 ，用来启动算子对应的任务
+                 * 这个代码的对应调用两个类 ： SourceStreamTask 和 OneInputStreamTask
+                 *
+                 */
+                invokable = loadAndInstantiateInvokable(userCodeClassLoader.asClassLoader(), nameOfInvokableClass, env);
             } finally {
                 FlinkSecurityManager.unmonitorUserSystemExitForCurrentThread();
             }
@@ -895,8 +907,7 @@ public class Task
                 throw new CancelTaskException();
             }
 
-            taskManagerActions.updateTaskExecutionState(
-                    new TaskExecutionState(executionId, ExecutionState.INITIALIZING));
+            taskManagerActions.updateTaskExecutionState(new TaskExecutionState(executionId, ExecutionState.INITIALIZING));
 
             // make sure the user code classloader is accessible thread-locally
             executingThread.setContextClassLoader(userCodeClassLoader.asClassLoader());
@@ -908,8 +919,7 @@ public class Task
             }
 
             // notify everyone that we switched to running
-            taskManagerActions.updateTaskExecutionState(
-                    new TaskExecutionState(executionId, ExecutionState.RUNNING));
+            taskManagerActions.updateTaskExecutionState(new TaskExecutionState(executionId, ExecutionState.RUNNING));
 
             runWithSystemExitMonitoring(finalInvokable::invoke);
         } catch (Throwable throwable) {
@@ -1564,13 +1574,11 @@ public class Task
      * @throws Throwable Forwards all exceptions that happen during initialization of the task. Also
      *     throws an exception if the task class misses the necessary constructor.
      */
-    private static TaskInvokable loadAndInstantiateInvokable(
-            ClassLoader classLoader, String className, Environment environment) throws Throwable {
+    private static TaskInvokable loadAndInstantiateInvokable(ClassLoader classLoader, String className, Environment environment) throws Throwable {
 
         final Class<? extends TaskInvokable> invokableClass;
         try {
-            invokableClass =
-                    Class.forName(className, true, classLoader).asSubclass(TaskInvokable.class);
+            invokableClass = Class.forName(className, true, classLoader).asSubclass(TaskInvokable.class);
         } catch (Throwable t) {
             throw new Exception("Could not load the task's invokable class.", t);
         }
@@ -1586,6 +1594,7 @@ public class Task
         // instantiate the class
         try {
             //noinspection ConstantConditions  --> cannot happen
+            // 这里将跳转到具体的应用类构造方法进行实例化算子
             return statelessCtor.newInstance(environment);
         } catch (InvocationTargetException e) {
             // directly forward exceptions from the eager initialization

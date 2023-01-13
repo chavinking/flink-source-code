@@ -66,8 +66,7 @@ public abstract class LocationPreferenceSlotSelectionStrategy implements SlotSel
 
         // we build up two indexes, one for resource id and one for host names of the preferred
         // locations.
-        final Map<ResourceID, Integer> preferredResourceIDs =
-                new HashMap<>(locationPreferences.size());
+        final Map<ResourceID, Integer> preferredResourceIDs = new HashMap<>(locationPreferences.size());
         final Map<String, Integer> preferredFQHostNames = new HashMap<>(locationPreferences.size());
 
         for (TaskManagerLocation locationPreference : locationPreferences) {

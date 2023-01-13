@@ -41,14 +41,14 @@ public class DefaultResourceTracker implements ResourceTracker {
     private final Map<JobID, JobScopedResourceTracker> trackers = new HashMap<>();
 
     @Override
-    public void notifyResourceRequirements(
-            JobID jobId, Collection<ResourceRequirement> resourceRequirements) {
+    public void notifyResourceRequirements(JobID jobId, Collection<ResourceRequirement> resourceRequirements) {
         Preconditions.checkNotNull(jobId);
         Preconditions.checkNotNull(resourceRequirements);
         LOG.trace(
                 "Received notification for job {} having new resource requirements {}.",
                 jobId,
                 resourceRequirements);
+
         getOrCreateTracker(jobId).notifyResourceRequirements(resourceRequirements);
 
         if (resourceRequirements.isEmpty()) {
@@ -116,8 +116,7 @@ public class DefaultResourceTracker implements ResourceTracker {
     public Map<JobID, Collection<ResourceRequirement>> getMissingResources() {
         Map<JobID, Collection<ResourceRequirement>> allMissingResources = new HashMap<>();
         for (Map.Entry<JobID, JobScopedResourceTracker> tracker : trackers.entrySet()) {
-            Collection<ResourceRequirement> missingResources =
-                    tracker.getValue().getMissingResources();
+            Collection<ResourceRequirement> missingResources = tracker.getValue().getMissingResources();
             if (!missingResources.isEmpty()) {
                 allMissingResources.put(tracker.getKey(), missingResources);
             }

@@ -80,8 +80,7 @@ public class EdgeManagerBuildUtil {
         }
     }
 
-    private static void connectAllToAll(
-            ExecutionVertex[] taskVertices, IntermediateResult intermediateResult) {
+    private static void connectAllToAll(ExecutionVertex[] taskVertices, IntermediateResult intermediateResult) {
 
         List<IntermediateResultPartitionID> consumedPartitions =
                 Arrays.stream(intermediateResult.getPartitions())
@@ -105,8 +104,7 @@ public class EdgeManagerBuildUtil {
         }
     }
 
-    private static void connectPointwise(
-            ExecutionVertex[] taskVertices, IntermediateResult intermediateResult) {
+    private static void connectPointwise(ExecutionVertex[] taskVertices, IntermediateResult intermediateResult) {
 
         final int sourceCount = intermediateResult.getPartitions().length;
         final int targetCount = taskVertices.length;

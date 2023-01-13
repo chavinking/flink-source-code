@@ -109,12 +109,14 @@ public class JobMasterServiceLeadershipRunner implements JobManagerRunner, Leade
     @GuardedBy("lock")
     private boolean hasCurrentLeaderBeenCancelled = false;
 
+//    创建jobmaster方法
     public JobMasterServiceLeadershipRunner(
             JobMasterServiceProcessFactory jobMasterServiceProcessFactory,
             LeaderElectionService leaderElectionService,
             JobResultStore jobResultStore,
             LibraryCacheManager.ClassLoaderLease classLoaderLease,
             FatalErrorHandler fatalErrorHandler) {
+
         this.jobMasterServiceProcessFactory = jobMasterServiceProcessFactory;
         this.leaderElectionService = leaderElectionService;
         this.jobResultStore = jobResultStore;
@@ -244,36 +246,47 @@ public class JobMasterServiceLeadershipRunner implements JobManagerRunner, Leade
         }
     }
 
+    /**
+     * 启动 jobManagerRunner.start();
+     *
+     * @param leaderSessionID New leader session ID
+     */
     @Override
     public void grantLeadership(UUID leaderSessionID) {
-        runIfStateRunning(
+        runIfStateRunning( // 这个步骤主要用来启动 startJobMasterServiceProcessAsync.start()
+//                异步启动jobmater进程
                 () -> startJobMasterServiceProcessAsync(leaderSessionID),
-                "starting a new JobMasterServiceProcess");
+                "starting a new JobMasterServiceProcess"
+        );
     }
 
+    /**
+     * 启动master服务
+     *
+     * @param leaderSessionId
+     */
     @GuardedBy("lock")
     private void startJobMasterServiceProcessAsync(UUID leaderSessionId) {
         sequentialOperation =
                 sequentialOperation.thenRun(
                         () ->
-                                runIfValidLeader(
+                                runIfValidLeader( // 这一步主要用来启动verifyJobSchedulingStatusAndCreateJobMasterServiceProcess.start()
                                         leaderSessionId,
                                         ThrowingRunnable.unchecked(
-                                                () ->
-                                                        verifyJobSchedulingStatusAndCreateJobMasterServiceProcess(
-                                                                leaderSessionId)),
+                                                () -> verifyJobSchedulingStatusAndCreateJobMasterServiceProcess(leaderSessionId)
+                                        ),
                                         "verify job scheduling status and create JobMasterServiceProcess"));
 
         handleAsyncOperationError(sequentialOperation, "Could not start the job manager.");
     }
 
     @GuardedBy("lock")
-    private void verifyJobSchedulingStatusAndCreateJobMasterServiceProcess(UUID leaderSessionId)
-            throws FlinkException {
+    private void verifyJobSchedulingStatusAndCreateJobMasterServiceProcess(UUID leaderSessionId) throws FlinkException {
         try {
             if (jobResultStore.hasJobResultEntry(getJobID())) {
                 jobAlreadyDone();
             } else {
+//                主要代码入口
                 createNewJobMasterServiceProcess(leaderSessionId);
             }
         } catch (IOException e) {
@@ -298,6 +311,12 @@ public class JobMasterServiceLeadershipRunner implements JobManagerRunner, Leade
                                         new JobAlreadyDoneException(getJobID())))));
     }
 
+    /**
+     * 启动jobmaster的主要入口方法
+     *
+     * @param leaderSessionId
+     * @throws FlinkException
+     */
     @GuardedBy("lock")
     private void createNewJobMasterServiceProcess(UUID leaderSessionId) throws FlinkException {
         Preconditions.checkState(jobMasterServiceProcess.closeAsync().isDone());
@@ -306,6 +325,9 @@ public class JobMasterServiceLeadershipRunner implements JobManagerRunner, Leade
                 "Create new JobMasterServiceProcess because we were granted leadership under {}.",
                 leaderSessionId);
 
+        /**
+         * *** 创建jobmaster服务 ***
+         */
         jobMasterServiceProcess = jobMasterServiceProcessFactory.create(leaderSessionId);
 
         forwardIfValidLeader(
@@ -313,6 +335,7 @@ public class JobMasterServiceLeadershipRunner implements JobManagerRunner, Leade
                 jobMasterServiceProcess.getJobMasterGatewayFuture(),
                 jobMasterGatewayFuture,
                 "JobMasterGatewayFuture from JobMasterServiceProcess");
+
         forwardResultFuture(leaderSessionId, jobMasterServiceProcess.getResultFuture());
         confirmLeadership(leaderSessionId, jobMasterServiceProcess.getLeaderAddressFuture());
     }
@@ -325,8 +348,7 @@ public class JobMasterServiceLeadershipRunner implements JobManagerRunner, Leade
                             synchronized (lock) {
                                 if (isValidLeader(leaderSessionId)) {
                                     LOG.debug("Confirm leadership {}.", leaderSessionId);
-                                    leaderElectionService.confirmLeadership(
-                                            leaderSessionId, address);
+                                    leaderElectionService.confirmLeadership(leaderSessionId, address);
                                 } else {
                                     LOG.trace(
                                             "Ignore confirming leadership because the leader {} is no longer valid.",
@@ -468,8 +490,7 @@ public class JobMasterServiceLeadershipRunner implements JobManagerRunner, Leade
         return state == State.RUNNING;
     }
 
-    private void runIfValidLeader(
-            UUID expectedLeaderId, Runnable action, String actionDescription) {
+    private void runIfValidLeader(UUID expectedLeaderId, Runnable action, String actionDescription) {
         synchronized (lock) {
             if (isValidLeader(expectedLeaderId)) {
                 action.run();

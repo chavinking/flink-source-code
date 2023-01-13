@@ -225,8 +225,7 @@ public class FutureUtils {
 
         final CompletableFuture<T> resultFuture = new CompletableFuture<>();
 
-        retryOperationWithDelay(
-                resultFuture, operation, retryStrategy, retryPredicate, scheduledExecutor);
+        retryOperationWithDelay(resultFuture, operation, retryStrategy, retryPredicate, scheduledExecutor);
 
         return resultFuture;
     }

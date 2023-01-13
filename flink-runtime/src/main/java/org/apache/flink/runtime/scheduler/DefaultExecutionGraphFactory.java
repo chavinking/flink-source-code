@@ -129,6 +129,25 @@ public class DefaultExecutionGraphFactory implements ExecutionGraphFactory {
         this.executionJobVertexFactory = checkNotNull(executionJobVertexFactory);
     }
 
+    /**
+     * 将jobgraph转换为executiongraph
+     *
+     * @param jobGraph jobGraph to initialize the ExecutionGraph with
+     * @param completedCheckpointStore completedCheckpointStore to pass to the CheckpointCoordinator
+     * @param checkpointsCleaner checkpointsCleaner to pass to the CheckpointCoordinator
+     * @param checkpointIdCounter checkpointIdCounter to pass to the CheckpointCoordinator
+     * @param partitionLocationConstraint partitionLocationConstraint for this job
+     * @param initializationTimestamp initializationTimestamp when the ExecutionGraph was created
+     * @param vertexAttemptNumberStore vertexAttemptNumberStore keeping information about the vertex
+     *     attempts of previous runs
+     * @param vertexParallelismStore vertexMaxParallelismStore keeping information about the vertex
+     *     max parallelism settings
+     * @param executionStateUpdateListener listener for state transitions of the individual
+     *     executions
+     * @param log log to use for logging
+     * @return
+     * @throws Exception
+     */
     @Override
     public ExecutionGraph createAndRestoreExecutionGraph(
             JobGraph jobGraph,
@@ -140,10 +159,9 @@ public class DefaultExecutionGraphFactory implements ExecutionGraphFactory {
             VertexAttemptNumberStore vertexAttemptNumberStore,
             VertexParallelismStore vertexParallelismStore,
             ExecutionStateUpdateListener executionStateUpdateListener,
-            Logger log)
-            throws Exception {
-        ExecutionDeploymentListener executionDeploymentListener =
-                new ExecutionDeploymentTrackerDeploymentListenerAdapter(executionDeploymentTracker);
+            Logger log) throws Exception {
+
+        ExecutionDeploymentListener executionDeploymentListener = new ExecutionDeploymentTrackerDeploymentListenerAdapter(executionDeploymentTracker);
         ExecutionStateUpdateListener combinedExecutionStateUpdateListener =
                 (execution, previousState, newState) -> {
                     executionStateUpdateListener.onStateUpdate(execution, previousState, newState);
@@ -152,6 +170,9 @@ public class DefaultExecutionGraphFactory implements ExecutionGraphFactory {
                     }
                 };
 
+        /**
+         * 重要方法
+         */
         final ExecutionGraph newExecutionGraph =
                 DefaultExecutionGraphBuilder.buildGraph(
                         jobGraph,

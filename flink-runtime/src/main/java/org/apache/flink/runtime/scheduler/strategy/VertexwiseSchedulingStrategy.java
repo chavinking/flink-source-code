@@ -131,6 +131,11 @@ public class VertexwiseSchedulingStrategy
         scheduleVerticesOneByOne(verticesToDeploy);
     }
 
+    /**
+     * jobmaster 调度任务入口
+     *
+     * @param verticesToDeploy
+     */
     private void scheduleVerticesOneByOne(final Set<ExecutionVertexID> verticesToDeploy) {
         if (verticesToDeploy.isEmpty()) {
             return;
@@ -140,7 +145,8 @@ public class VertexwiseSchedulingStrategy
                         schedulingTopology, verticesToDeploy);
 
         sortedVerticesToDeploy.forEach(
-                id -> schedulerOperations.allocateSlotsAndDeploy(Collections.singletonList(id)));
+                id -> schedulerOperations.allocateSlotsAndDeploy(Collections.singletonList(id))
+        );
     }
 
     private boolean areVertexInputsAllConsumable(

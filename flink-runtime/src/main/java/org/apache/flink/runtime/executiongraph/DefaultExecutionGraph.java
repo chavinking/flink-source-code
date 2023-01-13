@@ -831,9 +831,14 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
         }
     }
 
-    private void attachJobGraph(
-            List<JobVertex> verticesToAttach, List<JobVertex> verticesToInitialize)
-            throws JobException {
+    /**
+     * jobgraph -> executiongraph
+     *
+     * @param verticesToAttach
+     * @param verticesToInitialize
+     * @throws JobException
+     */
+    private void attachJobGraph(List<JobVertex> verticesToAttach, List<JobVertex> verticesToInitialize) throws JobException {
 
         assertRunningInJobMasterMainThread();
 
@@ -844,14 +849,16 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
                 tasks.size(),
                 intermediateResults.size());
 
+//        jobgraph -> executiongraph
+//        将一个jobvertex转换为一个executionjobvertex
         attachJobVertices(verticesToAttach);
+//        将executionjobvertex按照并行度转换成多个executionvertex
         initializeJobVertices(verticesToInitialize);
 
         // the topology assigning should happen before notifying new vertices to failoverStrategy
         executionTopology = DefaultExecutionTopology.fromExecutionGraph(this);
 
-        partitionGroupReleaseStrategy =
-                partitionGroupReleaseStrategyFactory.createInstance(getSchedulingTopology());
+        partitionGroupReleaseStrategy = partitionGroupReleaseStrategyFactory.createInstance(getSchedulingTopology());
     }
 
     /** Attach job vertices without initializing them. */
@@ -862,13 +869,11 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
                 this.isStoppable = false;
             }
 
-            VertexParallelismInformation parallelismInfo =
-                    parallelismStore.getParallelismInfo(jobVertex.getID());
+            VertexParallelismInformation parallelismInfo = parallelismStore.getParallelismInfo(jobVertex.getID());
 
             // create the execution job vertex and attach it to the graph
-            ExecutionJobVertex ejv =
-                    executionJobVertexFactory.createExecutionJobVertex(
-                            this, jobVertex, parallelismInfo);
+            // 1 为每一个jobvertex创建一个ExecutionJobVertex，并设置并行度
+            ExecutionJobVertex ejv = executionJobVertexFactory.createExecutionJobVertex(this, jobVertex, parallelismInfo);
 
             ExecutionJobVertex previousTask = this.tasks.putIfAbsent(jobVertex.getID(), ejv);
             if (previousTask != null) {
@@ -893,11 +898,14 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
     }
 
     @Override
-    public void initializeJobVertex(ExecutionJobVertex ejv, long createTimestamp)
-            throws JobException {
+    public void initializeJobVertex(ExecutionJobVertex ejv, long createTimestamp) throws JobException {
 
         checkNotNull(ejv);
 
+        /**
+         * 将每一个ExecutionJobVertex 解析成多个 ExecutionVertex
+         *
+         */
         ejv.initialize(
                 executionHistorySizeLimit,
                 rpcTimeout,
@@ -905,11 +913,11 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
                 this.initialAttemptCounts.getAttemptCounts(ejv.getJobVertexId()),
                 coordinatorStore);
 
+//        连接到前任数据集
         ejv.connectToPredecessors(this.intermediateResults);
 
         for (IntermediateResult res : ejv.getProducedDataSets()) {
-            IntermediateResult previousDataSet =
-                    this.intermediateResults.putIfAbsent(res.getId(), res);
+            IntermediateResult previousDataSet = this.intermediateResults.putIfAbsent(res.getId(), res);
             if (previousDataSet != null) {
                 throw new JobException(
                         String.format(
@@ -923,8 +931,7 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
         // enrich network memory.
         SlotSharingGroup slotSharingGroup = ejv.getSlotSharingGroup();
         if (areJobVerticesAllInitialized(slotSharingGroup)) {
-            SsgNetworkMemoryCalculationUtils.enrichNetworkMemory(
-                    slotSharingGroup, this::getJobVertex, shuffleMaster);
+            SsgNetworkMemoryCalculationUtils.enrichNetworkMemory(slotSharingGroup, this::getJobVertex, shuffleMaster);
         }
     }
 
@@ -1520,8 +1527,7 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
         }
     }
 
-    private void registerExecutionVerticesAndResultPartitionsFor(
-            ExecutionJobVertex executionJobVertex) {
+    private void registerExecutionVerticesAndResultPartitionsFor(ExecutionJobVertex executionJobVertex) {
         for (ExecutionVertex executionVertex : executionJobVertex.getTaskVertices()) {
             executionVerticesById.put(executionVertex.getID(), executionVertex);
             resultPartitionsById.putAll(executionVertex.getProducedPartitions());

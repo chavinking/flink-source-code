@@ -318,17 +318,21 @@ public class RestClusterClient<T> implements ClusterClient<T> {
         return retry(operation, unknownJobStateRetryable);
     }
 
+    /**
+     * Job提交入口
+     *
+     * @param jobGraph to submit
+     * @return
+     */
     @Override
     public CompletableFuture<JobID> submitJob(@Nonnull JobGraph jobGraph) {
         CompletableFuture<java.nio.file.Path> jobGraphFileFuture =
                 CompletableFuture.supplyAsync(
                         () -> {
                             try {
-                                final java.nio.file.Path jobGraphFile =
-                                        Files.createTempFile("flink-jobgraph", ".bin");
-                                try (ObjectOutputStream objectOut =
-                                        new ObjectOutputStream(
-                                                Files.newOutputStream(jobGraphFile))) {
+                                final java.nio.file.Path jobGraphFile = Files.createTempFile("flink-jobgraph", ".bin");
+                                try (ObjectOutputStream objectOut = new ObjectOutputStream(Files.newOutputStream(jobGraphFile))) {
+//                                    将jobgraph写入临时文件
                                     objectOut.writeObject(jobGraph);
                                 }
                                 return jobGraphFile;
@@ -342,27 +346,22 @@ public class RestClusterClient<T> implements ClusterClient<T> {
         CompletableFuture<Tuple2<JobSubmitRequestBody, Collection<FileUpload>>> requestFuture =
                 jobGraphFileFuture.thenApply(
                         jobGraphFile -> {
+//                            声明jar文件集合
                             List<String> jarFileNames = new ArrayList<>(8);
-                            List<JobSubmitRequestBody.DistributedCacheFile> artifactFileNames =
-                                    new ArrayList<>(8);
+//                            文件名列表
+                            List<JobSubmitRequestBody.DistributedCacheFile> artifactFileNames = new ArrayList<>(8);
+//                            上传hdfs文件列表
                             Collection<FileUpload> filesToUpload = new ArrayList<>(8);
 
-                            filesToUpload.add(
-                                    new FileUpload(
-                                            jobGraphFile, RestConstants.CONTENT_TYPE_BINARY));
+                            filesToUpload.add(new FileUpload(jobGraphFile, RestConstants.CONTENT_TYPE_BINARY));
 
                             for (Path jar : jobGraph.getUserJars()) {
                                 jarFileNames.add(jar.getName());
-                                filesToUpload.add(
-                                        new FileUpload(
-                                                Paths.get(jar.toUri()),
-                                                RestConstants.CONTENT_TYPE_JAR));
+                                filesToUpload.add(new FileUpload(Paths.get(jar.toUri()), RestConstants.CONTENT_TYPE_JAR));
                             }
 
-                            for (Map.Entry<String, DistributedCache.DistributedCacheEntry>
-                                    artifacts : jobGraph.getUserArtifacts().entrySet()) {
-                                final Path artifactFilePath =
-                                        new Path(artifacts.getValue().filePath);
+                            for (Map.Entry<String, DistributedCache.DistributedCacheEntry> artifacts : jobGraph.getUserArtifacts().entrySet()) {
+                                final Path artifactFilePath = new Path(artifacts.getValue().filePath);
                                 try {
                                     // Only local artifacts need to be uploaded.
                                     if (!artifactFilePath.getFileSystem().isDistributedFS()) {
@@ -391,8 +390,7 @@ public class RestClusterClient<T> implements ClusterClient<T> {
                                             jarFileNames,
                                             artifactFileNames);
 
-                            return Tuple2.of(
-                                    requestBody, Collections.unmodifiableCollection(filesToUpload));
+                            return Tuple2.of(requestBody, Collections.unmodifiableCollection(filesToUpload));
                         });
 
         final CompletableFuture<JobSubmitResponseBody> submissionFuture =
@@ -402,11 +400,12 @@ public class RestClusterClient<T> implements ClusterClient<T> {
                                     "Submitting job '{}' ({}).",
                                     jobGraph.getName(),
                                     jobGraph.getJobID());
+
                             return sendRetriableRequest(
                                     JobSubmitHeaders.getInstance(),
                                     EmptyMessageParameters.getInstance(),
-                                    requestAndFileUploads.f0,
-                                    requestAndFileUploads.f1,
+                                    requestAndFileUploads.f0, // 请求体
+                                    requestAndFileUploads.f1, // 上传文件集合
                                     isConnectionProblemOrServiceUnavailable(),
                                     (receiver, error) -> {
                                         if (error != null) {

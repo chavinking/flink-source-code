@@ -86,21 +86,30 @@ public class DefaultExecutionDeployer implements ExecutionDeployer {
         this.mainThreadExecutor = checkNotNull(mainThreadExecutor);
     }
 
+    /**
+     * 启动任务入口方法 DefaultExecutionDeployer.allocateSlotsAndDeploy()
+     *
+     * @param executionsToDeploy executions to deploy
+     * @param requiredVersionByVertex required versions of the execution vertices. If the actual
+     *     version does not match, the deployment of the execution will be rejected.
+     */
     @Override
     public void allocateSlotsAndDeploy(
             final List<Execution> executionsToDeploy,
             final Map<ExecutionVertexID, ExecutionVertexVersion> requiredVersionByVertex) {
+
         validateExecutionStates(executionsToDeploy);
 
         transitionToScheduled(executionsToDeploy);
 
-        final List<ExecutionSlotAssignment> executionSlotAssignments =
-                allocateSlotsFor(executionsToDeploy);
+        // 1-申请资源
+        final List<ExecutionSlotAssignment> executionSlotAssignments = allocateSlotsFor(executionsToDeploy);
+
 
         final List<ExecutionDeploymentHandle> deploymentHandles =
-                createDeploymentHandles(
-                        executionsToDeploy, requiredVersionByVertex, executionSlotAssignments);
+                createDeploymentHandles(executionsToDeploy, requiredVersionByVertex, executionSlotAssignments);
 
+        // 2-调度执行
         waitForAllSlotsAndDeploy(deploymentHandles);
     }
 
@@ -118,8 +127,7 @@ public class DefaultExecutionDeployer implements ExecutionDeployer {
         executionsToDeploy.forEach(e -> e.transitionState(ExecutionState.SCHEDULED));
     }
 
-    private List<ExecutionSlotAssignment> allocateSlotsFor(
-            final List<Execution> executionsToDeploy) {
+    private List<ExecutionSlotAssignment> allocateSlotsFor(final List<Execution> executionsToDeploy) {
         final List<ExecutionAttemptID> executionAttemptIds =
                 executionsToDeploy.stream()
                         .map(Execution::getAttemptId)

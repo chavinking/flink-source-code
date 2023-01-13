@@ -282,6 +282,11 @@ public class DeclarativeSlotManager implements SlotManager {
         resourceTracker.notifyResourceRequirements(jobId, Collections.emptyList());
     }
 
+    /**
+     * rm处理slot请求服务
+     *
+     * @param resourceRequirements resource requirements of a job
+     */
     @Override
     public void processResourceRequirements(ResourceRequirements resourceRequirements) {
         checkInit();
@@ -298,11 +303,18 @@ public class DeclarativeSlotManager implements SlotManager {
         }
 
         if (!resourceRequirements.getResourceRequirements().isEmpty()) {
-            jobMasterTargetAddresses.put(
-                    resourceRequirements.getJobId(), resourceRequirements.getTargetAddress());
+//            jm保存申请信息
+            jobMasterTargetAddresses.put(resourceRequirements.getJobId(), resourceRequirements.getTargetAddress());
         }
-        resourceTracker.notifyResourceRequirements(
-                resourceRequirements.getJobId(), resourceRequirements.getResourceRequirements());
+
+        /**
+         * 申请资源
+         */
+        resourceTracker.notifyResourceRequirements(resourceRequirements.getJobId(), resourceRequirements.getResourceRequirements());
+
+        /**
+         * 检查资源请求，这里存在分配逻辑
+         */
         checkResourceRequirementsWithDelay();
     }
 
@@ -459,8 +471,7 @@ public class DeclarativeSlotManager implements SlotManager {
                                 mainThreadExecutor.execute(
                                         () -> {
                                             checkResourceRequirements();
-                                            Preconditions.checkNotNull(requirementsCheckFuture)
-                                                    .complete(null);
+                                            Preconditions.checkNotNull(requirementsCheckFuture).complete(null);
                                         }),
                         requirementsCheckDelay.toMillis(),
                         TimeUnit.MILLISECONDS);
@@ -496,25 +507,32 @@ public class DeclarativeSlotManager implements SlotManager {
      *
      * <p>DO NOT call this method directly. Use {@link #checkResourceRequirementsWithDelay()}
      * instead.
+     *
+     * 检查资源请求
      */
     private void checkResourceRequirements() {
-        final Map<JobID, Collection<ResourceRequirement>> missingResources =
-                resourceTracker.getMissingResources();
+
+        final Map<JobID, Collection<ResourceRequirement>> missingResources = resourceTracker.getMissingResources();
+
         if (missingResources.isEmpty()) {
             return;
         }
 
+//        不满足条件的
         final Map<JobID, ResourceCounter> unfulfilledRequirements = new LinkedHashMap<>();
-        for (Map.Entry<JobID, Collection<ResourceRequirement>> resourceRequirements :
-                missingResources.entrySet()) {
+
+        for (Map.Entry<JobID, Collection<ResourceRequirement>> resourceRequirements : missingResources.entrySet()) {
             final JobID jobId = resourceRequirements.getKey();
 
-            final ResourceCounter unfulfilledJobRequirements =
-                    tryAllocateSlotsForJob(jobId, resourceRequirements.getValue());
+//            不能满足job需求，尝试分配资源给job
+            final ResourceCounter unfulfilledJobRequirements = tryAllocateSlotsForJob(jobId, resourceRequirements.getValue());
+
             if (!unfulfilledJobRequirements.isEmpty()) {
                 unfulfilledRequirements.put(jobId, unfulfilledJobRequirements);
             }
         }
+
+
         if (unfulfilledRequirements.isEmpty()) {
             return;
         }
@@ -527,8 +545,10 @@ public class DeclarativeSlotManager implements SlotManager {
                                                 PendingTaskManagerSlot::getResourceProfile,
                                                 Collectors.summingInt(x -> 1))));
 
-        for (Map.Entry<JobID, ResourceCounter> unfulfilledRequirement :
-                unfulfilledRequirements.entrySet()) {
+        /**
+         * 尝试给不满足条件的分配资源
+         */
+        for (Map.Entry<JobID, ResourceCounter> unfulfilledRequirement : unfulfilledRequirements.entrySet()) {
             pendingSlots =
                     tryFulfillRequirementsWithPendingSlots(
                             unfulfilledRequirement.getKey(),
@@ -537,18 +557,13 @@ public class DeclarativeSlotManager implements SlotManager {
         }
     }
 
-    private ResourceCounter tryAllocateSlotsForJob(
-            JobID jobId, Collection<ResourceRequirement> missingResources) {
+    private ResourceCounter tryAllocateSlotsForJob(JobID jobId, Collection<ResourceRequirement> missingResources) {
         ResourceCounter outstandingRequirements = ResourceCounter.empty();
 
         for (ResourceRequirement resourceRequirement : missingResources) {
-            int numMissingSlots =
-                    internalTryAllocateSlots(
-                            jobId, jobMasterTargetAddresses.get(jobId), resourceRequirement);
+            int numMissingSlots = internalTryAllocateSlots(jobId, jobMasterTargetAddresses.get(jobId), resourceRequirement);
             if (numMissingSlots > 0) {
-                outstandingRequirements =
-                        outstandingRequirements.add(
-                                resourceRequirement.getResourceProfile(), numMissingSlots);
+                outstandingRequirements = outstandingRequirements.add(resourceRequirement.getResourceProfile(), numMissingSlots);
             }
         }
         return outstandingRequirements;
@@ -563,11 +578,13 @@ public class DeclarativeSlotManager implements SlotManager {
      * @param resourceRequirement required slots
      * @return the number of missing slots
      */
-    private int internalTryAllocateSlots(
-            JobID jobId, String targetAddress, ResourceRequirement resourceRequirement) {
+    private int internalTryAllocateSlots(JobID jobId, String targetAddress, ResourceRequirement resourceRequirement) {
+
         final ResourceProfile requiredResource = resourceRequirement.getResourceProfile();
         // Use LinkedHashMap to retain the original order
         final Map<SlotID, TaskManagerSlotInformation> availableSlots = new LinkedHashMap<>();
+
+//        遍历free slot集合
         for (TaskManagerSlotInformation freeSlot : slotTracker.getFreeSlots()) {
             if (!isBlockedTaskManager(freeSlot.getTaskManagerConnection().getResourceID())) {
                 availableSlots.put(freeSlot.getSlotId(), freeSlot);
@@ -577,12 +594,14 @@ public class DeclarativeSlotManager implements SlotManager {
         int numUnfulfilled = 0;
         for (int x = 0; x < resourceRequirement.getNumberOfRequiredSlots(); x++) {
 
-            final Optional<TaskManagerSlotInformation> reservedSlot =
-                    slotMatchingStrategy.findMatchingSlot(
+            final Optional<TaskManagerSlotInformation> reservedSlot = slotMatchingStrategy.findMatchingSlot(
                             requiredResource,
                             availableSlots.values(),
-                            this::getNumberRegisteredSlotsOf);
+                            this::getNumberRegisteredSlotsOf
+            );
+
             if (reservedSlot.isPresent()) {
+//                分配slot
                 allocateSlot(reservedSlot.get(), jobId, targetAddress, requiredResource);
                 availableSlots.remove(reservedSlot.get().getSlotId());
             } else {
@@ -627,8 +646,7 @@ public class DeclarativeSlotManager implements SlotManager {
                     "Could not find a registered task manager for instance id " + instanceId + '.');
         }
 
-        final TaskExecutorConnection taskExecutorConnection =
-                taskManagerSlot.getTaskManagerConnection();
+        final TaskExecutorConnection taskExecutorConnection = taskManagerSlot.getTaskManagerConnection();
         final TaskExecutorGateway gateway = taskExecutorConnection.getTaskExecutorGateway();
 
         final AllocationID allocationId = new AllocationID();

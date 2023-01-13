@@ -121,12 +121,12 @@ public class ExecutionJobVertex
 
     @Nullable private InputSplitAssigner splitAssigner;
 
+
     @VisibleForTesting
     public ExecutionJobVertex(
             InternalExecutionGraphAccessor graph,
             JobVertex jobVertex,
-            VertexParallelismInformation parallelismInfo)
-            throws JobException {
+            VertexParallelismInformation parallelismInfo)  throws JobException {
 
         if (graph == null || jobVertex == null) {
             throw new NullPointerException();
@@ -134,7 +134,6 @@ public class ExecutionJobVertex
 
         this.graph = graph;
         this.jobVertex = jobVertex;
-
         this.parallelismInfo = parallelismInfo;
 
         // verify that our parallelism is not higher than the maximum parallelism
@@ -147,8 +146,7 @@ public class ExecutionJobVertex
                             this.parallelismInfo.getMaxParallelism()));
         }
 
-        this.resourceProfile =
-                ResourceProfile.fromResourceSpec(jobVertex.getMinResources(), MemorySize.ZERO);
+        this.resourceProfile = ResourceProfile.fromResourceSpec(jobVertex.getMinResources(), MemorySize.ZERO);
 
         // take the sharing group
         this.slotSharingGroup = checkNotNull(jobVertex.getSlotSharingGroup());
@@ -160,19 +158,19 @@ public class ExecutionJobVertex
             Time timeout,
             long createTimestamp,
             SubtaskAttemptNumberStore initialAttemptCounts,
-            CoordinatorStore coordinatorStore)
-            throws JobException {
+            CoordinatorStore coordinatorStore) throws JobException {
 
         checkState(parallelismInfo.getParallelism() > 0);
         checkState(!isInitialized());
 
+//        设置taskVertices等于并行度
         this.taskVertices = new ExecutionVertex[parallelismInfo.getParallelism()];
-
+//        设置输入并行度
         this.inputs = new ArrayList<>(jobVertex.getInputs().size());
 
         // create the intermediate results
-        this.producedDataSets =
-                new IntermediateResult[jobVertex.getNumberOfProducedIntermediateDataSets()];
+        // 设置 intermediate
+        this.producedDataSets = new IntermediateResult[jobVertex.getNumberOfProducedIntermediateDataSets()];
 
         for (int i = 0; i < jobVertex.getProducedDataSets().size(); i++) {
             final IntermediateDataSet result = jobVertex.getProducedDataSets().get(i);
@@ -186,6 +184,7 @@ public class ExecutionJobVertex
         }
 
         // create all task vertices
+        // 创建所有的ExecutionVertex
         for (int i = 0; i < this.parallelismInfo.getParallelism(); i++) {
             ExecutionVertex vertex =
                     createExecutionVertex(
@@ -209,19 +208,14 @@ public class ExecutionJobVertex
             }
         }
 
-        final List<SerializedValue<OperatorCoordinator.Provider>> coordinatorProviders =
-                getJobVertex().getOperatorCoordinators();
+        final List<SerializedValue<OperatorCoordinator.Provider>> coordinatorProviders = getJobVertex().getOperatorCoordinators();
         if (coordinatorProviders.isEmpty()) {
             this.operatorCoordinators = Collections.emptyList();
         } else {
-            final ArrayList<OperatorCoordinatorHolder> coordinators =
-                    new ArrayList<>(coordinatorProviders.size());
+            final ArrayList<OperatorCoordinatorHolder> coordinators = new ArrayList<>(coordinatorProviders.size());
             try {
-                for (final SerializedValue<OperatorCoordinator.Provider> provider :
-                        coordinatorProviders) {
-                    coordinators.add(
-                            createOperatorCoordinatorHolder(
-                                    provider, graph.getUserClassLoader(), coordinatorStore));
+                for (final SerializedValue<OperatorCoordinator.Provider> provider : coordinatorProviders) {
+                    coordinators.add(createOperatorCoordinatorHolder(provider, graph.getUserClassLoader(), coordinatorStore));
                 }
             } catch (Exception | LinkageError e) {
                 IOUtils.closeAllQuietly(coordinators);
@@ -234,17 +228,14 @@ public class ExecutionJobVertex
         // set up the input splits, if the vertex has any
         try {
             @SuppressWarnings("unchecked")
-            InputSplitSource<InputSplit> splitSource =
-                    (InputSplitSource<InputSplit>) jobVertex.getInputSplitSource();
+            InputSplitSource<InputSplit> splitSource = (InputSplitSource<InputSplit>) jobVertex.getInputSplitSource();
 
             if (splitSource != null) {
                 Thread currentThread = Thread.currentThread();
                 ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
                 currentThread.setContextClassLoader(graph.getUserClassLoader());
                 try {
-                    inputSplits =
-                            splitSource.createInputSplits(this.parallelismInfo.getParallelism());
-
+                    inputSplits = splitSource.createInputSplits(this.parallelismInfo.getParallelism());
                     if (inputSplits != null) {
                         splitAssigner = splitSource.getInputSplitAssigner(inputSplits);
                     }
@@ -437,9 +428,7 @@ public class ExecutionJobVertex
 
     // ---------------------------------------------------------------------------------------------
 
-    public void connectToPredecessors(
-            Map<IntermediateDataSetID, IntermediateResult> intermediateDataSets)
-            throws JobException {
+    public void connectToPredecessors(Map<IntermediateDataSetID, IntermediateResult> intermediateDataSets) throws JobException {
         checkState(isInitialized());
 
         List<JobEdge> inputs = jobVertex.getInputs();

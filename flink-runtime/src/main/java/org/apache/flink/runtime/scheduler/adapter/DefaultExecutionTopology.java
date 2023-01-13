@@ -232,8 +232,7 @@ public class DefaultExecutionTopology implements SchedulingTopology {
         }
     }
 
-    public static DefaultExecutionTopology fromExecutionGraph(
-            DefaultExecutionGraph executionGraph) {
+    public static DefaultExecutionTopology fromExecutionGraph(DefaultExecutionGraph executionGraph) {
         checkNotNull(executionGraph, "execution graph can not be null");
 
         EdgeManager edgeManager = executionGraph.getEdgeManager();

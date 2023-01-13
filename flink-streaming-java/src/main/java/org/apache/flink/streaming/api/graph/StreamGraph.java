@@ -416,6 +416,10 @@ public class StreamGraph implements Pipeline {
             String operatorName,
             Class<? extends TaskInvokable> invokableClass) {
 
+        /**
+         * 不同重载方法最后都会跳入到这个方法进行实现
+         * 添加streamNode
+         */
         addNode(
                 vertexID,
                 slotSharingGroup,
@@ -423,6 +427,7 @@ public class StreamGraph implements Pipeline {
                 invokableClass,
                 operatorFactory,
                 operatorName);
+
         setSerializers(vertexID, createSerializer(inTypeInfo), null, createSerializer(outTypeInfo));
 
         if (operatorFactory.isOutputTypeConfigurable() && outTypeInfo != null) {
@@ -520,6 +525,7 @@ public class StreamGraph implements Pipeline {
             throw new RuntimeException("Duplicate vertexID " + vertexID);
         }
 
+//        构建StreamNode
         StreamNode vertex =
                 new StreamNode(
                         vertexID,
@@ -632,8 +638,8 @@ public class StreamGraph implements Pipeline {
     }
 
     private void addEdgeInternal(
-            Integer upStreamVertexID,
-            Integer downStreamVertexID,
+            Integer upStreamVertexID, // 上游StreamNode
+            Integer downStreamVertexID, // 下游StreamNode
             int typeNumber,
             StreamPartitioner<?> partitioner,
             List<String> outputNames,
@@ -735,6 +741,9 @@ public class StreamGraph implements Pipeline {
          */
         int uniqueId = getStreamEdges(upstreamNode.getId(), downstreamNode.getId()).size();
 
+        /**
+         * 创建边对象，设置边上游 StreamNode 和 下游 StreamNode
+         */
         StreamEdge edge =
                 new StreamEdge(
                         upstreamNode,
@@ -746,6 +755,10 @@ public class StreamGraph implements Pipeline {
                         uniqueId,
                         intermediateDataSetId);
 
+        /**
+         * 将边对象设置为上游的出边
+         * 将边对象设置为下游的入边
+         */
         getStreamNode(edge.getSourceId()).addOutEdge(edge);
         getStreamNode(edge.getTargetId()).addInEdge(edge);
     }
@@ -1014,6 +1027,7 @@ public class StreamGraph implements Pipeline {
 
     /** Gets the assembled {@link JobGraph} with a specified {@link JobID}. */
     public JobGraph getJobGraph(ClassLoader userClassLoader, @Nullable JobID jobID) {
+//        创建JobGraph
         return StreamingJobGraphGenerator.createJobGraph(userClassLoader, this, jobID);
     }
 
