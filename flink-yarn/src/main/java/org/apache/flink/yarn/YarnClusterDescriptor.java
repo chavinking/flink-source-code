@@ -176,8 +176,7 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 
         this.yarnConfiguration = Preconditions.checkNotNull(yarnConfiguration);
         this.yarnClient = Preconditions.checkNotNull(yarnClient);
-        this.yarnClusterInformationRetriever =
-                Preconditions.checkNotNull(yarnClusterInformationRetriever);
+        this.yarnClusterInformationRetriever = Preconditions.checkNotNull(yarnClusterInformationRetriever);
         this.sharedYarnClient = sharedYarnClient;
 
         this.flinkConfiguration = Preconditions.checkNotNull(flinkConfiguration);
@@ -481,11 +480,12 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 
     @Override
     public ClusterClientProvider<ApplicationId> deployJobCluster(
-            ClusterSpecification clusterSpecification, JobGraph jobGraph, boolean detached)
-            throws ClusterDeploymentException {
+            ClusterSpecification clusterSpecification,
+            JobGraph jobGraph,
+            boolean detached
+    ) throws ClusterDeploymentException {
 
-        LOG.warn(
-                "Job Clusters are deprecated since Flink 1.15. Please use an Application Cluster/Application Mode instead.");
+        LOG.warn("Job Clusters are deprecated since Flink 1.15. Please use an Application Cluster/Application Mode instead.");
         try {
             return deployInternal(
                     clusterSpecification,
@@ -532,8 +532,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
             String applicationName,
             String yarnClusterEntrypoint,
             @Nullable JobGraph jobGraph,
-            boolean detached)
-            throws Exception {
+            boolean detached
+    ) throws Exception {
 
         final UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
         if (HadoopUtils.isKerberosSecurityEnabled(currentUser)) {
@@ -602,8 +602,7 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
         final ClusterSpecification validClusterSpecification;
         try {
             validClusterSpecification =
-                    validateClusterResources(
-                            clusterSpecification, yarnMinAllocationMB, maxRes, freeClusterMem);
+                    validateClusterResources(clusterSpecification, yarnMinAllocationMB, maxRes, freeClusterMem);
         } catch (YarnDeploymentException yde) {
             failSessionDuringDeployment(yarnClient, yarnApplication);
             throw yde;
@@ -616,9 +615,11 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
                         ? ClusterEntrypoint.ExecutionMode.DETACHED
                         : ClusterEntrypoint.ExecutionMode.NORMAL;
 
-        flinkConfiguration.setString(
-                ClusterEntrypoint.INTERNAL_CLUSTER_EXECUTION_MODE, executionMode.toString());
+        flinkConfiguration.setString(ClusterEntrypoint.INTERNAL_CLUSTER_EXECUTION_MODE, executionMode.toString());
 
+        /**
+         * 启动yarn上的appmaster
+         */
         ApplicationReport report =
                 startAppMaster(
                         flinkConfiguration,
@@ -779,6 +780,19 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
         }
     }
 
+    /**
+     * 启动yarn的appmaster
+     *
+     * @param configuration
+     * @param applicationName
+     * @param yarnClusterEntrypoint
+     * @param jobGraph
+     * @param yarnClient
+     * @param yarnApplication
+     * @param clusterSpecification
+     * @return
+     * @throws Exception
+     */
     private ApplicationReport startAppMaster(
             Configuration configuration,
             String applicationName,
@@ -786,20 +800,18 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
             JobGraph jobGraph,
             YarnClient yarnClient,
             YarnClientApplication yarnApplication,
-            ClusterSpecification clusterSpecification)
-            throws Exception {
+            ClusterSpecification clusterSpecification
+    ) throws Exception {
 
         // ------------------ Initialize the file systems -------------------------
 
-        org.apache.flink.core.fs.FileSystem.initialize(
-                configuration, PluginUtils.createPluginManagerFromRootFolder(configuration));
+        org.apache.flink.core.fs.FileSystem.initialize(configuration, PluginUtils.createPluginManagerFromRootFolder(configuration));
 
         final FileSystem fs = FileSystem.get(yarnConfiguration);
 
         // hard coded check for the GoogleHDFS client because its not overriding the getScheme()
         // method.
-        if (!fs.getClass().getSimpleName().equals("GoogleHadoopFileSystem")
-                && fs.getScheme().startsWith("file")) {
+        if (!fs.getClass().getSimpleName().equals("GoogleHadoopFileSystem") && fs.getScheme().startsWith("file")) {
             LOG.warn(
                     "The file system scheme is '"
                             + fs.getScheme()
@@ -877,13 +889,11 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 
         // only for per job mode
         if (jobGraph != null) {
-            for (Map.Entry<String, DistributedCache.DistributedCacheEntry> entry :
-                    jobGraph.getUserArtifacts().entrySet()) {
+            for (Map.Entry<String, DistributedCache.DistributedCacheEntry> entry : jobGraph.getUserArtifacts().entrySet()) {
                 // only upload local files
                 if (!Utils.isRemotePath(entry.getValue().filePath)) {
                     Path localPath = new Path(entry.getValue().filePath);
-                    Tuple2<Path, Long> remoteFileInfo =
-                            fileUploader.uploadLocalFileToRemote(localPath, entry.getKey());
+                    Tuple2<Path, Long> remoteFileInfo = fileUploader.uploadLocalFileToRemote(localPath, entry.getKey());
                     jobGraph.setUserArtifactRemotePath(
                             entry.getKey(), remoteFileInfo.f0.toString());
                 }
@@ -1236,6 +1246,11 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
                 new DeploymentFailureHook(yarnApplication, fileUploader.getApplicationDir());
         Runtime.getRuntime().addShutdownHook(deploymentFailureHook);
         LOG.info("Submitting application master " + appId);
+
+        /**
+         * 提交yarn应用程序
+         * 下面将跳转到yarn-per-job的主节点启动类进行集群启动
+         */
         yarnClient.submitApplication(appContext);
 
         LOG.info("Waiting for the cluster to be allocated");

@@ -55,6 +55,9 @@ public class JobDispatcherLeaderProcess extends AbstractDispatcherLeaderProcess 
         this.jobResultStore = Preconditions.checkNotNull(jobResultStore);
     }
 
+    /**
+     * yarn-per-job 模式下创建dispatcher
+     */
     @Override
     protected void onStart() {
         final DispatcherGatewayService dispatcherService =

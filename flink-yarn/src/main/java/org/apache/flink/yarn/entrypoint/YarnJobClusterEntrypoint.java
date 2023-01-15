@@ -76,8 +76,7 @@ public class YarnJobClusterEntrypoint extends JobClusterEntrypoint {
                 "Job Clusters are deprecated since Flink 1.15. Please use an Application Cluster/Application Mode instead.");
 
         // startup checks and logging
-        EnvironmentInformation.logEnvironmentInfo(
-                LOG, YarnJobClusterEntrypoint.class.getSimpleName(), args);
+        EnvironmentInformation.logEnvironmentInfo(LOG, YarnJobClusterEntrypoint.class.getSimpleName(), args);
         SignalHandler.register(LOG);
         JvmShutdownSafeguard.installAsShutdownHook(LOG);
 
@@ -103,9 +102,11 @@ public class YarnJobClusterEntrypoint extends JobClusterEntrypoint {
         final Configuration configuration =
                 YarnEntrypointUtils.loadConfiguration(workingDirectory, dynamicParameters, env);
 
-        YarnJobClusterEntrypoint yarnJobClusterEntrypoint =
-                new YarnJobClusterEntrypoint(configuration);
+        YarnJobClusterEntrypoint yarnJobClusterEntrypoint = new YarnJobClusterEntrypoint(configuration);
 
+        /**
+         * 运行集群
+         */
         ClusterEntrypoint.runClusterEntrypoint(yarnJobClusterEntrypoint);
     }
 }
