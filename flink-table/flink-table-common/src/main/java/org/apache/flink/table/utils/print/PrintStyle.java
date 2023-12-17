@@ -59,16 +59,17 @@ public interface PrintStyle {
             RowDataToStringConverter converter,
             int maxColumnWidth,
             boolean printNullAsEmpty,
-            boolean printRowKind) {
+            boolean printRowKind
+    ) {
         Preconditions.checkArgument(maxColumnWidth > 0, "maxColumnWidth should be greater than 0");
         return new TableauStyle(
                 schema,
                 converter,
-                TableauStyle.columnWidthsByType(
-                        schema.getColumns(), maxColumnWidth, printNullAsEmpty, printRowKind),
+                TableauStyle.columnWidthsByType(schema.getColumns(), maxColumnWidth, printNullAsEmpty, printRowKind),
                 maxColumnWidth,
                 printNullAsEmpty,
-                printRowKind);
+                printRowKind
+        );
     }
 
     /**

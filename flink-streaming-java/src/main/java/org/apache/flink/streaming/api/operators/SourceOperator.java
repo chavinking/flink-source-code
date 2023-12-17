@@ -387,6 +387,10 @@ public class SourceOperator<OUT, SplitT extends SourceSplit> extends AbstractStr
         return emitNextNotReading(output);
     }
 
+
+
+
+
     private DataInputStatus emitNextNotReading(DataOutput<OUT> output) throws Exception {
         switch (operatingMode) {
             case OUTPUT_NOT_INITIALIZED:

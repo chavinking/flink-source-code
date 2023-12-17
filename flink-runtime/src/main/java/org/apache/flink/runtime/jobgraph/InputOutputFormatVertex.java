@@ -63,14 +63,12 @@ public class InputOutputFormatVertex extends JobVertex {
             Thread.currentThread().setContextClassLoader(loader);
 
             // configure the input format and setup input splits
-            Map<OperatorID, UserCodeWrapper<? extends InputFormat<?, ?>>> inputFormats =
-                    formatContainer.getInputFormats();
+            Map<OperatorID, UserCodeWrapper<? extends InputFormat<?, ?>>> inputFormats = formatContainer.getInputFormats();
             if (inputFormats.size() > 1) {
                 throw new UnsupportedOperationException(
                         "Multiple input formats are not supported in a job vertex.");
             }
-            for (Map.Entry<OperatorID, UserCodeWrapper<? extends InputFormat<?, ?>>> entry :
-                    inputFormats.entrySet()) {
+            for (Map.Entry<OperatorID, UserCodeWrapper<? extends InputFormat<?, ?>>> entry : inputFormats.entrySet()) {
                 final InputFormat<?, ?> inputFormat;
 
                 try {
@@ -89,10 +87,8 @@ public class InputOutputFormatVertex extends JobVertex {
             }
 
             // configure output formats and invoke initializeGlobal()
-            Map<OperatorID, UserCodeWrapper<? extends OutputFormat<?>>> outputFormats =
-                    formatContainer.getOutputFormats();
-            for (Map.Entry<OperatorID, UserCodeWrapper<? extends OutputFormat<?>>> entry :
-                    outputFormats.entrySet()) {
+            Map<OperatorID, UserCodeWrapper<? extends OutputFormat<?>>> outputFormats = formatContainer.getOutputFormats();
+            for (Map.Entry<OperatorID, UserCodeWrapper<? extends OutputFormat<?>>> entry : outputFormats.entrySet()) {
                 final OutputFormat<?> outputFormat;
 
                 try {
@@ -166,8 +162,7 @@ public class InputOutputFormatVertex extends JobVertex {
         formatDescriptions.put(checkNotNull(operatorID), formatDescription);
     }
 
-    private InputOutputFormatContainer initInputOutputformatContainer(ClassLoader classLoader)
-            throws Exception {
+    private InputOutputFormatContainer initInputOutputformatContainer(ClassLoader classLoader) throws Exception {
         try {
             return new InputOutputFormatContainer(new TaskConfig(getConfiguration()), classLoader);
         } catch (Throwable t) {

@@ -119,8 +119,7 @@ public class DeclarativeSlotPoolService implements SlotPoolService {
         this.jobManagerAddress = Preconditions.checkNotNull(address);
 
         this.resourceRequirementServiceConnectionManager =
-                DefaultDeclareResourceRequirementServiceConnectionManager.create(
-                        mainThreadExecutor);
+                DefaultDeclareResourceRequirementServiceConnectionManager.create(mainThreadExecutor);
 
         onStart(mainThreadExecutor);
 

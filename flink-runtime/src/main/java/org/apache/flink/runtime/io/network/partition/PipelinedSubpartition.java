@@ -137,8 +137,7 @@ public class PipelinedSubpartition extends ResultSubpartition
 
     // ------------------------------------------------------------------------
 
-    PipelinedSubpartition(
-            int index, int receiverExclusiveBuffersPerChannel, ResultPartition parent) {
+    PipelinedSubpartition(int index, int receiverExclusiveBuffersPerChannel, ResultPartition parent) {
         super(index, parent);
 
         checkArgument(

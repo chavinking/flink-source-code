@@ -175,7 +175,8 @@ public class NettyShuffleMetricFactory {
                 isDetailedMetrics,
                 outputGroup,
                 outputGroup.addGroup(METRIC_GROUP_BUFFERS),
-                resultPartitions);
+                resultPartitions
+        );
     }
 
     private static void registerOutputMetrics(
@@ -188,24 +189,24 @@ public class NettyShuffleMetricFactory {
         }
         buffersGroup.gauge(METRIC_OUTPUT_QUEUE_LENGTH, new OutputBuffersGauge(resultPartitions));
         buffersGroup.gauge(METRIC_OUTPUT_QUEUE_SIZE, new OutputBuffersSizeGauge(resultPartitions));
-        buffersGroup.gauge(
-                METRIC_OUTPUT_POOL_USAGE, new OutputBufferPoolUsageGauge(resultPartitions));
+        buffersGroup.gauge(METRIC_OUTPUT_POOL_USAGE, new OutputBufferPoolUsageGauge(resultPartitions));
     }
 
-    public static void registerInputMetrics(
-            boolean isDetailedMetrics, MetricGroup inputGroup, SingleInputGate[] inputGates) {
+    public static void registerInputMetrics(boolean isDetailedMetrics, MetricGroup inputGroup, SingleInputGate[] inputGates) {
         registerInputMetrics(
                 isDetailedMetrics,
                 inputGroup,
                 inputGroup.addGroup(METRIC_GROUP_BUFFERS),
-                inputGates);
+                inputGates
+        );
     }
 
     private static void registerInputMetrics(
             boolean isDetailedMetrics,
             MetricGroup inputGroup,
             MetricGroup buffersGroup,
-            SingleInputGate[] inputGates) {
+            SingleInputGate[] inputGates
+    ) {
         if (isDetailedMetrics) {
             InputGateMetrics.registerQueueLengthMetrics(inputGroup, inputGates);
         }
@@ -213,22 +214,16 @@ public class NettyShuffleMetricFactory {
         buffersGroup.gauge(METRIC_INPUT_QUEUE_LENGTH, new InputBuffersGauge(inputGates));
         buffersGroup.gauge(METRIC_INPUT_QUEUE_SIZE, new InputBuffersSizeGauge(inputGates));
 
-        FloatingBuffersUsageGauge floatingBuffersUsageGauge =
-                new FloatingBuffersUsageGauge(inputGates);
-        ExclusiveBuffersUsageGauge exclusiveBuffersUsageGauge =
-                new ExclusiveBuffersUsageGauge(inputGates);
-        CreditBasedInputBuffersUsageGauge creditBasedInputBuffersUsageGauge =
-                new CreditBasedInputBuffersUsageGauge(
-                        floatingBuffersUsageGauge, exclusiveBuffersUsageGauge, inputGates);
+        FloatingBuffersUsageGauge floatingBuffersUsageGauge = new FloatingBuffersUsageGauge(inputGates);
+        ExclusiveBuffersUsageGauge exclusiveBuffersUsageGauge = new ExclusiveBuffersUsageGauge(inputGates);
+        CreditBasedInputBuffersUsageGauge creditBasedInputBuffersUsageGauge = new CreditBasedInputBuffersUsageGauge(floatingBuffersUsageGauge, exclusiveBuffersUsageGauge, inputGates);
         buffersGroup.gauge(METRIC_INPUT_EXCLUSIVE_BUFFERS_USAGE, exclusiveBuffersUsageGauge);
         buffersGroup.gauge(METRIC_INPUT_FLOATING_BUFFERS_USAGE, floatingBuffersUsageGauge);
         buffersGroup.gauge(METRIC_INPUT_POOL_USAGE, creditBasedInputBuffersUsageGauge);
     }
 
-    public static void registerDebloatingTaskMetrics(
-            SingleInputGate[] inputGates, MetricGroup taskGroup) {
-        taskGroup.gauge(
-                MetricNames.ESTIMATED_TIME_TO_CONSUME_BUFFERS, new TimeToConsumeGauge(inputGates));
+    public static void registerDebloatingTaskMetrics(SingleInputGate[] inputGates, MetricGroup taskGroup) {
+        taskGroup.gauge(MetricNames.ESTIMATED_TIME_TO_CONSUME_BUFFERS, new TimeToConsumeGauge(inputGates));
     }
 
     /**

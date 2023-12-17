@@ -186,12 +186,12 @@ class LocalBufferPool implements BufferPool {
      */
     LocalBufferPool(
             NetworkBufferPool networkBufferPool,
-            int numberOfRequiredMemorySegments,
-            int maxNumberOfMemorySegments,
-            int numberOfSubpartitions,
-            int maxBuffersPerChannel,
-            int maxOverdraftBuffersPerGate)
-            throws IOException {
+            int numberOfRequiredMemorySegments, // 最小缓冲区数量
+            int maxNumberOfMemorySegments, // 最大缓冲区数量
+            int numberOfSubpartitions,// 子分区数量
+            int maxBuffersPerChannel,// 每个渠道buffer数量
+            int maxOverdraftBuffersPerGate// 每个网关buffer数量
+    ) throws IOException {
         checkArgument(
                 numberOfRequiredMemorySegments > 0,
                 "Required number of memory segments (%s) should be larger than 0.",
@@ -226,6 +226,7 @@ class LocalBufferPool implements BufferPool {
 
         this.subpartitionBuffersCount = new int[numberOfSubpartitions];
         subpartitionBufferRecyclers = new BufferRecycler[numberOfSubpartitions];
+
         for (int i = 0; i < subpartitionBufferRecyclers.length; i++) {
             subpartitionBufferRecyclers[i] = new SubpartitionBufferRecycler(i, this);
         }
@@ -534,6 +535,7 @@ class LocalBufferPool implements BufferPool {
         return shouldBeAvailable();
     }
 
+
     private void checkConsistentAvailability() {
         assert Thread.holdsLock(availableMemorySegments);
 
@@ -542,6 +544,8 @@ class LocalBufferPool implements BufferPool {
                 availabilityHelper.isApproximatelyAvailable() == shouldBeAvailable,
                 "Inconsistent availability: expected " + shouldBeAvailable);
     }
+
+
 
     @Override
     public void recycle(MemorySegment segment) {

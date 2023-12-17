@@ -243,7 +243,8 @@ public class SqlToOperationConverter {
                         flinkPlanner.getOrCreateSqlValidator(),
                         catalogManager,
                         this::getQuotedSqlString,
-                        this::validateTableConstraint);
+                        this::validateTableConstraint
+                );
     }
 
     /**
@@ -251,22 +252,32 @@ public class SqlToOperationConverter {
      * SqlNode will have it's implementation in the #convert(type) method whose 'type' argument is
      * subclass of {@code SqlNode}.
      *
+     * 执行SQL到Operation 的转换工作
+     *
      * @param flinkPlanner FlinkPlannerImpl to convertCreateTable sql node to rel node
      * @param catalogManager CatalogManager to resolve full path for operations
      * @param sqlNode SqlNode to execute on
      */
-    public static Optional<Operation> convert(
-            FlinkPlannerImpl flinkPlanner, CatalogManager catalogManager, SqlNode sqlNode) {
+    public static Optional<Operation> convert(FlinkPlannerImpl flinkPlanner, CatalogManager catalogManager, SqlNode sqlNode) {
         // validate the query
+        // 校验解析后的SQL语法树
         final SqlNode validated = flinkPlanner.validate(sqlNode);
+
         return convertValidatedSqlNode(flinkPlanner, catalogManager, validated);
+
     }
 
+
+
+
+
     /** Convert a validated sql node to Operation. */
-    private static Optional<Operation> convertValidatedSqlNode(
-            FlinkPlannerImpl flinkPlanner, CatalogManager catalogManager, SqlNode validated) {
-        SqlToOperationConverter converter =
-                new SqlToOperationConverter(flinkPlanner, catalogManager);
+    private static Optional<Operation> convertValidatedSqlNode(FlinkPlannerImpl flinkPlanner, CatalogManager catalogManager, SqlNode validated) {
+
+        // 创建SqlToOperationConverter，它负责SQL转换
+        SqlToOperationConverter converter = new SqlToOperationConverter(flinkPlanner, catalogManager);
+
+        // 判断SqlNode的类型，采用不同的转换逻辑
         if (validated instanceof SqlCreateCatalog) {
             return Optional.of(converter.convertCreateCatalog((SqlCreateCatalog) validated));
         } else if (validated instanceof SqlDropCatalog) {
@@ -276,8 +287,7 @@ public class SqlToOperationConverter {
         } else if (validated instanceof SqlShowCatalogs) {
             return Optional.of(converter.convertShowCatalogs((SqlShowCatalogs) validated));
         } else if (validated instanceof SqlShowCurrentCatalog) {
-            return Optional.of(
-                    converter.convertShowCurrentCatalog((SqlShowCurrentCatalog) validated));
+            return Optional.of(converter.convertShowCurrentCatalog((SqlShowCurrentCatalog) validated));
         } else if (validated instanceof SqlShowModules) {
             return Optional.of(converter.convertShowModules((SqlShowModules) validated));
         } else if (validated instanceof SqlUnloadModule) {
@@ -295,18 +305,14 @@ public class SqlToOperationConverter {
         } else if (validated instanceof SqlShowDatabases) {
             return Optional.of(converter.convertShowDatabases((SqlShowDatabases) validated));
         } else if (validated instanceof SqlShowCurrentDatabase) {
-            return Optional.of(
-                    converter.convertShowCurrentDatabase((SqlShowCurrentDatabase) validated));
+            return Optional.of(converter.convertShowCurrentDatabase((SqlShowCurrentDatabase) validated));
         } else if (validated instanceof SqlUseDatabase) {
             return Optional.of(converter.convertUseDatabase((SqlUseDatabase) validated));
         } else if (validated instanceof SqlCreateTable) {
             if (validated instanceof SqlCreateTableAs) {
-                return Optional.of(
-                        converter.createTableConverter.convertCreateTableAS(
-                                flinkPlanner, (SqlCreateTableAs) validated));
+                return Optional.of(converter.createTableConverter.convertCreateTableAS(flinkPlanner, (SqlCreateTableAs) validated));
             }
-            return Optional.of(
-                    converter.createTableConverter.convertCreateTable((SqlCreateTable) validated));
+            return Optional.of(converter.createTableConverter.convertCreateTable((SqlCreateTable) validated));
         } else if (validated instanceof SqlDropTable) {
             return Optional.of(converter.convertDropTable((SqlDropTable) validated));
         } else if (validated instanceof SqlAlterTable) {
@@ -350,8 +356,7 @@ public class SqlToOperationConverter {
         } else if (validated instanceof RichSqlInsert) {
             return Optional.of(converter.convertSqlInsert((RichSqlInsert) validated));
         } else if (validated instanceof SqlBeginStatementSet) {
-            return Optional.of(
-                    converter.convertBeginStatementSet((SqlBeginStatementSet) validated));
+            return Optional.of(converter.convertBeginStatementSet((SqlBeginStatementSet) validated));
         } else if (validated instanceof SqlEndStatementSet) {
             return Optional.of(converter.convertEndStatementSet((SqlEndStatementSet) validated));
         } else if (validated instanceof SqlSet) {
@@ -361,23 +366,28 @@ public class SqlToOperationConverter {
         } else if (validated instanceof SqlStatementSet) {
             return Optional.of(converter.convertSqlStatementSet((SqlStatementSet) validated));
         } else if (validated instanceof SqlExecute) {
-            return convertValidatedSqlNode(
-                    flinkPlanner, catalogManager, ((SqlExecute) validated).getStatement());
+            return convertValidatedSqlNode(flinkPlanner, catalogManager, ((SqlExecute) validated).getStatement());
         } else if (validated instanceof SqlExecutePlan) {
             return Optional.of(converter.convertExecutePlan((SqlExecutePlan) validated));
         } else if (validated instanceof SqlCompilePlan) {
             return Optional.of(converter.convertCompilePlan((SqlCompilePlan) validated));
         } else if (validated instanceof SqlCompileAndExecutePlan) {
-            return Optional.of(
-                    converter.convertCompileAndExecutePlan((SqlCompileAndExecutePlan) validated));
+            return Optional.of(converter.convertCompileAndExecutePlan((SqlCompileAndExecutePlan) validated));
         } else if (validated.getKind().belongsTo(SqlKind.QUERY)) {
-            return Optional.of(converter.convertSqlQuery(validated));
+            // 查询语句转换入口
+            return Optional.of(
+                    converter.convertSqlQuery(validated)
+            );
         } else if (validated instanceof SqlAnalyzeTable) {
             return Optional.of(converter.convertAnalyzeTable((SqlAnalyzeTable) validated));
         } else {
             return Optional.empty();
         }
     }
+
+
+
+
 
     private static Operation convertValidatedSqlNodeOrFail(
             FlinkPlannerImpl flinkPlanner, CatalogManager catalogManager, SqlNode validated) {
@@ -1493,9 +1503,12 @@ public class SqlToOperationConverter {
         return sqlNode.toSqlString(dialect).getSql();
     }
 
+
     private PlannerQueryOperation toQueryOperation(FlinkPlannerImpl planner, SqlNode validated) {
         // transform to a relational tree
+        // 转换为relational tree
         RelRoot relational = planner.rel(validated);
+
         return new PlannerQueryOperation(relational.project());
     }
 }

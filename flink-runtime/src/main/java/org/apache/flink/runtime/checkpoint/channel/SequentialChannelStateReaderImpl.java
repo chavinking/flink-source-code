@@ -58,58 +58,60 @@ public class SequentialChannelStateReaderImpl implements SequentialChannelStateR
 
     @Override
     public void readInputData(InputGate[] inputGates) throws IOException, InterruptedException {
-        try (InputChannelRecoveredStateHandler stateHandler =
-                new InputChannelRecoveredStateHandler(
-                        inputGates, taskStateSnapshot.getInputRescalingDescriptor())) {
+        try (
+                InputChannelRecoveredStateHandler stateHandler = new InputChannelRecoveredStateHandler(
+                        inputGates,
+                        taskStateSnapshot.getInputRescalingDescriptor()
+                )
+        ) {
             read(
                     stateHandler,
-                    groupByDelegate(
-                            streamSubtaskStates(), OperatorSubtaskState::getInputChannelState));
+                    groupByDelegate(streamSubtaskStates(), OperatorSubtaskState::getInputChannelState));
         }
     }
 
     @Override
-    public void readOutputData(ResultPartitionWriter[] writers, boolean notifyAndBlockOnCompletion)
-            throws IOException, InterruptedException {
-        try (ResultSubpartitionRecoveredStateHandler stateHandler =
-                new ResultSubpartitionRecoveredStateHandler(
+    public void readOutputData(ResultPartitionWriter[] writers, boolean notifyAndBlockOnCompletion) throws IOException, InterruptedException {
+        try (ResultSubpartitionRecoveredStateHandler stateHandler = new ResultSubpartitionRecoveredStateHandler(
                         writers,
                         notifyAndBlockOnCompletion,
-                        taskStateSnapshot.getOutputRescalingDescriptor())) {
+                        taskStateSnapshot.getOutputRescalingDescriptor()
+            )
+        ) {
             read(
                     stateHandler,
-                    groupByDelegate(
-                            streamSubtaskStates(),
-                            OperatorSubtaskState::getResultSubpartitionState));
+                    groupByDelegate(streamSubtaskStates(), OperatorSubtaskState::getResultSubpartitionState)
+            );
         }
     }
 
+
+
+
     private <Info, Context, Handle extends AbstractChannelStateHandle<Info>> void read(
             RecoveredChannelStateHandler<Info, Context> stateHandler,
-            Map<StreamStateHandle, List<Handle>> streamStateHandleListMap)
-            throws IOException, InterruptedException {
-        for (Map.Entry<StreamStateHandle, List<Handle>> delegateAndHandles :
-                streamStateHandleListMap.entrySet()) {
-            readSequentially(
-                    delegateAndHandles.getKey(), delegateAndHandles.getValue(), stateHandler);
+            Map<StreamStateHandle, List<Handle>> streamStateHandleListMap
+    ) throws IOException, InterruptedException {
+        for (Map.Entry<StreamStateHandle, List<Handle>> delegateAndHandles : streamStateHandleListMap.entrySet()) {
+            readSequentially(delegateAndHandles.getKey(), delegateAndHandles.getValue(), stateHandler);
         }
     }
 
     private <Info, Context, Handle extends AbstractChannelStateHandle<Info>> void readSequentially(
             StreamStateHandle streamStateHandle,
             List<Handle> channelStateHandles,
-            RecoveredChannelStateHandler<Info, Context> stateHandler)
-            throws IOException, InterruptedException {
+            RecoveredChannelStateHandler<Info, Context> stateHandler
+    ) throws IOException, InterruptedException {
         try (FSDataInputStream is = streamStateHandle.openInputStream()) {
             serializer.readHeader(is);
-            for (RescaledOffset<Info> offsetAndChannelInfo :
-                    extractOffsetsSorted(channelStateHandles)) {
+            for (RescaledOffset<Info> offsetAndChannelInfo : extractOffsetsSorted(channelStateHandles)) {
                 chunkReader.readChunk(
                         is,
                         offsetAndChannelInfo.offset,
                         stateHandler,
                         offsetAndChannelInfo.channelInfo,
-                        offsetAndChannelInfo.oldSubtaskIndex);
+                        offsetAndChannelInfo.oldSubtaskIndex
+                );
             }
         }
     }
@@ -187,18 +189,15 @@ class ChannelStateChunkReader {
             long sourceOffset,
             RecoveredChannelStateHandler<Info, Context> stateHandler,
             Info channelInfo,
-            int oldSubtaskIndex)
-            throws IOException, InterruptedException {
+            int oldSubtaskIndex
+    ) throws IOException, InterruptedException {
         if (source.getPos() != sourceOffset) {
             source.seek(sourceOffset);
         }
         int length = serializer.readLength(source);
         while (length > 0) {
-            RecoveredChannelStateHandler.BufferWithContext<Context> bufferWithContext =
-                    stateHandler.getBuffer(channelInfo);
-            try (Closeable ignored =
-                    NetworkActionsLogger.measureIO(
-                            "ChannelStateChunkReader#readChunk", bufferWithContext.buffer)) {
+            RecoveredChannelStateHandler.BufferWithContext<Context> bufferWithContext = stateHandler.getBuffer(channelInfo);
+            try (Closeable ignored = NetworkActionsLogger.measureIO("ChannelStateChunkReader#readChunk", bufferWithContext.buffer)) {
                 while (length > 0 && bufferWithContext.buffer.isWritable()) {
                     length -= serializer.readData(source, bufferWithContext.buffer, length);
                 }

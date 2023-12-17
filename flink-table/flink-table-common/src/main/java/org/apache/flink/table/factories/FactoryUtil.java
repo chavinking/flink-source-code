@@ -509,6 +509,10 @@ public final class FactoryUtil {
         }
     }
 
+
+
+
+
     /**
      * Discovers a factory using the given factory base class and identifier.
      *
@@ -519,8 +523,8 @@ public final class FactoryUtil {
      * ClassLoader, boolean)} are not applicable.
      */
     @SuppressWarnings("unchecked")
-    public static <T extends Factory> T discoverFactory(
-            ClassLoader classLoader, Class<T> factoryClass, String factoryIdentifier) {
+    public static <T extends Factory> T discoverFactory(ClassLoader classLoader, Class<T> factoryClass, String factoryIdentifier) {
+
         final List<Factory> factories = discoverFactories(classLoader);
 
         final List<Factory> foundFactories =
@@ -571,6 +575,10 @@ public final class FactoryUtil {
 
         return (T) matchingFactories.get(0);
     }
+
+
+
+
 
     /**
      * Validates the required and optional {@link ConfigOption}s of a factory.

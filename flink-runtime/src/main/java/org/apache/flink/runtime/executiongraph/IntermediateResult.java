@@ -88,6 +88,7 @@ public class IntermediateResult {
         checkArgument(numParallelProducers >= 1);
         this.numParallelProducers = numParallelProducers;
 
+//        创建分区集合，在创建executiongraph时和IntermediateResultPartition进行1对1关联
         this.partitions = new IntermediateResultPartition[numParallelProducers];
 
         // we do not set the intermediate result partitions here, because we let them be initialized
@@ -102,9 +103,12 @@ public class IntermediateResult {
 
         this.shuffleDescriptorCache = new HashMap<>();
 
+        // 下一个节点加入到集合consumerVertices
         intermediateDataSet
                 .getConsumers()
-                .forEach(jobEdge -> consumerVertices.add(jobEdge.getTarget().getID()));
+                .forEach(
+                        jobEdge -> consumerVertices.add(jobEdge.getTarget().getID())
+                );
     }
 
     public void setPartition(int partitionNumber, IntermediateResultPartition partition) {
@@ -243,14 +247,14 @@ public class IntermediateResult {
         }
     }
 
-    public MaybeOffloaded<ShuffleDescriptor[]> getCachedShuffleDescriptors(
-            ConsumedPartitionGroup consumedPartitionGroup) {
+    public MaybeOffloaded<ShuffleDescriptor[]> getCachedShuffleDescriptors(ConsumedPartitionGroup consumedPartitionGroup) {
         return shuffleDescriptorCache.get(consumedPartitionGroup);
     }
 
     public void cacheShuffleDescriptors(
             ConsumedPartitionGroup consumedPartitionGroup,
-            MaybeOffloaded<ShuffleDescriptor[]> shuffleDescriptors) {
+            MaybeOffloaded<ShuffleDescriptor[]> shuffleDescriptors
+    ) {
         this.shuffleDescriptorCache.put(consumedPartitionGroup, shuffleDescriptors);
     }
 

@@ -168,10 +168,12 @@ public class Execution
     /**
      * Information to restore the task on recovery, such as checkpoint id and task state snapshot.
      */
-    @Nullable private JobManagerTaskRestore taskRestore;
+    @Nullable
+    private JobManagerTaskRestore taskRestore;
 
     /** This field holds the allocation id once it was assigned successfully. */
-    @Nullable private AllocationID assignedAllocationID;
+    @Nullable
+    private AllocationID assignedAllocationID;
 
     // ------------------------ Accumulators & Metrics ------------------------
 
@@ -186,8 +188,7 @@ public class Execution
 
     private IOMetrics ioMetrics;
 
-    private Map<IntermediateResultPartitionID, ResultPartitionDeploymentDescriptor>
-            producedPartitions;
+    private Map<IntermediateResultPartitionID, ResultPartitionDeploymentDescriptor> producedPartitions;
 
     // --------------------------------------------------------------------------------------------
 
@@ -195,7 +196,7 @@ public class Execution
      * Creates a new Execution attempt.
      *
      * @param executor The executor used to dispatch callbacks from futures and asynchronous RPC
-     *     calls.
+     *         calls.
      * @param vertex The execution vertex to which this Execution belongs
      * @param attemptNumber The execution attempt number.
      * @param startTimestamp The timestamp that marks the creation of this Execution
@@ -267,8 +268,7 @@ public class Execution
         return assignedResource;
     }
 
-    public Optional<ResultPartitionDeploymentDescriptor> getResultPartitionDeploymentDescriptor(
-            IntermediateResultPartitionID id) {
+    public Optional<ResultPartitionDeploymentDescriptor> getResultPartitionDeploymentDescriptor(IntermediateResultPartitionID id) {
         return Optional.ofNullable(producedPartitions.get(id));
     }
 
@@ -277,6 +277,7 @@ public class Execution
      * is in state SCHEDULED. Returns true, if the resource could be assigned.
      *
      * @param logicalSlot to assign to this execution
+     *
      * @return true if the slot could be assigned to the execution, otherwise false
      */
     public boolean tryAssignResource(final LogicalSlot logicalSlot) {
@@ -454,11 +455,11 @@ public class Execution
     }
 
     private static CompletableFuture<
-                    Map<IntermediateResultPartitionID, ResultPartitionDeploymentDescriptor>>
-            registerProducedPartitions(
-                    ExecutionVertex vertex,
-                    TaskManagerLocation location,
-                    ExecutionAttemptID attemptId) {
+            Map<IntermediateResultPartitionID, ResultPartitionDeploymentDescriptor>>
+    registerProducedPartitions(
+            ExecutionVertex vertex,
+            TaskManagerLocation location,
+            ExecutionAttemptID attemptId) {
 
         ProducerDescriptor producerDescriptor = ProducerDescriptor.create(location, attemptId);
 
@@ -501,6 +502,7 @@ public class Execution
         return partition.getIntermediateResult().getConsumersMaxParallelism();
     }
 
+
     /**
      * Deploys the execution to the previously assigned resource.
      *
@@ -528,14 +530,11 @@ public class Execution
             if (!transitionState(previous, DEPLOYING)) {
                 // race condition, someone else beat us to the deploying call.
                 // this should actually not happen and indicates a race somewhere else
-                throw new IllegalStateException(
-                        "Cannot deploy task: Concurrent deployment call race.");
+                throw new IllegalStateException("Cannot deploy task: Concurrent deployment call race.");
             }
         } else {
             // vertex may have been cancelled, or it was already scheduled
-            throw new IllegalStateException(
-                    "The vertex must be in SCHEDULED state to be deployed. Found state "
-                            + previous);
+            throw new IllegalStateException("The vertex must be in SCHEDULED state to be deployed. Found state " + previous);
         }
 
         if (this != slot.getPayload()) {
@@ -543,6 +542,7 @@ public class Execution
                     String.format(
                             "The execution %s has not been assigned to the assigned slot.", this));
         }
+
 
         try {
 
@@ -567,35 +567,67 @@ public class Execution
                     getAssignedResourceLocation(),
                     slot.getAllocationId());
 
+
+
+
+
+//            ************************** 上面进行了一系列检查，可以忽略 **************************
+
+//            ********************************* 定义每一个(1/5)部署对象描述器
+            /**
+             * TaskDeploymentDescriptorFactory.fromExecution(this)的含义是：从当前任务的Execution对象中创建一个TaskDeploymentDescriptor对象，
+             * 用于描述当前任务的所有部署信息。这个部署描述符将在任务的部署和执行过程中被使用，用于将任务发送到指定节点上执行，
+             * 并对任务的运行状态进行监控和管理。
+             *
+             *
+             * *********************************
+             *
+             * 这段代码的含义是创建一个 TaskDeploymentDescriptor 对象，用于将任务部署到一个指定的 Slot 上运行。
+             * 具体来说，代码中通过 TaskDeploymentDescriptorFactory.fromExecution(this) 创建一个 TaskDeploymentDescriptorFactory 对象，
+             * 然后调用其 createDeploymentDescriptor 方法生成一个 TaskDeploymentDescriptor 对象。该方法的参数包括：
+             *
+             * slot.getAllocationId(): 表示将该任务部署到哪个 Slot 上运行；
+             * taskRestore: 用于任务的恢复，即任务失败时如何从之前的状态进行恢复；
+             * producedPartitions.values(): 表示该任务会产生哪些输出数据集，这些输出数据集对应的 ResultPartition 列表。
+             */ // 任务部署描述器里包含了inputGates描述器，但在这里并不会初始化inputchannel对象
             final TaskDeploymentDescriptor deployment =
                     TaskDeploymentDescriptorFactory.fromExecution(this)
                             .createDeploymentDescriptor(
                                     slot.getAllocationId(),
                                     taskRestore,
-                                    producedPartitions.values());
+                                    producedPartitions.values()
+                            );
+
+
+
 
             // null taskRestore to let it be GC'ed
             taskRestore = null;
 
             final TaskManagerGateway taskManagerGateway = slot.getTaskManagerGateway();
 
-            final ComponentMainThreadExecutor jobMasterMainThreadExecutor =
-                    vertex.getExecutionGraphAccessor().getJobMasterMainThreadExecutor();
+            final ComponentMainThreadExecutor jobMasterMainThreadExecutor = vertex
+                    .getExecutionGraphAccessor()
+                    .getJobMasterMainThreadExecutor();
 
             getVertex().notifyPendingDeployment(this);
             // We run the submission in the future executor so that the serialization of large TDDs
             // does not block
             // the main thread and sync back to the main thread once submission is completed.
-            CompletableFuture.supplyAsync(
-                            () -> taskManagerGateway.submitTask(deployment, rpcTimeout), executor)
+            CompletableFuture
+                    .supplyAsync(
+                            // ********************************************************
+                            // 提交任务到执行节点部署任务，开始执行
+                            () -> taskManagerGateway.submitTask(deployment, rpcTimeout),
+                            executor
+                    )
                     .thenCompose(Function.identity())
                     .whenCompleteAsync(
                             (ack, failure) -> {
                                 if (failure == null) {
                                     vertex.notifyCompletedDeployment(this);
                                 } else {
-                                    final Throwable actualFailure =
-                                            ExceptionUtils.stripCompletionException(failure);
+                                    final Throwable actualFailure = ExceptionUtils.stripCompletionException(failure);
 
                                     if (actualFailure instanceof TimeoutException) {
                                         String taskname =
@@ -618,7 +650,8 @@ public class Execution
                                     }
                                 }
                             },
-                            jobMasterMainThreadExecutor);
+                            jobMasterMainThreadExecutor
+                    );
 
         } catch (Throwable t) {
             markFailed(t);
@@ -785,8 +818,8 @@ public class Execution
      * @param completedCheckpointId of the completed checkpoint
      * @param completedTimestamp of the completed checkpoint
      * @param lastSubsumedCheckpointId of the last subsumed checkpoint, a value of {@link
-     *     org.apache.flink.runtime.checkpoint.CheckpointStoreUtil#INVALID_CHECKPOINT_ID} means no
-     *     checkpoint has been subsumed.
+     *         org.apache.flink.runtime.checkpoint.CheckpointStoreUtil#INVALID_CHECKPOINT_ID} means no
+     *         checkpoint has been subsumed.
      */
     public void notifyCheckpointOnComplete(
             long completedCheckpointId, long completedTimestamp, long lastSubsumedCheckpointId) {
@@ -841,10 +874,14 @@ public class Execution
      * @param checkpointId of th checkpoint to trigger
      * @param timestamp of the checkpoint to trigger
      * @param checkpointOptions of the checkpoint to trigger
+     *
      * @return Future acknowledge which is returned once the checkpoint has been triggered
      */
     public CompletableFuture<Acknowledge> triggerCheckpoint(
-            long checkpointId, long timestamp, CheckpointOptions checkpointOptions) {
+            long checkpointId,
+            long timestamp,
+            CheckpointOptions checkpointOptions
+    ) {
         return triggerCheckpointHelper(checkpointId, timestamp, checkpointOptions);
     }
 
@@ -854,28 +891,38 @@ public class Execution
      * @param checkpointId of th checkpoint to trigger
      * @param timestamp of the checkpoint to trigger
      * @param checkpointOptions of the checkpoint to trigger
+     *
      * @return Future acknowledge which is returned once the checkpoint has been triggered
      */
     public CompletableFuture<Acknowledge> triggerSynchronousSavepoint(
-            long checkpointId, long timestamp, CheckpointOptions checkpointOptions) {
+            long checkpointId,
+            long timestamp,
+            CheckpointOptions checkpointOptions
+    ) {
         return triggerCheckpointHelper(checkpointId, timestamp, checkpointOptions);
     }
 
+
     private CompletableFuture<Acknowledge> triggerCheckpointHelper(
-            long checkpointId, long timestamp, CheckpointOptions checkpointOptions) {
+            long checkpointId,
+            long timestamp,
+            CheckpointOptions checkpointOptions
+    ) {
 
         final LogicalSlot slot = assignedResource;
 
         if (slot != null) {
             final TaskManagerGateway taskManagerGateway = slot.getTaskManagerGateway();
-
-            return taskManagerGateway.triggerCheckpoint(
-                    attemptId, getVertex().getJobId(), checkpointId, timestamp, checkpointOptions);
+            return taskManagerGateway.triggerCheckpoint(attemptId, getVertex().getJobId(), checkpointId, timestamp, checkpointOptions);
         }
-        LOG.debug(
-                "The execution has no slot assigned. This indicates that the execution is no longer running.");
+
+        LOG.debug("The execution has no slot assigned. This indicates that the execution is no longer running.");
+
         return CompletableFuture.completedFuture(Acknowledge.get());
     }
+
+
+
 
     /**
      * Sends the operator event to the Task on the Task Executor.
@@ -1042,7 +1089,8 @@ public class Execution
                     String message =
                             String.format(
                                     "Asynchronous race: Found %s in state %s after successful cancel call.",
-                                    vertex.getTaskNameWithSubtaskIndex(), state);
+                                    vertex.getTaskNameWithSubtaskIndex(),
+                                    state);
                     LOG.error(message);
                     vertex.getExecutionGraphAccessor().failGlobal(new Exception(message));
                 }
@@ -1089,14 +1137,14 @@ public class Execution
      *
      * @param t Failure cause
      * @param cancelTask Indicating whether to send a PRC call to remove task from TaskManager. True
-     *     if the failure is fired by JobManager and the execution is already deployed. Otherwise it
-     *     should be false.
+     *         if the failure is fired by JobManager and the execution is already deployed. Otherwise it
+     *         should be false.
      * @param userAccumulators User accumulators
      * @param metrics IO metrics
      * @param releasePartitions Indicating whether to release result partitions produced by this
-     *     execution. False if the task is FAILED in TaskManager, otherwise true.
+     *         execution. False if the task is FAILED in TaskManager, otherwise true.
      * @param fromSchedulerNg Indicating whether the failure is from the SchedulerNg. It should be
-     *     false if it is from within the ExecutionGraph.
+     *         false if it is from within the ExecutionGraph.
      */
     private void processFail(
             Throwable t,
@@ -1163,8 +1211,8 @@ public class Execution
 
         if (cancelTask
                 && (stateBeforeFailed == RUNNING
-                        || stateBeforeFailed == INITIALIZING
-                        || stateBeforeFailed == DEPLOYING)) {
+                || stateBeforeFailed == INITIALIZING
+                || stateBeforeFailed == DEPLOYING)) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Sending out cancel request, to remove task execution from TaskManager.");
             }
@@ -1227,7 +1275,10 @@ public class Execution
                 String message =
                         String.format(
                                 "Concurrent unexpected state transition of task %s from %s (expected %s) to %s while deployment was in progress.",
-                                getAttemptId(), currentState, from, to);
+                                getAttemptId(),
+                                currentState,
+                                from,
+                                to);
 
                 LOG.debug(message);
 
@@ -1523,10 +1574,10 @@ public class Execution
                 userAccumulators == null
                         ? null
                         : userAccumulators.entrySet().stream()
-                                .collect(
-                                        Collectors.toMap(
-                                                Map.Entry::getKey,
-                                                entry -> OptionalFailure.of(entry.getValue())));
+                        .collect(
+                                Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        entry -> OptionalFailure.of(entry.getValue())));
         return StringifiedAccumulatorResult.stringifyAccumulatorResults(accumulators);
     }
 

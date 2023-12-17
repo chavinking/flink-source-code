@@ -49,10 +49,10 @@ public class BufferDecompressor {
         this.internalBuffer =
                 new NetworkBuffer(
                         MemorySegmentFactory.wrap(internalBufferArray),
-                        FreeingBufferRecycler.INSTANCE);
+                        FreeingBufferRecycler.INSTANCE
+                );
         this.blockDecompressor =
-                BlockCompressionFactory.createBlockCompressionFactory(factoryName)
-                        .getDecompressor();
+                BlockCompressionFactory.createBlockCompressionFactory(factoryName).getDecompressor();
     }
 
     /**

@@ -68,8 +68,7 @@ public class SimpleOperatorFactory<OUT> extends AbstractStreamOperatorFactory<OU
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends StreamOperator<OUT>> T createStreamOperator(
-            StreamOperatorParameters<OUT> parameters) {
+    public <T extends StreamOperator<OUT>> T createStreamOperator(StreamOperatorParameters<OUT> parameters) {
         if (operator instanceof AbstractStreamOperator) {
             ((AbstractStreamOperator) operator).setProcessingTimeService(processingTimeService);
         }

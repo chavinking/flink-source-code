@@ -39,12 +39,12 @@ public class DefaultLogicalVertex implements LogicalVertex {
 
     private final List<LogicalEdge> inputEdges;
 
-    DefaultLogicalVertex(
-            final JobVertex jobVertex,
-            final Function<IntermediateDataSetID, DefaultLogicalResult> resultRetriever) {
+    DefaultLogicalVertex(final JobVertex jobVertex, final Function<IntermediateDataSetID, DefaultLogicalResult> resultRetriever) {
 
         this.jobVertex = checkNotNull(jobVertex);
         this.resultRetriever = checkNotNull(resultRetriever);
+
+//        设置JobVertex的上游输入边集合
         this.inputEdges =
                 jobVertex.getInputs().stream()
                         .map(DefaultLogicalEdge::new)

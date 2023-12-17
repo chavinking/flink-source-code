@@ -182,15 +182,13 @@ public class DistributedCache {
         }
     }
 
-    public static Set<Entry<String, DistributedCacheEntry>> readFileInfoFromConfig(
-            Configuration conf) {
+    public static Set<Entry<String, DistributedCacheEntry>> readFileInfoFromConfig(Configuration conf) {
         int num = conf.getInteger(CACHE_FILE_NUM, 0);
         if (num == 0) {
             return Collections.emptySet();
         }
 
-        Map<String, DistributedCacheEntry> cacheFiles =
-                new HashMap<String, DistributedCacheEntry>();
+        Map<String, DistributedCacheEntry> cacheFiles = new HashMap<String, DistributedCacheEntry>();
         for (int i = 1; i <= num; i++) {
             String name = conf.getString(CACHE_FILE_NAME + i, null);
             String filePath = conf.getString(CACHE_FILE_PATH + i, null);
@@ -198,8 +196,7 @@ public class DistributedCache {
             boolean isDirectory = conf.getBoolean(CACHE_FILE_DIR + i, false);
 
             byte[] blobKey = conf.getBytes(CACHE_FILE_BLOB_KEY + i, null);
-            cacheFiles.put(
-                    name, new DistributedCacheEntry(filePath, isExecutable, blobKey, isDirectory));
+            cacheFiles.put(name, new DistributedCacheEntry(filePath, isExecutable, blobKey, isDirectory));
         }
         return cacheFiles.entrySet();
     }

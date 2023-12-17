@@ -83,6 +83,7 @@ class ChainingOutput<T> implements WatermarkGaugeExposingOutput<StreamRecord<T>>
     @Override
     public <X> void collect(OutputTag<X> outputTag, StreamRecord<X> record) {
         if (OutputTag.isResponsibleFor(this.outputTag, outputTag)) {
+            // 跳转到下一个算子执行
             pushToOperator(record);
         }
     }
@@ -96,6 +97,8 @@ class ChainingOutput<T> implements WatermarkGaugeExposingOutput<StreamRecord<T>>
 
             numRecordsIn.inc();
             input.setKeyContextElement(castRecord);
+
+//            将数据传输给下游算子处理
             input.processElement(castRecord);
         } catch (Exception e) {
             throw new ExceptionInChainedOperatorException(e);

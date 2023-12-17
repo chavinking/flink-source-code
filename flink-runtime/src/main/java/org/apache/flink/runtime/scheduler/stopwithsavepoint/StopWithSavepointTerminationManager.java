@@ -91,7 +91,8 @@ public class StopWithSavepointTerminationManager {
             CheckpointCoordinator checkpointCoordinator,
             @Nullable String targetDirectory,
             JobID jobId,
-            Logger logger) {
+            Logger logger
+    ) {
         if (checkpointCoordinator == null) {
             throw new IllegalStateException(String.format("Job %s is not a streaming job.", jobId));
         }

@@ -138,8 +138,7 @@ public class StreamExecSink extends CommonExecSink implements StreamExecNode<Obj
 
     @SuppressWarnings("unchecked")
     @Override
-    protected Transformation<Object> translateToPlanInternal(
-            PlannerBase planner, ExecNodeConfig config) {
+    protected Transformation<Object> translateToPlanInternal(PlannerBase planner, ExecNodeConfig config) {
         final ExecEdge inputEdge = getInputEdges().get(0);
         final Transformation<RowData> inputTransform =
                 (Transformation<RowData>) inputEdge.translateToPlan(planner);
@@ -181,6 +180,7 @@ public class StreamExecSink extends CommonExecSink implements StreamExecNode<Obj
                 tableSink,
                 rowtimeFieldIndex,
                 upsertMaterialize,
-                inputUpsertKey);
+                inputUpsertKey
+        );
     }
 }

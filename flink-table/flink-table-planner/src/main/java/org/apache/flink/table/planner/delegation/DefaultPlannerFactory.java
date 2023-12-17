@@ -52,17 +52,19 @@ public final class DefaultPlannerFactory implements PlannerFactory {
 
     @Override
     public Planner create(Context context) {
-        final RuntimeExecutionMode runtimeExecutionMode =
-                context.getTableConfig().get(ExecutionOptions.RUNTIME_MODE);
+
+        final RuntimeExecutionMode runtimeExecutionMode = context.getTableConfig().get(ExecutionOptions.RUNTIME_MODE);
         switch (runtimeExecutionMode) {
             case STREAMING:
+                // 创建具体的planner
                 return new StreamPlanner(
                         context.getExecutor(),
                         context.getTableConfig(),
                         context.getModuleManager(),
                         context.getFunctionCatalog(),
                         context.getCatalogManager(),
-                        context.getClassLoader());
+                        context.getClassLoader()
+                );
             case BATCH:
                 return new BatchPlanner(
                         context.getExecutor(),

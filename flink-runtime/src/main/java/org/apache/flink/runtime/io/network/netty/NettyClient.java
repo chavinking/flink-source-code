@@ -160,8 +160,7 @@ class NettyClient {
         String name = NettyConfig.CLIENT_THREAD_GROUP_NAME + " (" + config.getServerPort() + ")";
 
         EpollEventLoopGroup epollGroup =
-                new EpollEventLoopGroup(
-                        config.getClientNumThreads(), NettyServer.getNamedThreadFactory(name));
+                new EpollEventLoopGroup(config.getClientNumThreads(), NettyServer.getNamedThreadFactory(name));
         bootstrap.group(epollGroup).channel(EpollSocketChannel.class);
     }
 

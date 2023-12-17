@@ -286,8 +286,7 @@ public class FileSystemCheckpointStorage
      * @throws IllegalConfigurationException If the configuration misses critical values, or
      *     specifies invalid values
      */
-    public static FileSystemCheckpointStorage createFromConfig(
-            ReadableConfig config, ClassLoader classLoader) throws IllegalConfigurationException {
+    public static FileSystemCheckpointStorage createFromConfig(ReadableConfig config, ClassLoader classLoader) throws IllegalConfigurationException {
         // we need to explicitly read the checkpoint directory here, because that
         // is a required constructor parameter
         final String checkpointDir = config.get(CheckpointingOptions.CHECKPOINTS_DIRECTORY);

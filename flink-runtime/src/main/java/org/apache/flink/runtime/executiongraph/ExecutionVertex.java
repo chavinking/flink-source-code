@@ -122,17 +122,23 @@ public class ExecutionVertex
                         subTaskIndex + 1,
                         jobVertex.getParallelism());
 
+//        Map<IntermediateResultPartitionID, IntermediateResultPartition> resultPartitions;
+//        对应的下游分区
         this.resultPartitions = new LinkedHashMap<>(producedDataSets.length, 1);
 
         for (IntermediateResult result : producedDataSets) {
+//            创建中间结果集分区
             IntermediateResultPartition irp =
                     new IntermediateResultPartition(
                             result,
                             this,
                             subTaskIndex,
-                            getExecutionGraphAccessor().getEdgeManager());
-            result.setPartition(subTaskIndex, irp);
+//                            这个参数含义？
+                            getExecutionGraphAccessor().getEdgeManager()
+                    );
 
+//            设置对应的分区与IntermediateResult中的具体分区关联
+            result.setPartition(subTaskIndex, irp);
             resultPartitions.put(irp.getPartitionId(), irp);
         }
 
@@ -143,8 +149,10 @@ public class ExecutionVertex
         this.timeout = timeout;
         this.inputSplits = new ArrayList<>();
 
+        // 创建部署执行器
         this.currentExecution = createNewExecution(createTimestamp);
 
+        // 注册部署执行器
         getExecutionGraphAccessor().registerExecution(currentExecution);
     }
 
@@ -158,7 +166,8 @@ public class ExecutionVertex
                 this,
                 nextAttemptNumber++,
                 timestamp,
-                timeout);
+                timeout
+        );
     }
 
     public Execution getPartitionProducer() {
@@ -522,7 +531,8 @@ public class ExecutionVertex
                     .getExecutionDeploymentListener()
                     .onStartedDeployment(
                             execution.getAttemptId(),
-                            execution.getAssignedResourceLocation().getResourceID());
+                            execution.getAssignedResourceLocation().getResourceID()
+                    );
         }
     }
 

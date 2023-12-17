@@ -162,6 +162,11 @@ public abstract class ResultPartition implements ResultPartitionWriter {
         partitionManager.registerResultPartition(this);
     }
 
+
+
+
+
+
     /** Do the subclass's own setup operation. */
     protected abstract void setupInternal() throws IOException;
 

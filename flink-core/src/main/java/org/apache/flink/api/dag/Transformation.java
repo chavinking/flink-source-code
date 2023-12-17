@@ -153,8 +153,7 @@ public abstract class Transformation<T> {
      * use-case-specific weights for this transformation. Managed memory reserved for a use case
      * will be shared by all the declaring transformations within a slot according to this weight.
      */
-    private final Map<ManagedMemoryUseCase, Integer> managedMemoryOperatorScopeUseCaseWeights =
-            new HashMap<>();
+    private final Map<ManagedMemoryUseCase, Integer> managedMemoryOperatorScopeUseCaseWeights = new HashMap<>();
 
     /** Slot scope use cases that this transformation needs managed memory for. */
     private final Set<ManagedMemoryUseCase> managedMemorySlotScopeUseCases = new HashSet<>();
@@ -289,8 +288,7 @@ public abstract class Transformation<T> {
      *     ManagedMemoryUseCase} for the specific weight definition.
      * @return The previous weight, if exist.
      */
-    public Optional<Integer> declareManagedMemoryUseCaseAtOperatorScope(
-            ManagedMemoryUseCase managedMemoryUseCase, int weight) {
+    public Optional<Integer> declareManagedMemoryUseCaseAtOperatorScope(ManagedMemoryUseCase managedMemoryUseCase, int weight) {
         Preconditions.checkNotNull(managedMemoryUseCase);
         Preconditions.checkArgument(
                 managedMemoryUseCase.scope == ManagedMemoryUseCase.Scope.OPERATOR,

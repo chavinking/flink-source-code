@@ -43,14 +43,20 @@ public class StreamOperatorFactoryUtil {
      *     operator and coordinators.
      * @return a newly created and configured operator, and the {@link ProcessingTimeService}
      *     instance it can access.
+     *
+     *                         operatorConfig.getStreamOperatorFactory(userCodeClassloader),// 算子工厂
+     *                         containingTask,//包含该链式输出的任务。
+     *                         operatorConfig,// 输出配置
+     *                         output,// 上一个节点创建的operator的output对象
+     *                         operatorEventDispatcher
      */
-    public static <OUT, OP extends StreamOperator<OUT>>
-            Tuple2<OP, Optional<ProcessingTimeService>> createOperator(
-                    StreamOperatorFactory<OUT> operatorFactory,
-                    StreamTask<OUT, ?> containingTask,
-                    StreamConfig configuration,
-                    Output<StreamRecord<OUT>> output,
-                    OperatorEventDispatcher operatorEventDispatcher) {
+    public static <OUT, OP extends StreamOperator<OUT>> Tuple2<OP, Optional<ProcessingTimeService>> createOperator(
+                    StreamOperatorFactory<OUT> operatorFactory,// 算子工厂
+                    StreamTask<OUT, ?> containingTask,//包含该链式输出的任务。
+                    StreamConfig configuration,// 输出配置
+                    Output<StreamRecord<OUT>> output,// 上一个节点创建的operator的output对象
+                    OperatorEventDispatcher operatorEventDispatcher
+    ) {
 
         MailboxExecutor mailboxExecutor =
                 containingTask
@@ -70,23 +76,22 @@ public class StreamOperatorFactoryUtil {
         final ProcessingTimeService processingTimeService;
         if (operatorFactory instanceof ProcessingTimeServiceAware) {
             processingTimeService = processingTimeServiceFactory.get();
-            ((ProcessingTimeServiceAware) operatorFactory)
-                    .setProcessingTimeService(processingTimeService);
+            ((ProcessingTimeServiceAware) operatorFactory).setProcessingTimeService(processingTimeService);
         } else {
             processingTimeService = null;
         }
 
         // TODO: what to do with ProcessingTimeServiceAware?
         OP op =
-                operatorFactory.createStreamOperator(
+                operatorFactory.createStreamOperator( // 通过工厂类创建算子对象
                         new StreamOperatorParameters<>(
-                                containingTask,
-                                configuration,
-                                output,
-                                processingTimeService != null
-                                        ? () -> processingTimeService
-                                        : processingTimeServiceFactory,
-                                operatorEventDispatcher));
+                                containingTask,//包含该链式输出的任务。
+                                configuration,// 输出配置
+                                output,// 上一个节点创建的operator的output对象
+                                processingTimeService != null ? () -> processingTimeService : processingTimeServiceFactory,
+                                operatorEventDispatcher
+                        )
+                );
         return new Tuple2<>(op, Optional.ofNullable(processingTimeService));
     }
 }

@@ -34,8 +34,7 @@ import java.io.Serializable;
 public interface StreamOperatorFactory<OUT> extends Serializable {
 
     /** Create the operator. Sets access to the context and the output. */
-    <T extends StreamOperator<OUT>> T createStreamOperator(
-            StreamOperatorParameters<OUT> parameters);
+    <T extends StreamOperator<OUT>> T createStreamOperator(StreamOperatorParameters<OUT> parameters);
 
     /** Set the chaining strategy for operator factory. */
     void setChainingStrategy(ChainingStrategy strategy);

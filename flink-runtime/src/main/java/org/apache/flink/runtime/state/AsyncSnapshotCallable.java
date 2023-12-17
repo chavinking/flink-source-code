@@ -103,8 +103,7 @@ public abstract class AsyncSnapshotCallable<T> implements Callable<T> {
      * Creates a future task from this and registers it with the given {@link CloseableRegistry}.
      * The task is unregistered again in {@link FutureTask#done()}.
      */
-    public AsyncSnapshotTask toAsyncSnapshotFutureTask(@Nonnull CloseableRegistry taskRegistry)
-            throws IOException {
+    public AsyncSnapshotTask toAsyncSnapshotFutureTask(@Nonnull CloseableRegistry taskRegistry) throws IOException {
         return new AsyncSnapshotTask(taskRegistry);
     }
 

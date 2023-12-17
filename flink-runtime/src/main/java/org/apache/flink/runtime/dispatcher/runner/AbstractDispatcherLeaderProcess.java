@@ -95,6 +95,7 @@ public abstract class AbstractDispatcherLeaderProcess implements DispatcherLeade
         runIfStateIs(State.CREATED, this::startInternal);
     }
 
+//    启动
     private void startInternal() {
         log.info("Start {}.", getClass().getSimpleName());
         state = State.RUNNING;
@@ -165,11 +166,12 @@ public abstract class AbstractDispatcherLeaderProcess implements DispatcherLeade
 
     private void completeDispatcherSetupInternal(
             DispatcherGatewayService createdDispatcherService) {
-        Preconditions.checkState(
-                dispatcherService == null, "The DispatcherGatewayService can only be set once.");
+        Preconditions.checkState(dispatcherService == null, "The DispatcherGatewayService can only be set once.");
         dispatcherService = createdDispatcherService;
         dispatcherGatewayFuture.complete(createdDispatcherService.getGateway());
         FutureUtils.forward(createdDispatcherService.getShutDownFuture(), shutDownFuture);
+
+//        处理意外的调度服务终止
         handleUnexpectedDispatcherServiceTermination(createdDispatcherService);
     }
 

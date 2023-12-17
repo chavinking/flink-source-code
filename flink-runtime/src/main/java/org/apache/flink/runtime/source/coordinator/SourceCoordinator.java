@@ -267,6 +267,10 @@ public class SourceCoordinator<SplitT extends SourceSplit, EnumChkT>
         LOG.info("Source coordinator for source {} closed.", operatorName);
     }
 
+
+
+
+
     @Override
     public void handleEventFromOperator(int subtask, int attemptNumber, OperatorEvent event) {
         runInEventLoop(
@@ -292,8 +296,12 @@ public class SourceCoordinator<SplitT extends SourceSplit, EnumChkT>
                 "handling operator event %s from subtask %d (#%d)",
                 event,
                 subtask,
-                attemptNumber);
+                attemptNumber
+        );
     }
+
+
+
 
     @Override
     public void executionAttemptFailed(
@@ -358,7 +366,9 @@ public class SourceCoordinator<SplitT extends SourceSplit, EnumChkT>
                     LOG.debug(
                             "Taking a state snapshot on operator {} for checkpoint {}",
                             operatorName,
-                            checkpointId);
+                            checkpointId
+                    );
+
                     try {
                         context.onCheckpoint(checkpointId);
                         result.complete(toBytes(checkpointId));
@@ -373,8 +383,13 @@ public class SourceCoordinator<SplitT extends SourceSplit, EnumChkT>
                     }
                 },
                 "taking checkpoint %d",
-                checkpointId);
+                checkpointId
+        );
     }
+
+
+
+
 
     @Override
     public void notifyCheckpointComplete(long checkpointId) {
@@ -432,7 +447,8 @@ public class SourceCoordinator<SplitT extends SourceSplit, EnumChkT>
     private void runInEventLoop(
             final ThrowingRunnable<Throwable> action,
             final String actionName,
-            final Object... actionNameFormatParameters) {
+            final Object... actionNameFormatParameters
+    ) {
 
         ensureStarted();
 
@@ -453,8 +469,7 @@ public class SourceCoordinator<SplitT extends SourceSplit, EnumChkT>
                         // logging or job failing will not succeed any more
                         ExceptionUtils.rethrowIfFatalErrorOrOOM(t);
 
-                        final String actionString =
-                                String.format(actionName, actionNameFormatParameters);
+                        final String actionString = String.format(actionName, actionNameFormatParameters);
                         LOG.error(
                                 "Uncaught exception in the SplitEnumerator for Source {} while {}. Triggering job failover.",
                                 operatorName,

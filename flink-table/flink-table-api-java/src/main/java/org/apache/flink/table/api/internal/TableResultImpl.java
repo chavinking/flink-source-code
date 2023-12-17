@@ -62,8 +62,7 @@ public class TableResultImpl implements TableResultInternal {
             ResultProvider resultProvider,
             PrintStyle printStyle) {
         this.jobClient = jobClient;
-        this.resolvedSchema =
-                Preconditions.checkNotNull(resolvedSchema, "resolvedSchema should not be null");
+        this.resolvedSchema = Preconditions.checkNotNull(resolvedSchema, "resolvedSchema should not be null");
         this.resultKind = Preconditions.checkNotNull(resultKind, "resultKind should not be null");
         Preconditions.checkNotNull(resultProvider, "result provider should not be null");
         this.resultProvider = resultProvider;
@@ -149,6 +148,7 @@ public class TableResultImpl implements TableResultInternal {
 
     @Override
     public void print() {
+        // 获取行迭代器
         Iterator<RowData> it = resultProvider.toInternalIterator();
         printStyle.print(it, new PrintWriter(System.out));
     }
@@ -228,8 +228,7 @@ public class TableResultImpl implements TableResultInternal {
             if (printStyle == null) {
                 printStyle = PrintStyle.rawContent(resultProvider.getRowDataStringConverter());
             }
-            return new TableResultImpl(
-                    jobClient, resolvedSchema, resultKind, resultProvider, printStyle);
+            return new TableResultImpl(jobClient, resolvedSchema, resultKind, resultProvider, printStyle);
         }
     }
 }

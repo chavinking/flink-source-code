@@ -71,8 +71,7 @@ public class RecordWriterOutput<OUT> implements WatermarkGaugeExposingOutput<Str
         this.recordWriter =
                 (RecordWriter<SerializationDelegate<StreamElement>>) (RecordWriter<?>) recordWriter;
 
-        TypeSerializer<StreamElement> outRecordSerializer =
-                new StreamElementSerializer<>(outSerializer);
+        TypeSerializer<StreamElement> outRecordSerializer = new StreamElementSerializer<>(outSerializer);
 
         if (outSerializer != null) {
             serializationDelegate = new SerializationDelegate<>(outRecordSerializer);
@@ -151,7 +150,8 @@ public class RecordWriterOutput<OUT> implements WatermarkGaugeExposingOutput<Str
     public void broadcastEvent(AbstractEvent event, boolean isPriorityEvent) throws IOException {
         if (isPriorityEvent
                 && event instanceof CheckpointBarrier
-                && !supportsUnalignedCheckpoints) {
+                && !supportsUnalignedCheckpoints
+        ) {
             final CheckpointBarrier barrier = (CheckpointBarrier) event;
             event = barrier.withOptions(barrier.getCheckpointOptions().withUnalignedUnsupported());
             isPriorityEvent = false;

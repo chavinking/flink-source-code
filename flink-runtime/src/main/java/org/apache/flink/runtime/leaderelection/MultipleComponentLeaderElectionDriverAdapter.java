@@ -42,8 +42,7 @@ final class MultipleComponentLeaderElectionDriverAdapter implements LeaderElecti
 
     @Override
     public void writeLeaderInformation(LeaderInformation leaderInformation) {
-        multipleComponentLeaderElectionService.publishLeaderInformation(
-                componentId, leaderInformation);
+        multipleComponentLeaderElectionService.publishLeaderInformation(componentId, leaderInformation);
     }
 
     @Override

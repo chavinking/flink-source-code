@@ -102,8 +102,7 @@ public class PartitionedFileWriter implements AutoCloseable {
     /** Whether this file writer is closed or not. */
     private boolean isClosed;
 
-    public PartitionedFileWriter(int numSubpartitions, int maxIndexBufferSize, String basePath)
-            throws IOException {
+    public PartitionedFileWriter(int numSubpartitions, int maxIndexBufferSize, String basePath) throws IOException {
         checkArgument(numSubpartitions > 0, "Illegal number of subpartitions.");
         checkArgument(maxIndexBufferSize > 0, "Illegal maximum index cache size.");
         checkArgument(basePath != null, "Base path must not be null.");

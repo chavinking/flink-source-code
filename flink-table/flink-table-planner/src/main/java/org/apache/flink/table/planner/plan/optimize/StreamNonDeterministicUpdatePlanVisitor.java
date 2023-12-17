@@ -152,8 +152,7 @@ public class StreamNonDeterministicUpdatePlanVisitor {
         return visit(rel, NO_REQUIRED_DETERMINISM);
     }
 
-    public StreamPhysicalRel visit(
-            final StreamPhysicalRel rel, final ImmutableBitSet requireDeterminism) {
+    public StreamPhysicalRel visit(final StreamPhysicalRel rel, final ImmutableBitSet requireDeterminism) {
         if (rel instanceof StreamPhysicalSink) {
             if (inputInsertOnly(rel)) {
                 // for append stream, not care about NDU
@@ -680,8 +679,7 @@ public class StreamNonDeterministicUpdatePlanVisitor {
         return ChangelogPlanUtils.inputInsertOnly(rel);
     }
 
-    private StreamPhysicalRel transmitDeterminismRequirement(
-            final StreamPhysicalRel parent, final ImmutableBitSet requireDeterminism) {
+    private StreamPhysicalRel transmitDeterminismRequirement(final StreamPhysicalRel parent, final ImmutableBitSet requireDeterminism) {
         List<RelNode> newChildren = visitInputs(parent, requireDeterminism);
         return (StreamPhysicalRel) parent.copy(parent.getTraitSet(), newChildren);
     }
@@ -693,7 +691,8 @@ public class StreamNonDeterministicUpdatePlanVisitor {
             StreamPhysicalRel input = (StreamPhysicalRel) parent.getInput(index);
             // unified processing on input upsertKey
             newChildren.add(
-                    visit(input, requireDeterminismExcludeUpsertKey(input, requireDeterminism)));
+                    visit(input, requireDeterminismExcludeUpsertKey(input, requireDeterminism))
+            );
         }
         return newChildren;
     }

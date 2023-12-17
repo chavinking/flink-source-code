@@ -49,8 +49,7 @@ public interface CheckpointableTask {
      * @return future with value of {@code false} if the checkpoint was not carried out, {@code
      *     true} otherwise
      */
-    CompletableFuture<Boolean> triggerCheckpointAsync(
-            CheckpointMetaData checkpointMetaData, CheckpointOptions checkpointOptions);
+    CompletableFuture<Boolean> triggerCheckpointAsync(CheckpointMetaData checkpointMetaData, CheckpointOptions checkpointOptions);
 
     /**
      * This method is called when a checkpoint is triggered as a result of receiving checkpoint

@@ -340,8 +340,8 @@ public abstract class AbstractStreamOperator<OUT>
             long checkpointId,
             long timestamp,
             CheckpointOptions checkpointOptions,
-            CheckpointStreamFactory factory)
-            throws Exception {
+            CheckpointStreamFactory factory
+    ) throws Exception {
         return stateHandler.snapshotState(
                 this,
                 Optional.ofNullable(timeServiceManager),
@@ -350,7 +350,8 @@ public abstract class AbstractStreamOperator<OUT>
                 timestamp,
                 checkpointOptions,
                 factory,
-                isUsingCustomRawKeyedState());
+                isUsingCustomRawKeyedState()
+        );
     }
 
     /**

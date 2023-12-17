@@ -169,8 +169,7 @@ abstract class PlannerBase(
   override def getParser: Parser = {
     if (parser == null || getTableConfig.getSqlDialect != currentDialect) {
       dialectFactory = getDialectFactory
-      parser =
-        dialectFactory.create(new DefaultParserContext(catalogManager, plannerContext, executor))
+      parser = dialectFactory.create(new DefaultParserContext(catalogManager, plannerContext, executor))
     }
     parser
   }
@@ -184,26 +183,65 @@ abstract class PlannerBase(
     extendedOperationExecutor
   }
 
-  override def translate(
-      modifyOperations: util.List[ModifyOperation]): util.List[Transformation[_]] = {
+
+
+
+
+  /**
+   * 包含了从Operation获取关系表达式，优化，生成执行节点图和转换为Flink Transformation的步骤
+   * 执行翻译工作，将SQL转换得到的Operation转换为Stream环境变量属性 transformations
+   * 然后根据翻译得到的 transformations 就可以进行任务的部署提交流程，这些工作就进入到了flink核心算子内部进行
+   */
+  override def translate(modifyOperations: util.List[ModifyOperation]): util.List[Transformation[_]] = {
+
+//    执行转换前的检查
     beforeTranslation()
+
+    // 如果modifyOperations为空，返回一个空的Transformation集合
     if (modifyOperations.isEmpty) {
       return List.empty[Transformation[_]]
     }
 
+    // 转换Operation为Calcite的relation expression（关系表达式）
+    // modifyOperations被包装成了 CollectModifyOperation 类型
+    // relNodes 返回的事封装了原始SQL执行计划的 LogicalSink 对象
     val relNodes = modifyOperations.map(translateToRel)
+
+    // 重要代码部分 **********************************************************************************
+    // 重要代码部分 **********************************************************************************
+    // 重要代码部分 **********************************************************************************
+
     val optimizedRelNodes = optimize(relNodes)
     val execGraph = translateToExecNodeGraph(optimizedRelNodes, isCompiled = false)
     val transformations = translateToPlan(execGraph)
+
+    // 重要代码部分 **********************************************************************************
+    // 重要代码部分 **********************************************************************************
+    // 重要代码部分 **********************************************************************************
+
+
+//    执行转换后的清理等工作
     afterTranslation()
+
+    // 返回转换后的对象
     transformations
+
   }
 
-  /** Converts a relational tree of [[ModifyOperation]] into a Calcite relational expression. */
+
+
+
+
+  /** Converts a relational tree of [[ModifyOperation]] into a Calcite relational expression.
+   * 将算子装换为算术算子树
+   * */
   @VisibleForTesting
   private[flink] def translateToRel(modifyOperation: ModifyOperation): RelNode = {
+
     val dataTypeFactory = catalogManager.getDataTypeFactory
+
     modifyOperation match {
+
       case s: UnregisteredSinkModifyOperation[_] =>
         val input = createRelBuilder.queryOperation(s.getChild).build()
         val sinkSchema = s.getSink.getTableSchema
@@ -213,22 +251,30 @@ abstract class PlannerBase(
           catalogManager.getSchemaResolver.resolve(sinkSchema.toSchema),
           null,
           dataTypeFactory,
-          getTypeFactory)
+          getTypeFactory
+        )
         LogicalLegacySink.create(
           query,
           s.getSink,
           "UnregisteredSink",
-          ConnectorCatalogTable.sink(s.getSink, !isStreamingMode))
+          ConnectorCatalogTable.sink(s.getSink, !isStreamingMode)
+        )
 
+
+
+//        查询分支，如果提交的是查询请求，走这个分支
       case collectModifyOperation: CollectModifyOperation =>
+        // 拿到算子树RelNode，这里的relNode是最原始的SQL转换来的RelNode对象
         val input = createRelBuilder.queryOperation(modifyOperation.getChild).build()
         DynamicSinkUtils.convertCollectToRel(
-          createRelBuilder,
-          input,
-          collectModifyOperation,
+          createRelBuilder, // RelBuilder对象
+          input, // 最原始的RelNode对象
+          collectModifyOperation, // 传入的算子，封装了原始算子树
           getTableConfig,
           getFlinkContext.getClassLoader
         )
+
+
 
       case catalogSink: SinkModifyOperation =>
         val input = createRelBuilder.queryOperation(modifyOperation.getChild).build()
@@ -267,8 +313,7 @@ abstract class PlannerBase(
         } match {
           case Some(sinkRel) => sinkRel
           case None =>
-            throw new TableException(
-              s"Sink '${catalogSink.getContextResolvedTable}' does not exists")
+            throw new TableException(s"Sink '${catalogSink.getContextResolvedTable}' does not exists")
         }
 
       case externalModifyOperation: ExternalModifyOperation =>
@@ -310,12 +355,22 @@ abstract class PlannerBase(
     }
   }
 
+
+
+
+
   @VisibleForTesting
   private[flink] def optimize(relNodes: Seq[RelNode]): Seq[RelNode] = {
+    // 进行执行计划优化
     val optimizedRelNodes = getOptimizer.optimize(relNodes)
+    // 校验数量
     require(optimizedRelNodes.size == relNodes.size)
     optimizedRelNodes
   }
+
+
+
+
 
   @VisibleForTesting
   private[flink] def optimize(relNode: RelNode): RelNode = {
@@ -329,9 +384,7 @@ abstract class PlannerBase(
    * transforms the graph based on the given processors.
    */
   @VisibleForTesting
-  private[flink] def translateToExecNodeGraph(
-      optimizedRelNodes: Seq[RelNode],
-      isCompiled: Boolean): ExecNodeGraph = {
+  private[flink] def translateToExecNodeGraph(optimizedRelNodes: Seq[RelNode], isCompiled: Boolean): ExecNodeGraph = {
     val nonPhysicalRel = optimizedRelNodes.filterNot(_.isInstanceOf[FlinkPhysicalRel])
     if (nonPhysicalRel.nonEmpty) {
       throw new TableException(
@@ -343,14 +396,14 @@ abstract class PlannerBase(
 
     // convert FlinkPhysicalRel DAG to ExecNodeGraph
     val generator = new ExecNodeGraphGenerator()
-    val execGraph =
-      generator.generate(optimizedRelNodes.map(_.asInstanceOf[FlinkPhysicalRel]), isCompiled)
+    val execGraph = generator.generate(optimizedRelNodes.map(_.asInstanceOf[FlinkPhysicalRel]), isCompiled)
 
     // process the graph
     val context = new ProcessorContext(this)
     val processors = getExecNodeGraphProcessors
     processors.foldLeft(execGraph)((graph, processor) => processor.process(graph, context))
   }
+
 
   protected def getExecNodeGraphProcessors: Seq[ExecNodeGraphProcessor]
 
@@ -460,13 +513,15 @@ abstract class PlannerBase(
     )
   }
 
+
+
   protected def beforeTranslation(): Unit = {
     // Add query start time to TableConfig, these config are used internally,
     // these configs will be used by temporal functions like CURRENT_TIMESTAMP,LOCALTIMESTAMP.
     val epochTime: JLong = System.currentTimeMillis()
     tableConfig.set(TABLE_QUERY_START_EPOCH_TIME, epochTime)
-    val localTime: JLong = epochTime +
-      TimeZone.getTimeZone(TableConfigUtils.getLocalTimeZone(tableConfig)).getOffset(epochTime)
+
+    val localTime: JLong = epochTime + TimeZone.getTimeZone(TableConfigUtils.getLocalTimeZone(tableConfig)).getOffset(epochTime)
     tableConfig.set(TABLE_QUERY_START_LOCAL_TIME, localTime)
 
     val currentDatabase = catalogManager.getCurrentDatabase
@@ -476,12 +531,16 @@ abstract class PlannerBase(
     getExecEnv.configure(tableConfig.getConfiguration, classLoader)
 
     // Use config parallelism to override env parallelism.
-    val defaultParallelism =
-      getTableConfig.get(ExecutionConfigOptions.TABLE_EXEC_RESOURCE_DEFAULT_PARALLELISM)
+    val defaultParallelism = getTableConfig.get(ExecutionConfigOptions.TABLE_EXEC_RESOURCE_DEFAULT_PARALLELISM)
+
     if (defaultParallelism > 0) {
       getExecEnv.getConfig.setParallelism(defaultParallelism)
     }
   }
+
+
+
+
 
   protected def afterTranslation(): Unit = {
     // Cleanup all internal configuration after plan translation finished.

@@ -46,8 +46,7 @@ object JavaScalaConversionUtil {
   def toJava[T0, T1](tuple: (T0, T1)): JTuple2[T0, T1] =
     new JTuple2[T0, T1](tuple._1, tuple._2)
 
-  def toJava[T](seq: Seq[T]): JList[T] =
-    seq.asJava
+  def toJava[T](seq: Seq[T]): JList[T] = seq.asJava
 
   def toScala[T](list: JList[T]): Seq[T] =
     list.asScala

@@ -105,20 +105,40 @@ public class SourceStreamTask<
                 env,
                 null,
                 FatalExitExceptionHandler.INSTANCE,
-                StreamTaskActionExecutor.synchronizedExecutor(lock));
+                StreamTaskActionExecutor.synchronizedExecutor(lock)
+        );
 
         this.lock = Preconditions.checkNotNull(lock);
+
         // 用来接收数据的线程
         this.sourceThread = new LegacySourceFunctionThread();
 
         getEnvironment().getMetricGroup().getIOMetricGroup().setEnableBusyTime(false);
     }
 
+    /**
+     * SourceStreamTask 状态初始化工作
+     */
     @Override
     protected void init() {
         // we check if the source is actually inducing the checkpoints, rather
         // than the trigger
+        // 获取用户源定义方法
         SourceFunction<?> source = mainOperator.getUserFunction();
+
+        /**
+         * 在 Apache Flink 中，ExternallyInducedSource 是一个表示外部触发源的类。它是 Flink 数据流编程模型中的一个组件，用于从外部系统或事件触发器异步地生成数据流。
+         *
+         * ExternallyInducedSource 类可以用于实现自定义的数据源，以便根据外部事件或触发器的到来，生成相应的数据记录并将其发送到 Flink 数据流中进行处理。
+         *
+         * 通常情况下，Flink 中的数据源是以连续流（continuous stream）的方式生成数据，也就是源源不断地产生数据。
+         * 但是，对于一些场景，我们可能需要根据外部事件来触发数据的生成，例如从消息队列中接收到新的消息时才产生数据。
+         * 这种情况下，可以使用 ExternallyInducedSource 来实现这样的外部触发数据源。
+         *
+         * 通过继承 ExternallyInducedSource 类并实现其抽象方法，可以编写自定义的外部触发源。这样，当外部事件或触发器到达时，可以在 run() 方法中生成相应的数据记录并将其发送到 Flink 数据流中。
+         *
+         * 需要注意的是，具体的使用和实现细节可能会根据应用程序的需求和上下文而有所不同。要了解更多关于 ExternallyInducedSource 类的详细信息，可以查阅 Flink 的官方文档和相关资源。
+         */
         if (source instanceof ExternallyInducedSource) {
             externallyInducedCheckpoints = true;
 
@@ -139,16 +159,15 @@ public class SourceStreamTask<
                                             CheckpointStorageLocationReference.getDefault(),
                                             configuration.isExactlyOnceCheckpointMode(),
                                             configuration.isUnalignedCheckpointsEnabled(),
-                                            configuration.getAlignedCheckpointTimeout().toMillis());
+                                            configuration.getAlignedCheckpointTimeout().toMillis()
+                                    );
                             final long timestamp = System.currentTimeMillis();
 
-                            final CheckpointMetaData checkpointMetaData =
-                                    new CheckpointMetaData(checkpointId, timestamp, timestamp);
+                            final CheckpointMetaData checkpointMetaData = new CheckpointMetaData(checkpointId, timestamp, timestamp);
 
                             try {
                                 SourceStreamTask.super
-                                        .triggerCheckpointAsync(
-                                                checkpointMetaData, checkpointOptions)
+                                        .triggerCheckpointAsync(checkpointMetaData, checkpointOptions)
                                         .get();
                             } catch (RuntimeException e) {
                                 throw e;
@@ -160,14 +179,20 @@ public class SourceStreamTask<
 
             ((ExternallyInducedSource<?, ?>) source).setCheckpointTrigger(triggerHook);
         }
+
         getEnvironment()
                 .getMetricGroup()
                 .getIOMetricGroup()
                 .gauge(
                         MetricNames.CHECKPOINT_START_DELAY_TIME,
-                        this::getAsyncCheckpointStartDelayNanos);
+                        this::getAsyncCheckpointStartDelayNanos
+                );
+
         recordWriter.setMaxOverdraftBuffersPerGate(0);
     }
+
+
+
 
     @Override
     protected void advanceToEndOfEventTime() throws Exception {
@@ -179,9 +204,20 @@ public class SourceStreamTask<
         // does not hold any resources, so no cleanup needed
     }
 
+
+
+
+    /**
+     * 用来处理数据源的processInput()方法
+     *
+     * @param controller controller object for collaborative interaction between the action and the
+     *     stream task.
+     * @throws Exception
+     */
     @Override
     protected void processInput(MailboxDefaultAction.Controller controller) throws Exception {
 
+//        阻塞执行，因为代码执行到这步后有些对象还没有完全准备好
         controller.suspendDefaultAction();
 
         // Against the usual contract of this method, this implementation is not step-wise but
@@ -203,6 +239,9 @@ public class SourceStreamTask<
                             }
                         });
     }
+
+
+
 
     @Override
     protected void cancelTask() {
@@ -256,7 +295,9 @@ public class SourceStreamTask<
 
     @Override
     public CompletableFuture<Boolean> triggerCheckpointAsync(
-            CheckpointMetaData checkpointMetaData, CheckpointOptions checkpointOptions) {
+            CheckpointMetaData checkpointMetaData,
+            CheckpointOptions checkpointOptions
+    ) {
         if (!externallyInducedCheckpoints) {
             if (isSynchronousSavepoint(checkpointOptions.getCheckpointType())) {
                 return triggerStopWithSavepointAsync(checkpointMetaData, checkpointOptions);
@@ -325,6 +366,12 @@ public class SourceStreamTask<
             this.completionFuture = new CompletableFuture<>();
         }
 
+
+        /**
+         * 接收数据线程开始工作
+         *
+         * Flink程序执行的起点
+         */
         @Override
         public void run() {
             try {
@@ -332,21 +379,25 @@ public class SourceStreamTask<
                     LOG.debug(
                             "Legacy source {} skip execution since the task is finished on restore",
                             getTaskNameWithSubtaskAndId());
+
+//                    这个对象在构造operatorchain时创建出来的
+                    // 从sourcestreamtask的主程序开始执行
                     mainOperator.run(lock, operatorChain);
                 }
                 completeProcessing();
                 completionFuture.complete(null);
             } catch (Throwable t) {
                 // Note, t can be also an InterruptedException
-                if (isCanceled()
-                        && ExceptionUtils.findThrowable(t, InterruptedException.class)
-                                .isPresent()) {
+                if (isCanceled() && ExceptionUtils.findThrowable(t, InterruptedException.class).isPresent()) {
                     completionFuture.completeExceptionally(new CancelTaskException(t));
                 } else {
                     completionFuture.completeExceptionally(t);
                 }
             }
         }
+
+
+
 
         private void completeProcessing() throws InterruptedException, ExecutionException {
             if (!isCanceled() && !isFailing()) {

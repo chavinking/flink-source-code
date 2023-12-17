@@ -285,8 +285,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
             CheckpointMetricsBuilder metrics,
             OperatorChain<?, ?> operatorChain,
             boolean isTaskFinished,
-            Supplier<Boolean> isRunning)
-            throws Exception {
+            Supplier<Boolean> isRunning
+    ) throws Exception {
 
         checkNotNull(options);
         checkNotNull(metrics);
@@ -318,7 +318,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
             operatorChain.broadcastEvent(new CancelCheckpointMarker(metadata.getCheckpointId()));
             LOG.info(
                     "Checkpoint {} has been notified as aborted, would not trigger any checkpoint.",
-                    metadata.getCheckpointId());
+                    metadata.getCheckpointId()
+            );
             return;
         }
 
@@ -328,6 +329,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
             options = options.withUnalignedSupported();
             initInputsCheckpoint(metadata.getCheckpointId(), options);
         }
+
+
 
         // Step (1): Prepare the checkpoint, allow operators to do some pre-barrier work.
         //           The pre-barrier work should be nothing or minimal in the common case.
@@ -340,8 +343,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
                 System.currentTimeMillis(),
                 metadata.getTimestamp(),
                 System.currentTimeMillis() - metadata.getTimestamp());
-        CheckpointBarrier checkpointBarrier =
-                new CheckpointBarrier(metadata.getCheckpointId(), metadata.getTimestamp(), options);
+
+        CheckpointBarrier checkpointBarrier = new CheckpointBarrier(metadata.getCheckpointId(), metadata.getTimestamp(), options);
         operatorChain.broadcastEvent(checkpointBarrier, options.isUnalignedCheckpoint());
 
         // Step (3): Register alignment timer to timeout aligned barrier to unaligned barrier
@@ -353,22 +356,18 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
             channelStateWriter.finishOutput(metadata.getCheckpointId());
         }
 
-        // Step (5): Take the state snapshot. This should be largely asynchronous, to not impact
-        // progress of the
-        // streaming topology
-
-        Map<OperatorID, OperatorSnapshotFutures> snapshotFutures =
-                new HashMap<>(operatorChain.getNumberOfOperators());
+        // Step (5): Take the state snapshot. This should be largely asynchronous, to not impact progress of the streaming topology
+        Map<OperatorID, OperatorSnapshotFutures> snapshotFutures = new HashMap<>(operatorChain.getNumberOfOperators());
         try {
-            if (takeSnapshotSync(
-                    snapshotFutures, metadata, metrics, options, operatorChain, isRunning)) {
+            if (takeSnapshotSync(snapshotFutures, metadata, metrics, options, operatorChain, isRunning)) {
                 finishAndReportAsync(
                         snapshotFutures,
                         metadata,
                         metrics,
                         operatorChain.isTaskDeployedAsFinished(),
                         isTaskFinished,
-                        isRunning);
+                        isRunning
+                );
             } else {
                 cleanup(snapshotFutures, metadata, metrics, new Exception("Checkpoint declined"));
             }
@@ -378,10 +377,15 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         }
     }
 
+
+
+
+
     private void registerAlignmentTimer(
             long checkpointId,
             OperatorChain<?, ?> operatorChain,
-            CheckpointBarrier checkpointBarrier) {
+            CheckpointBarrier checkpointBarrier
+    ) {
         // The timer isn't triggered when the checkpoint completes quickly, so cancel timer here.
         cancelAlignmentTimer();
         if (!checkpointBarrier.getCheckpointOptions().isTimeoutable()) {
@@ -502,12 +506,15 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         ExceptionUtils.tryRethrowException(previousException);
     }
 
+
+
     @Override
-    public void initInputsCheckpoint(long id, CheckpointOptions checkpointOptions)
-            throws CheckpointException {
+    public void initInputsCheckpoint(
+            long id,
+            CheckpointOptions checkpointOptions
+    ) throws CheckpointException {
         if (checkpointOptions.isUnalignedCheckpoint()) {
             channelStateWriter.start(id, checkpointOptions);
-
             prepareInflightDataSnapshot(id);
         } else if (checkpointOptions.isTimeoutable()) {
             // The output buffer may need to be snapshotted, so start the channelStateWriter here.
@@ -515,6 +522,10 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
             channelStateWriter.finishInput(id);
         }
     }
+
+
+
+
 
     public void waitForPendingCheckpoints() throws Exception {
         if (!enableCheckpointAfterTasksFinished) {
@@ -577,7 +588,9 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
     }
 
     private void registerAsyncCheckpointRunnable(
-            long checkpointId, AsyncCheckpointRunnable asyncCheckpointRunnable) throws IOException {
+            long checkpointId,
+            AsyncCheckpointRunnable asyncCheckpointRunnable
+    ) throws IOException {
         synchronized (lock) {
             if (closed) {
                 LOG.debug(
@@ -622,11 +635,11 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
             Map<OperatorID, OperatorSnapshotFutures> operatorSnapshotsInProgress,
             CheckpointMetaData metadata,
             CheckpointMetricsBuilder metrics,
-            Exception ex) {
+            Exception ex
+    ) {
 
         channelStateWriter.abort(metadata.getCheckpointId(), ex, true);
-        for (OperatorSnapshotFutures operatorSnapshotResult :
-                operatorSnapshotsInProgress.values()) {
+        for (OperatorSnapshotFutures operatorSnapshotResult : operatorSnapshotsInProgress.values()) {
             if (operatorSnapshotResult != null) {
                 try {
                     operatorSnapshotResult.cancel();
@@ -642,7 +655,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
                     taskName,
                     metadata.getCheckpointId(),
                     metrics.getAlignmentDurationNanosOrDefault() / 1_000_000,
-                    metrics.getSyncDurationMillis());
+                    metrics.getSyncDurationMillis()
+            );
         }
     }
 
@@ -668,8 +682,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
             CheckpointMetricsBuilder metrics,
             boolean isTaskDeployedAsFinished,
             boolean isTaskFinished,
-            Supplier<Boolean> isRunning)
-            throws IOException {
+            Supplier<Boolean> isRunning
+    ) throws IOException {
         AsyncCheckpointRunnable asyncCheckpointRunnable =
                 new AsyncCheckpointRunnable(
                         snapshotFutures,
@@ -682,10 +696,10 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
                         asyncExceptionHandler,
                         isTaskDeployedAsFinished,
                         isTaskFinished,
-                        isRunning);
+                        isRunning
+                );
 
-        registerAsyncCheckpointRunnable(
-                asyncCheckpointRunnable.getCheckpointId(), asyncCheckpointRunnable);
+        registerAsyncCheckpointRunnable(asyncCheckpointRunnable.getCheckpointId(), asyncCheckpointRunnable);
 
         // we are transferring ownership over snapshotInProgressList for cleanup to the thread,
         // active on submit
@@ -697,30 +711,32 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
                 unregisterAsyncCheckpointRunnable(asyncCheckpointRunnable.getCheckpointId());
     }
 
+
+
+
+
     private boolean takeSnapshotSync(
             Map<OperatorID, OperatorSnapshotFutures> operatorSnapshotsInProgress,
             CheckpointMetaData checkpointMetaData,
             CheckpointMetricsBuilder checkpointMetrics,
             CheckpointOptions checkpointOptions,
             OperatorChain<?, ?> operatorChain,
-            Supplier<Boolean> isRunning)
-            throws Exception {
+            Supplier<Boolean> isRunning
+    ) throws Exception {
 
-        checkState(
-                !operatorChain.isClosed(),
-                "OperatorChain and Task should never be closed at this point");
+        checkState(!operatorChain.isClosed(), "OperatorChain and Task should never be closed at this point");
 
         long checkpointId = checkpointMetaData.getCheckpointId();
         long started = System.nanoTime();
 
-        ChannelStateWriteResult channelStateWriteResult =
-                checkpointOptions.needsChannelState()
+
+
+        ChannelStateWriteResult channelStateWriteResult = checkpointOptions.needsChannelState()
                         ? channelStateWriter.getAndRemoveWriteResult(checkpointId)
                         : ChannelStateWriteResult.EMPTY;
 
-        CheckpointStreamFactory storage =
-                checkpointStorage.resolveCheckpointStorageLocation(
-                        checkpointId, checkpointOptions.getTargetLocation());
+
+        CheckpointStreamFactory storage = checkpointStorage.resolveCheckpointStorageLocation(checkpointId, checkpointOptions.getTargetLocation());
 
         try {
             operatorChain.snapshotState(
@@ -729,7 +745,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
                     checkpointOptions,
                     isRunning,
                     channelStateWriteResult,
-                    storage);
+                    storage
+            );
 
         } finally {
             checkpointStorage.clearCacheFor(checkpointId);
@@ -741,12 +758,18 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
                 checkpointId,
                 checkpointMetrics.getAlignmentDurationNanosOrDefault() / 1_000_000,
                 checkpointMetrics.getSyncDurationMillis(),
-                checkpointOptions.isUnalignedCheckpoint());
+                checkpointOptions.isUnalignedCheckpoint()
+        );
 
         checkpointMetrics.setSyncDurationMillis((System.nanoTime() - started) / 1_000_000);
         checkpointMetrics.setUnalignedCheckpoint(checkpointOptions.isUnalignedCheckpoint());
         return true;
     }
+
+
+
+
+
 
     private Set<Long> createAbortedCheckpointSetWithLimitSize(int maxRecordAbortedCheckpoints) {
         return Collections.newSetFromMap(
@@ -780,13 +803,13 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
 
         @Override
         public CheckpointStreamFactory resolveCheckpointStorageLocation(
-                long checkpointId, CheckpointStorageLocationReference reference) {
+                long checkpointId, CheckpointStorageLocationReference reference
+        ) {
             return cache.computeIfAbsent(
                     checkpointId,
                     id -> {
                         try {
-                            return delegate.resolveCheckpointStorageLocation(
-                                    checkpointId, reference);
+                            return delegate.resolveCheckpointStorageLocation(checkpointId, reference);
                         } catch (IOException e) {
                             throw new FlinkRuntimeException(e);
                         }

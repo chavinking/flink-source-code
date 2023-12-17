@@ -72,8 +72,11 @@ public class JoinHintResolver extends RelShuttleImpl {
      * ValidationException} will be thrown.
      */
     final List<RelNode> resolve(List<RelNode> roots) {
+        // 这段正常来说只是进行一次语法树遍历行为
         List<RelNode> resolvedRoots =
-                roots.stream().map(node -> node.accept(this)).collect(Collectors.toList());
+                roots.stream().map(
+                        node -> node.accept(this)
+                ).collect(Collectors.toList());
         validateHints();
         return resolvedRoots;
     }

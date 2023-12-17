@@ -41,21 +41,31 @@ public class EdgeManagerBuildUtil {
      * @param distributionPattern the {@link DistributionPattern} of the edge that connects the
      *     upstream {@link IntermediateResult} and the downstream {@link IntermediateResult}
      */
+
     static void connectVertexToResult(
-            ExecutionJobVertex vertex,
-            IntermediateResult intermediateResult,
+            ExecutionJobVertex vertex, // 当前节点
+            IntermediateResult intermediateResult, // 上游输入集合
             DistributionPattern distributionPattern) {
 
         switch (distributionPattern) {
             case POINTWISE:
+                /**
+                 * vertex.getTaskVertices() ：子任务信息
+                 * intermediateResult ： 上游输入集合
+                 */
                 connectPointwise(vertex.getTaskVertices(), intermediateResult);
                 break;
             case ALL_TO_ALL:
+                /**
+                 * vertex.getTaskVertices() ：子任务信息
+                 * intermediateResult ： 上游输入集合
+                 */
                 connectAllToAll(vertex.getTaskVertices(), intermediateResult);
                 break;
             default:
                 throw new IllegalArgumentException("Unrecognized distribution pattern.");
         }
+
     }
 
     /**
@@ -80,29 +90,46 @@ public class EdgeManagerBuildUtil {
         }
     }
 
+    /**
+     * 连接子任务和上游输入数据集
+     *
+     * @param taskVertices
+     * @param intermediateResult
+     */
     private static void connectAllToAll(ExecutionVertex[] taskVertices, IntermediateResult intermediateResult) {
 
+//        获取子分区ID集合
         List<IntermediateResultPartitionID> consumedPartitions =
                 Arrays.stream(intermediateResult.getPartitions())
                         .map(IntermediateResultPartition::getPartitionId)
                         .collect(Collectors.toList());
+
+
         ConsumedPartitionGroup consumedPartitionGroup =
-                createAndRegisterConsumedPartitionGroupToEdgeManager(
-                        taskVertices.length, consumedPartitions, intermediateResult);
+                createAndRegisterConsumedPartitionGroupToEdgeManager(taskVertices.length, consumedPartitions, intermediateResult);
+
         for (ExecutionVertex ev : taskVertices) {
+
             ev.addConsumedPartitionGroup(consumedPartitionGroup);
         }
 
+//        获取子任务ID集合
         List<ExecutionVertexID> consumerVertices =
                 Arrays.stream(taskVertices)
                         .map(ExecutionVertex::getID)
                         .collect(Collectors.toList());
+
         ConsumerVertexGroup consumerVertexGroup =
                 ConsumerVertexGroup.fromMultipleVertices(consumerVertices);
+
+
         for (IntermediateResultPartition partition : intermediateResult.getPartitions()) {
             partition.addConsumers(consumerVertexGroup);
         }
+
     }
+
+
 
     private static void connectPointwise(ExecutionVertex[] taskVertices, IntermediateResult intermediateResult) {
 
@@ -114,8 +141,7 @@ public class EdgeManagerBuildUtil {
                 ExecutionVertex executionVertex = taskVertices[i];
                 IntermediateResultPartition partition = intermediateResult.getPartitions()[i];
 
-                ConsumerVertexGroup consumerVertexGroup =
-                        ConsumerVertexGroup.fromSingleVertex(executionVertex.getID());
+                ConsumerVertexGroup consumerVertexGroup = ConsumerVertexGroup.fromSingleVertex(executionVertex.getID());
                 partition.addConsumers(consumerVertexGroup);
 
                 ConsumedPartitionGroup consumedPartitionGroup =
@@ -189,20 +215,23 @@ public class EdgeManagerBuildUtil {
     }
 
     private static ConsumedPartitionGroup createAndRegisterConsumedPartitionGroupToEdgeManager(
-            int numConsumers,
-            List<IntermediateResultPartitionID> consumedPartitions,
-            IntermediateResult intermediateResult) {
+            int numConsumers, // 子任务数量
+            List<IntermediateResultPartitionID> consumedPartitions, // 上游结果集分区信息
+            IntermediateResult intermediateResult // 上游结果集
+    ) {
+
         ConsumedPartitionGroup consumedPartitionGroup =
-                ConsumedPartitionGroup.fromMultiplePartitions(
-                        numConsumers, consumedPartitions, intermediateResult.getResultType());
+                ConsumedPartitionGroup.fromMultiplePartitions(numConsumers, consumedPartitions, intermediateResult.getResultType());
+
         registerConsumedPartitionGroupToEdgeManager(consumedPartitionGroup, intermediateResult);
+
         return consumedPartitionGroup;
+
     }
 
-    private static void registerConsumedPartitionGroupToEdgeManager(
-            ConsumedPartitionGroup consumedPartitionGroup, IntermediateResult intermediateResult) {
+    private static void registerConsumedPartitionGroupToEdgeManager(ConsumedPartitionGroup consumedPartitionGroup, IntermediateResult intermediateResult) {
         intermediateResult
-                .getProducer()
+                .getProducer() // 拿到结果集合的上游ExecutionJobVertex数据
                 .getGraph()
                 .getEdgeManager()
                 .registerConsumedPartitionGroup(consumedPartitionGroup);

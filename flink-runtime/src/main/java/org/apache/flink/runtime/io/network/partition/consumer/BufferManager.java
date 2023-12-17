@@ -139,8 +139,7 @@ public class BufferManager implements BufferListener, BufferRecycler {
             return;
         }
 
-        Collection<MemorySegment> segments =
-                globalPool.requestUnpooledMemorySegments(numExclusiveBuffers);
+        Collection<MemorySegment> segments = globalPool.requestUnpooledMemorySegments(numExclusiveBuffers);
         synchronized (bufferQueue) {
             // AvailableBufferQueue::addExclusiveBuffer may release the previously allocated
             // floating buffer, which requires the caller to recycle these released floating

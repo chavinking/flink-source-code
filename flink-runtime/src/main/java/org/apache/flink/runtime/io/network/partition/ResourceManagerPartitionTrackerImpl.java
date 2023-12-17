@@ -104,8 +104,7 @@ public class ResourceManagerPartitionTrackerImpl implements ResourceManagerParti
     }
 
     @Override
-    public List<ShuffleDescriptor> getClusterPartitionShuffleDescriptors(
-            IntermediateDataSetID dataSetID) {
+    public List<ShuffleDescriptor> getClusterPartitionShuffleDescriptors(IntermediateDataSetID dataSetID) {
         final DataSetMetaInfo dataSetMetaInfo = this.dataSetMetaInfo.get(dataSetID);
         if (dataSetMetaInfo == null) {
             return Collections.emptyList();

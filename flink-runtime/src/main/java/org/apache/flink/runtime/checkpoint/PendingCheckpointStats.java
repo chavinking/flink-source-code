@@ -71,17 +71,14 @@ public class PendingCheckpointStats extends AbstractCheckpointStats {
             long checkpointId,
             long triggerTimestamp,
             CheckpointProperties props,
-            Map<JobVertexID, Integer> taskStats) {
+            Map<JobVertexID, Integer> taskStats
+    ) {
         this(
                 checkpointId,
                 triggerTimestamp,
                 props,
                 taskStats.values().stream().mapToInt(i -> i).sum(),
-                taskStats.entrySet().stream()
-                        .collect(
-                                toConcurrentMap(
-                                        Map.Entry::getKey,
-                                        e -> new TaskStateStats(e.getKey(), e.getValue()))));
+                taskStats.entrySet().stream().collect(toConcurrentMap(Map.Entry::getKey, e -> new TaskStateStats(e.getKey(), e.getValue()))));
     }
 
     /**

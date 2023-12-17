@@ -51,13 +51,10 @@ public class ExecutionVertexVersioner {
         return new ExecutionVertexVersion(executionVertexId, newVersion);
     }
 
-    public Map<ExecutionVertexID, ExecutionVertexVersion> recordVertexModifications(
-            final Collection<ExecutionVertexID> vertices) {
+    public Map<ExecutionVertexID, ExecutionVertexVersion> recordVertexModifications(final Collection<ExecutionVertexID> vertices) {
         return vertices.stream()
                 .map(this::recordModification)
-                .collect(
-                        Collectors.toMap(
-                                ExecutionVertexVersion::getExecutionVertexId, Function.identity()));
+                .collect(Collectors.toMap(ExecutionVertexVersion::getExecutionVertexId, Function.identity()));
     }
 
     public boolean isModified(final ExecutionVertexVersion executionVertexVersion) {

@@ -50,8 +50,7 @@ public final class OperatorEventDispatcherImpl implements OperatorEventDispatche
 
     private final TaskOperatorEventGateway toCoordinator;
 
-    public OperatorEventDispatcherImpl(
-            ClassLoader classLoader, TaskOperatorEventGateway toCoordinator) {
+    public OperatorEventDispatcherImpl(ClassLoader classLoader, TaskOperatorEventGateway toCoordinator) {
         this.classLoader = checkNotNull(classLoader);
         this.toCoordinator = checkNotNull(toCoordinator);
         this.handlers = new HashMap<>();

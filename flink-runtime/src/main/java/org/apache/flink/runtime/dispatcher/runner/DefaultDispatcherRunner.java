@@ -115,6 +115,11 @@ public final class DefaultDispatcherRunner implements DispatcherRunner, LeaderCo
                 });
     }
 
+    /**
+     * 启动dispatcher服务任务
+     *
+     * @param leaderSessionID
+     */
     private void startNewDispatcherLeaderProcess(UUID leaderSessionID) {
         stopDispatcherLeaderProcess();
 
@@ -137,12 +142,9 @@ public final class DefaultDispatcherRunner implements DispatcherRunner, LeaderCo
     }
 
     private DispatcherLeaderProcess createNewDispatcherLeaderProcess(UUID leaderSessionID) {
-        final DispatcherLeaderProcess newDispatcherLeaderProcess =
-                dispatcherLeaderProcessFactory.create(leaderSessionID);
-
+        final DispatcherLeaderProcess newDispatcherLeaderProcess = dispatcherLeaderProcessFactory.create(leaderSessionID);
         forwardShutDownFuture(newDispatcherLeaderProcess);
         forwardConfirmLeaderSessionFuture(leaderSessionID, newDispatcherLeaderProcess);
-
         return newDispatcherLeaderProcess;
     }
 
@@ -167,16 +169,15 @@ public final class DefaultDispatcherRunner implements DispatcherRunner, LeaderCo
                         });
     }
 
-    private void forwardConfirmLeaderSessionFuture(
-            UUID leaderSessionID, DispatcherLeaderProcess newDispatcherLeaderProcess) {
+    private void forwardConfirmLeaderSessionFuture(UUID leaderSessionID, DispatcherLeaderProcess newDispatcherLeaderProcess) {
         FutureUtils.assertNoException(
                 newDispatcherLeaderProcess
                         .getLeaderAddressFuture()
                         .thenAccept(
                                 leaderAddress -> {
                                     if (leaderElectionService.hasLeadership(leaderSessionID)) {
-                                        leaderElectionService.confirmLeadership(
-                                                leaderSessionID, leaderAddress);
+//                                        确认leader，空实现
+                                        leaderElectionService.confirmLeadership(leaderSessionID, leaderAddress);
                                     }
                                 }));
     }
@@ -231,7 +232,11 @@ public final class DefaultDispatcherRunner implements DispatcherRunner, LeaderCo
             DispatcherLeaderProcessFactory dispatcherLeaderProcessFactory)
             throws Exception {
         final DefaultDispatcherRunner dispatcherRunner =
-                new DefaultDispatcherRunner(leaderElectionService, fatalErrorHandler, dispatcherLeaderProcessFactory);
+                new DefaultDispatcherRunner(
+                        leaderElectionService,
+                        fatalErrorHandler,
+                        dispatcherLeaderProcessFactory
+                );
 
         return DispatcherRunnerLeaderElectionLifecycleManager.createFor(dispatcherRunner, leaderElectionService);
     }

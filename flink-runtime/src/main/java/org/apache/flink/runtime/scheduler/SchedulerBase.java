@@ -228,8 +228,9 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
         this.executionGraphHandler =
                 new ExecutionGraphHandler(executionGraph, log, ioExecutor, this.mainThreadExecutor);
 
-        this.operatorCoordinatorHandler =
-                new DefaultOperatorCoordinatorHandler(executionGraph, this::handleGlobalFailure);
+
+        this.operatorCoordinatorHandler = new DefaultOperatorCoordinatorHandler(executionGraph, this::handleGlobalFailure);
+
         operatorCoordinatorHandler.initializeOperatorCoordinators(this.mainThreadExecutor);
 
         this.exceptionHistory =
@@ -379,16 +380,15 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
                         completedCheckpointStore,
                         checkpointsCleaner,
                         checkpointIdCounter,
-                        TaskDeploymentDescriptorFactory.PartitionLocationConstraint.fromJobType(
-                                jobGraph.getJobType()),
+                        TaskDeploymentDescriptorFactory.PartitionLocationConstraint.fromJobType(jobGraph.getJobType()),
                         initializationTimestamp,
                         new DefaultVertexAttemptNumberStore(),
                         vertexParallelismStore,
                         deploymentStateTimeMetrics,
-                        log);
+                        log
+                );
 
-        newExecutionGraph.setInternalTaskFailuresListener(
-                new UpdateSchedulerNgOnInternalFailuresListener(this));
+        newExecutionGraph.setInternalTaskFailuresListener(new UpdateSchedulerNgOnInternalFailuresListener(this));
         newExecutionGraph.registerJobStatusListener(jobStatusListener);
         newExecutionGraph.start(mainThreadExecutor);
 
@@ -619,8 +619,20 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
                 executionGraph.getStatusTimestamp(JobStatus.INITIALIZING),
                 jobStatusMetricsSettings);
 
-//        开启所有的协调组件
+        /**
+         * 在 Flink 中，OperatorCoordinatorHandler 是用来管理算子协调器（Operator Coordinator）的模块。算子协调器是一个用来协调算子并行执行的组件，
+         * 它通常会在一个并行算子的每个子任务中执行，并负责管理子任务之间的协作和通信。
+         * OperatorCoordinatorHandler 的作用就是为 Flink 作业中的算子协调器提供一个全局的管理和协调服务。具体来说，它的主要作用包括：
+         * 管理算子协调器的生命周期：在 Flink 作业启动时，OperatorCoordinatorHandler 会根据作业的执行图创建算子协调器并启动它们。
+         * 而在作业结束时，它则会负责停止并销毁这些算子协调器。
+         * 提供协调服务：OperatorCoordinatorHandler 会向算子协调器提供必要的协调服务，如任务状态的同步、通信协议的管理、故障处理等。
+         * 支持任务调度：OperatorCoordinatorHandler 会为算子协调器提供任务调度支持，确保任务可以正确地分配到不同的 TaskManager 上执行，
+         * 并且任务执行的顺序可以满足作业执行图中的依赖关系。
+         * 总之，OperatorCoordinatorHandler 在 Flink 作业中起着至关重要的作用，它负责管理算子协调器的生命周期和提供协调服务，从而确保作业的正确执行。
+         */
         operatorCoordinatorHandler.startAllOperatorCoordinators();
+
+
         startSchedulingInternal();
     }
 
@@ -637,8 +649,7 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
         metrics.gauge(MetricNames.NUM_RESTARTS, numberOfRestarts);
         metrics.gauge(MetricNames.FULL_RESTARTS, numberOfRestarts);
 
-        final JobStatusMetrics jobStatusMetrics =
-                new JobStatusMetrics(initializationTimestamp, jobStatusMetricsSettings);
+        final JobStatusMetrics jobStatusMetrics = new JobStatusMetrics(initializationTimestamp, jobStatusMetricsSettings);
         jobStatusMetrics.registerMetrics(metrics);
         jobStatusListenerRegistrar.accept(jobStatusMetrics);
 
@@ -856,18 +867,18 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
     public CompletableFuture<String> triggerSavepoint(
             final String targetDirectory,
             final boolean cancelJob,
-            final SavepointFormatType formatType) {
+            final SavepointFormatType formatType
+    ) {
         mainThreadExecutor.assertRunningInMainThread();
 
-        final CheckpointCoordinator checkpointCoordinator =
-                executionGraph.getCheckpointCoordinator();
-        StopWithSavepointTerminationManager.checkSavepointActionPreconditions(
-                checkpointCoordinator, targetDirectory, getJobId(), log);
+        final CheckpointCoordinator checkpointCoordinator = executionGraph.getCheckpointCoordinator();
+        StopWithSavepointTerminationManager.checkSavepointActionPreconditions(checkpointCoordinator, targetDirectory, getJobId(), log);
 
         log.info(
                 "Triggering {}savepoint for job {}.",
                 cancelJob ? "cancel-with-" : "",
-                jobGraph.getJobID());
+                jobGraph.getJobID()
+        );
 
         if (cancelJob) {
             stopCheckpointScheduler();
@@ -892,7 +903,8 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
                             }
                             return path;
                         },
-                        mainThreadExecutor);
+                        mainThreadExecutor
+                );
     }
 
     @Override
@@ -956,8 +968,7 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
             final CheckpointMetrics checkpointMetrics,
             final TaskStateSnapshot checkpointState) {
 
-        executionGraphHandler.acknowledgeCheckpoint(
-                jobID, executionAttemptID, checkpointId, checkpointMetrics, checkpointState);
+        executionGraphHandler.acknowledgeCheckpoint(jobID, executionAttemptID, checkpointId, checkpointMetrics, checkpointState);
     }
 
     @Override
@@ -1046,8 +1057,7 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
             final OperatorEvent evt)
             throws FlinkException {
 
-        operatorCoordinatorHandler.deliverOperatorEventToCoordinator(
-                taskExecutionId, operatorId, evt);
+        operatorCoordinatorHandler.deliverOperatorEventToCoordinator(taskExecutionId, operatorId, evt);
     }
 
     @Override

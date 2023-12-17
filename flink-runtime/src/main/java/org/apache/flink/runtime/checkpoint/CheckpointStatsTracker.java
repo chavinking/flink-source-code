@@ -157,10 +157,10 @@ public class CheckpointStatsTracker {
             long checkpointId,
             long triggerTimestamp,
             CheckpointProperties props,
-            Map<JobVertexID, Integer> vertexToDop) {
+            Map<JobVertexID, Integer> vertexToDop
+    ) {
 
-        PendingCheckpointStats pending =
-                new PendingCheckpointStats(checkpointId, triggerTimestamp, props, vertexToDop);
+        PendingCheckpointStats pending = new PendingCheckpointStats(checkpointId, triggerTimestamp, props, vertexToDop);
 
         statsReadWriteLock.lock();
         try {

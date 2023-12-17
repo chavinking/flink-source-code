@@ -64,8 +64,7 @@ public interface ScheduledExecutor extends Executor {
      * @return a ScheduledFuture representing the periodic task. This future never completes unless
      *     an execution of the given task fails or if the future is cancelled
      */
-    ScheduledFuture<?> scheduleAtFixedRate(
-            Runnable command, long initialDelay, long period, TimeUnit unit);
+    ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
 
     /**
      * Executed the given command repeatedly with the given delay between the end of an execution

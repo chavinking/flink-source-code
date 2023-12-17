@@ -297,8 +297,7 @@ public class RemoteInputChannel extends InputChannel {
 
     @Override
     int getBuffersInUseCount() {
-        return getNumberOfQueuedBuffers()
-                + Math.max(0, bufferManager.getNumberOfRequiredBuffers() - initialCredit);
+        return getNumberOfQueuedBuffers() + Math.max(0, bufferManager.getNumberOfRequiredBuffers() - initialCredit);
     }
 
     @Override

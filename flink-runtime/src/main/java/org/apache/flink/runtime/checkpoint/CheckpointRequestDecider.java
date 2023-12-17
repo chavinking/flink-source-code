@@ -73,7 +73,8 @@ class CheckpointRequestDecider {
             Clock clock,
             long minPauseBetweenCheckpoints,
             IntSupplier pendingCheckpointsSizeSupplier,
-            IntSupplier numberOfCleaningCheckpointsSupplier) {
+            IntSupplier numberOfCleaningCheckpointsSupplier
+    ) {
         this(
                 maxConcurrentCheckpointAttempts,
                 rescheduleTrigger,
@@ -81,7 +82,8 @@ class CheckpointRequestDecider {
                 minPauseBetweenCheckpoints,
                 pendingCheckpointsSizeSupplier,
                 numberOfCleaningCheckpointsSupplier,
-                DEFAULT_MAX_QUEUED_REQUESTS);
+                DEFAULT_MAX_QUEUED_REQUESTS
+        );
     }
 
     CheckpointRequestDecider(
@@ -91,7 +93,8 @@ class CheckpointRequestDecider {
             long minPauseBetweenCheckpoints,
             IntSupplier pendingCheckpointsSizeSupplier,
             IntSupplier numberOfCleaningCheckpointsSupplier,
-            int maxQueuedRequests) {
+            int maxQueuedRequests
+    ) {
         Preconditions.checkArgument(maxConcurrentCheckpointAttempts > 0);
         Preconditions.checkArgument(maxQueuedRequests > 0);
         this.maxConcurrentCheckpointAttempts = maxConcurrentCheckpointAttempts;
@@ -109,7 +112,8 @@ class CheckpointRequestDecider {
      * @return request that should be executed
      */
     Optional<CheckpointTriggerRequest> chooseRequestToExecute(
-            CheckpointTriggerRequest newRequest, boolean isTriggering, long lastCompletionMs) {
+            CheckpointTriggerRequest newRequest, boolean isTriggering, long lastCompletionMs
+    ) {
         if (queuedRequests.size() >= maxQueuedRequests && !queuedRequests.last().isPeriodic) {
             // there are only non-periodic (ie user-submitted) requests enqueued - retain them and
             // drop the new one
@@ -120,11 +124,9 @@ class CheckpointRequestDecider {
             if (queuedRequests.size() > maxQueuedRequests) {
                 queuedRequests
                         .pollLast()
-                        .completeExceptionally(
-                                new CheckpointException(TOO_MANY_CHECKPOINT_REQUESTS));
+                        .completeExceptionally(new CheckpointException(TOO_MANY_CHECKPOINT_REQUESTS));
             }
-            Optional<CheckpointTriggerRequest> request =
-                    chooseRequestToExecute(isTriggering, lastCompletionMs);
+            Optional<CheckpointTriggerRequest> request = chooseRequestToExecute(isTriggering, lastCompletionMs);
             request.ifPresent(CheckpointRequestDecider::logInQueueTime);
             return request;
         }
@@ -150,7 +152,8 @@ class CheckpointRequestDecider {
      * @return request that should be executed
      */
     private Optional<CheckpointTriggerRequest> chooseRequestToExecute(
-            boolean isTriggering, long lastCompletionMs) {
+            boolean isTriggering, long lastCompletionMs
+    ) {
         if (isTriggering
                 || queuedRequests.isEmpty()
                 || numberOfCleaningCheckpointsSupplier.getAsInt()

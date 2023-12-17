@@ -167,8 +167,7 @@ public class SortMergeResultPartition extends ResultPartition {
         // reading the output of all upstream tasks in the same order, which is better for data
         // input balance of the downstream tasks
         this.subpartitionOrder = getRandomSubpartitionOrder(numSubpartitions);
-        this.readScheduler =
-                new SortMergeResultPartitionReadScheduler(readBufferPool, readIOExecutor, lock);
+        this.readScheduler = new SortMergeResultPartitionReadScheduler(readBufferPool, readIOExecutor, lock);
     }
 
     @Override
@@ -179,8 +178,7 @@ public class SortMergeResultPartition extends ResultPartition {
             }
             try {
                 // allocate at most 4M heap memory for caching of index entries
-                fileWriter =
-                        new PartitionedFileWriter(numSubpartitions, 4194304, resultFileBasePath);
+                fileWriter = new PartitionedFileWriter(numSubpartitions, 4194304, resultFileBasePath);
             } catch (Throwable throwable) {
                 throw new IOException("Failed to create file writer.", throwable);
             }

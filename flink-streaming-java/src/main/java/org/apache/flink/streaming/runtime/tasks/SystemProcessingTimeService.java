@@ -102,15 +102,12 @@ public class SystemProcessingTimeService implements TimerService {
     @Override
     public ScheduledFuture<?> registerTimer(long timestamp, ProcessingTimeCallback callback) {
 
-        long delay =
-                ProcessingTimeServiceUtil.getProcessingTimeDelay(
-                        timestamp, getCurrentProcessingTime());
+        long delay = ProcessingTimeServiceUtil.getProcessingTimeDelay(timestamp, getCurrentProcessingTime());
 
         // we directly try to register the timer and only react to the status on exception
         // that way we save unnecessary volatile accesses for each timer
         try {
-            return timerService.schedule(
-                    wrapOnTimerCallback(callback, timestamp), delay, TimeUnit.MILLISECONDS);
+            return timerService.schedule(wrapOnTimerCallback(callback, timestamp), delay, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException e) {
             final int status = this.status.get();
             if (status == STATUS_QUIESCED) {

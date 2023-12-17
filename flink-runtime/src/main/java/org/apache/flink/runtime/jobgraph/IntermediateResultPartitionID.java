@@ -48,8 +48,7 @@ public class IntermediateResultPartitionID implements ResultID {
      * Creates an new intermediate result partition ID with {@link IntermediateDataSetID} and the
      * partitionNum.
      */
-    public IntermediateResultPartitionID(
-            IntermediateDataSetID intermediateDataSetID, int partitionNum) {
+    public IntermediateResultPartitionID(IntermediateDataSetID intermediateDataSetID, int partitionNum) {
         this.intermediateDataSetID = intermediateDataSetID;
         this.partitionNum = partitionNum;
     }

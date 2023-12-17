@@ -157,8 +157,9 @@ public class StreamOperatorStateHandler {
             long timestamp,
             CheckpointOptions checkpointOptions,
             CheckpointStreamFactory factory,
-            boolean isUsingCustomRawKeyedState)
-            throws CheckpointException {
+            boolean isUsingCustomRawKeyedState
+    ) throws CheckpointException {
+
         KeyGroupRange keyGroupRange =
                 null != keyedStateBackend
                         ? keyedStateBackend.getKeyGroupRange()
@@ -167,8 +168,7 @@ public class StreamOperatorStateHandler {
         OperatorSnapshotFutures snapshotInProgress = new OperatorSnapshotFutures();
 
         StateSnapshotContextSynchronousImpl snapshotContext =
-                new StateSnapshotContextSynchronousImpl(
-                        checkpointId, timestamp, factory, keyGroupRange, closeableRegistry);
+                new StateSnapshotContextSynchronousImpl(checkpointId, timestamp, factory, keyGroupRange, closeableRegistry);
 
         snapshotState(
                 streamOperator,
@@ -180,10 +180,14 @@ public class StreamOperatorStateHandler {
                 factory,
                 snapshotInProgress,
                 snapshotContext,
-                isUsingCustomRawKeyedState);
+                isUsingCustomRawKeyedState
+        );
 
         return snapshotInProgress;
+
     }
+
+
 
     @VisibleForTesting
     void snapshotState(
@@ -196,57 +200,66 @@ public class StreamOperatorStateHandler {
             CheckpointStreamFactory factory,
             OperatorSnapshotFutures snapshotInProgress,
             StateSnapshotContextSynchronousImpl snapshotContext,
-            boolean isUsingCustomRawKeyedState)
-            throws CheckpointException {
+            boolean isUsingCustomRawKeyedState
+    ) throws CheckpointException {
+
         try {
             if (timeServiceManager.isPresent()) {
                 checkState(
                         keyedStateBackend != null,
-                        "keyedStateBackend should be available with timeServiceManager");
+                        "keyedStateBackend should be available with timeServiceManager"
+                );
                 final InternalTimeServiceManager<?> manager = timeServiceManager.get();
+
 
                 boolean requiresLegacyRawKeyedStateSnapshots =
                         keyedStateBackend instanceof AbstractKeyedStateBackend
                                 && ((AbstractKeyedStateBackend<?>) keyedStateBackend)
-                                        .requiresLegacySynchronousTimerSnapshots(
-                                                checkpointOptions.getCheckpointType());
+                                        .requiresLegacySynchronousTimerSnapshots(checkpointOptions.getCheckpointType());
 
                 if (requiresLegacyRawKeyedStateSnapshots) {
                     checkState(
                             !isUsingCustomRawKeyedState,
                             "Attempting to snapshot timers to raw keyed state, but this operator has custom raw keyed state to write.");
                     manager.snapshotToRawKeyedState(
-                            snapshotContext.getRawKeyedOperatorStateOutput(), operatorName);
+                            snapshotContext.getRawKeyedOperatorStateOutput(),
+                            operatorName
+                    );
                 }
             }
+
+
+
+            // 对状态进行快照，包括KeyedState和OperatorState
             streamOperator.snapshotState(snapshotContext);
 
             snapshotInProgress.setKeyedStateRawFuture(snapshotContext.getKeyedStateStreamFuture());
-            snapshotInProgress.setOperatorStateRawFuture(
-                    snapshotContext.getOperatorStateStreamFuture());
+            snapshotInProgress.setOperatorStateRawFuture(snapshotContext.getOperatorStateStreamFuture());
 
+            // 写入operatorState快照
             if (null != operatorStateBackend) {
                 snapshotInProgress.setOperatorStateManagedFuture(
-                        operatorStateBackend.snapshot(
-                                checkpointId, timestamp, factory, checkpointOptions));
+                        operatorStateBackend.snapshot(checkpointId, timestamp, factory, checkpointOptions)
+                );
             }
 
+            // 写入keyedState快照
             if (null != keyedStateBackend) {
                 if (isCanonicalSavepoint(checkpointOptions.getCheckpointType())) {
                     SnapshotStrategyRunner<KeyedStateHandle, ? extends FullSnapshotResources<?>>
-                            snapshotRunner =
-                                    prepareCanonicalSavepoint(keyedStateBackend, closeableRegistry);
+                            snapshotRunner = prepareCanonicalSavepoint(keyedStateBackend, closeableRegistry);
 
                     snapshotInProgress.setKeyedStateManagedFuture(
-                            snapshotRunner.snapshot(
-                                    checkpointId, timestamp, factory, checkpointOptions));
+                            snapshotRunner.snapshot(checkpointId, timestamp, factory, checkpointOptions)
+                    );
 
                 } else {
                     snapshotInProgress.setKeyedStateManagedFuture(
-                            keyedStateBackend.snapshot(
-                                    checkpointId, timestamp, factory, checkpointOptions));
+                            keyedStateBackend.snapshot(checkpointId, timestamp, factory, checkpointOptions)
+                    );
                 }
             }
+
         } catch (Exception snapshotException) {
             try {
                 snapshotInProgress.cancel();
@@ -272,6 +285,9 @@ public class StreamOperatorStateHandler {
                     snapshotException);
         }
     }
+
+
+
 
     private boolean isCanonicalSavepoint(SnapshotType snapshotType) {
         return snapshotType.isSavepoint()

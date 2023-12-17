@@ -92,8 +92,10 @@ public class CheckpointBarrierTracker extends CheckpointBarrierHandler {
 
     @Override
     public void processBarrier(
-            CheckpointBarrier receivedBarrier, InputChannelInfo channelInfo, boolean isRpcTriggered)
-            throws IOException {
+            CheckpointBarrier receivedBarrier,
+            InputChannelInfo channelInfo,
+            boolean isRpcTriggered
+    ) throws IOException {
         final long barrierId = receivedBarrier.getId();
 
         // fast path for single channel trackers. We only go with the fast path
@@ -159,6 +161,9 @@ public class CheckpointBarrierTracker extends CheckpointBarrierHandler {
             }
         }
     }
+
+
+
 
     @Override
     public void processBarrierAnnouncement(

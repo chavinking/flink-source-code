@@ -319,8 +319,7 @@ public class SqlToRelConverter {
             SqlRexConvertletTable convertletTable,
             Config config) {
         this.viewExpander = viewExpander;
-        this.opTab =
-                (validator == null) ? SqlStdOperatorTable.instance() : validator.getOperatorTable();
+        this.opTab = (validator == null) ? SqlStdOperatorTable.instance() : validator.getOperatorTable();
         this.validator = validator;
         this.catalogReader = catalogReader;
         this.subQueryConverter = new NoOpSubQueryConverter();
@@ -329,12 +328,8 @@ public class SqlToRelConverter {
         this.exprConverter = new SqlNodeToRexConverterImpl(convertletTable);
         this.explainParamCount = 0;
         this.config = Objects.requireNonNull(config);
-        this.relBuilder =
-                config.getRelBuilderFactory()
-                        .create(cluster, null)
-                        .transform(config.getRelBuilderConfigTransform());
+        this.relBuilder = config.getRelBuilderFactory().create(cluster, null).transform(config.getRelBuilderConfigTransform());
         this.hintStrategies = config.getHintStrategyTable();
-
         cluster.setHintStrategies(this.hintStrategies);
         this.cluster = Objects.requireNonNull(cluster);
     }
@@ -563,6 +558,7 @@ public class SqlToRelConverter {
      *     <code>false</code> if the query will be part of a view.
      */
     public RelRoot convertQuery(SqlNode query, final boolean needsValidation, final boolean top) {
+
         if (needsValidation) {
             query = validator.validate(query);
         }
@@ -617,6 +613,10 @@ public class SqlToRelConverter {
                 .withCollation(collation)
                 .withHints(hints);
     }
+
+
+
+
 
     private static boolean isStream(SqlNode query) {
         return query instanceof SqlSelect
@@ -5949,8 +5949,7 @@ public class SqlToRelConverter {
 
         /** Adds a transform to {@link #getRelBuilderConfigTransform()}. */
         default Config addRelBuilderConfigTransform(UnaryOperator<RelBuilder.Config> transform) {
-            return withRelBuilderConfigTransform(
-                    getRelBuilderConfigTransform().andThen(transform)::apply);
+            return withRelBuilderConfigTransform(getRelBuilderConfigTransform().andThen(transform)::apply);
         }
 
         /**

@@ -99,7 +99,8 @@ class HeapSnapshotStrategy<K>
             long checkpointId,
             long timestamp,
             @Nonnull CheckpointStreamFactory streamFactory,
-            @Nonnull CheckpointOptions checkpointOptions) {
+            @Nonnull CheckpointOptions checkpointOptions
+    ) {
 
         List<StateMetaInfoSnapshot> metaInfoSnapshots = syncPartResource.getMetaInfoSnapshots();
         if (metaInfoSnapshots.isEmpty()) {
@@ -113,15 +114,11 @@ class HeapSnapshotStrategy<K>
                         // get a serialized form already at state registration time in the future
                         syncPartResource.getKeySerializer(),
                         metaInfoSnapshots,
-                        !Objects.equals(
-                                UncompressedStreamCompressionDecorator.INSTANCE,
-                                keyGroupCompressionDecorator));
+                        !Objects.equals(UncompressedStreamCompressionDecorator.INSTANCE, keyGroupCompressionDecorator)
+                );
 
-        final SupplierWithException<CheckpointStreamWithResultProvider, Exception>
-                checkpointStreamSupplier =
-                        localRecoveryConfig.isLocalRecoveryEnabled()
-                                        && !checkpointOptions.getCheckpointType().isSavepoint()
-                                ? () ->
+        final SupplierWithException<CheckpointStreamWithResultProvider, Exception> checkpointStreamSupplier =
+                        localRecoveryConfig.isLocalRecoveryEnabled() && !checkpointOptions.getCheckpointType().isSavepoint() ? () ->
                                         createDuplicatingStream(
                                                 checkpointId,
                                                 CheckpointedStateScope.EXCLUSIVE,
@@ -130,44 +127,30 @@ class HeapSnapshotStrategy<K>
                                                         .getLocalStateDirectoryProvider()
                                                         .orElseThrow(
                                                                 LocalRecoveryConfig
-                                                                        .localRecoveryNotEnabled()))
-                                : () ->
-                                        createSimpleStream(
-                                                CheckpointedStateScope.EXCLUSIVE, streamFactory);
+                                                                        .localRecoveryNotEnabled())
+                                        )
+                                : () -> createSimpleStream(CheckpointedStateScope.EXCLUSIVE, streamFactory);
 
         return (snapshotCloseableRegistry) -> {
             final Map<StateUID, Integer> stateNamesToId = syncPartResource.getStateNamesToId();
-            final Map<StateUID, StateSnapshot> cowStateStableSnapshots =
-                    syncPartResource.getCowStateStableSnapshots();
-            final CheckpointStreamWithResultProvider streamWithResultProvider =
-                    checkpointStreamSupplier.get();
-
+            final Map<StateUID, StateSnapshot> cowStateStableSnapshots = syncPartResource.getCowStateStableSnapshots();
+            final CheckpointStreamWithResultProvider streamWithResultProvider = checkpointStreamSupplier.get();
             snapshotCloseableRegistry.registerCloseable(streamWithResultProvider);
-
-            final CheckpointStateOutputStream localStream =
-                    streamWithResultProvider.getCheckpointOutputStream();
-
-            final DataOutputViewStreamWrapper outView =
-                    new DataOutputViewStreamWrapper(localStream);
+            final CheckpointStateOutputStream localStream = streamWithResultProvider.getCheckpointOutputStream();
+            final DataOutputViewStreamWrapper outView = new DataOutputViewStreamWrapper(localStream);
             serializationProxy.write(outView);
 
             final long[] keyGroupRangeOffsets = new long[keyGroupRange.getNumberOfKeyGroups()];
 
-            for (int keyGroupPos = 0;
-                    keyGroupPos < keyGroupRange.getNumberOfKeyGroups();
-                    ++keyGroupPos) {
+            for (int keyGroupPos = 0; keyGroupPos < keyGroupRange.getNumberOfKeyGroups(); ++keyGroupPos) {
                 int keyGroupId = keyGroupRange.getKeyGroupId(keyGroupPos);
                 keyGroupRangeOffsets[keyGroupPos] = localStream.getPos();
                 outView.writeInt(keyGroupId);
 
-                for (Map.Entry<StateUID, StateSnapshot> stateSnapshot :
-                        cowStateStableSnapshots.entrySet()) {
-                    StateSnapshot.StateKeyGroupWriter partitionedSnapshot =
-                            stateSnapshot.getValue().getKeyGroupWriter();
-                    try (OutputStream kgCompressionOut =
-                            keyGroupCompressionDecorator.decorateWithCompression(localStream)) {
-                        DataOutputViewStreamWrapper kgCompressionView =
-                                new DataOutputViewStreamWrapper(kgCompressionOut);
+                for (Map.Entry<StateUID, StateSnapshot> stateSnapshot : cowStateStableSnapshots.entrySet()) {
+                    StateSnapshot.StateKeyGroupWriter partitionedSnapshot = stateSnapshot.getValue().getKeyGroupWriter();
+                    try (OutputStream kgCompressionOut = keyGroupCompressionDecorator.decorateWithCompression(localStream)) {
+                        DataOutputViewStreamWrapper kgCompressionView = new DataOutputViewStreamWrapper(kgCompressionOut);
                         kgCompressionView.writeShort(stateNamesToId.get(stateSnapshot.getKey()));
                         partitionedSnapshot.writeStateInKeyGroup(kgCompressionView, keyGroupId);
                     } // this will just close the outer compression stream
@@ -175,16 +158,17 @@ class HeapSnapshotStrategy<K>
             }
 
             if (snapshotCloseableRegistry.unregisterCloseable(streamWithResultProvider)) {
-                KeyGroupRangeOffsets kgOffs =
-                        new KeyGroupRangeOffsets(keyGroupRange, keyGroupRangeOffsets);
-                SnapshotResult<StreamStateHandle> result =
-                        streamWithResultProvider.closeAndFinalizeCheckpointStreamResult();
+                KeyGroupRangeOffsets kgOffs = new KeyGroupRangeOffsets(keyGroupRange, keyGroupRangeOffsets);
+                SnapshotResult<StreamStateHandle> result = streamWithResultProvider.closeAndFinalizeCheckpointStreamResult();
                 return toKeyedStateHandleSnapshotResult(result, kgOffs, KeyGroupsStateHandle::new);
             } else {
                 throw new IOException("Stream already unregistered.");
             }
         };
     }
+
+
+
 
     public TypeSerializer<K> getKeySerializer() {
         return keySerializerProvider.currentSchemaSerializer();

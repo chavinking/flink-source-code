@@ -153,9 +153,7 @@ public interface CheckpointStreamWithResultProvider extends Closeable {
             @Nonnull CheckpointStreamFactory primaryStreamFactory)
             throws IOException {
 
-        CheckpointStateOutputStream primaryOut =
-                primaryStreamFactory.createCheckpointStateOutputStream(checkpointedStateScope);
-
+        CheckpointStateOutputStream primaryOut = primaryStreamFactory.createCheckpointStateOutputStream(checkpointedStateScope);
         return new CheckpointStreamWithResultProvider.PrimaryStreamOnly(primaryOut);
     }
 
@@ -171,25 +169,13 @@ public interface CheckpointStreamWithResultProvider extends Closeable {
                 primaryStreamFactory.createCheckpointStateOutputStream(checkpointedStateScope);
 
         try {
-            File outFile =
-                    new File(
-                            secondaryStreamDirProvider.subtaskSpecificCheckpointDirectory(
-                                    checkpointId),
-                            String.valueOf(UUID.randomUUID()));
+            File outFile = new File(secondaryStreamDirProvider.subtaskSpecificCheckpointDirectory(checkpointId), String.valueOf(UUID.randomUUID()));
             Path outPath = new Path(outFile.toURI());
-
-            CheckpointStateOutputStream secondaryOut =
-                    new FileBasedStateOutputStream(outPath.getFileSystem(), outPath);
-
-            return new CheckpointStreamWithResultProvider.PrimaryAndSecondaryStream(
-                    primaryOut, secondaryOut);
+            CheckpointStateOutputStream secondaryOut = new FileBasedStateOutputStream(outPath.getFileSystem(), outPath);
+            return new CheckpointStreamWithResultProvider.PrimaryAndSecondaryStream(primaryOut, secondaryOut);
         } catch (IOException secondaryEx) {
-            LOG.warn(
-                    "Exception when opening secondary/local checkpoint output stream. "
-                            + "Continue only with the primary stream.",
-                    secondaryEx);
+            LOG.warn("Exception when opening secondary/local checkpoint output stream. " + "Continue only with the primary stream.", secondaryEx);
         }
-
         return new CheckpointStreamWithResultProvider.PrimaryStreamOnly(primaryOut);
     }
 

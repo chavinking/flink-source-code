@@ -80,10 +80,7 @@ public class DefaultSchedulerFactory implements SchedulerNGFactory {
         final SlotPool slotPool =
                 slotPoolService
                         .castInto(SlotPool.class)
-                        .orElseThrow(
-                                () ->
-                                        new IllegalStateException(
-                                                "The DefaultScheduler requires a SlotPool."));
+                        .orElseThrow(() -> new IllegalStateException("The DefaultScheduler requires a SlotPool."));
 
         final DefaultSchedulerComponents schedulerComponents =
                 createSchedulerComponents(

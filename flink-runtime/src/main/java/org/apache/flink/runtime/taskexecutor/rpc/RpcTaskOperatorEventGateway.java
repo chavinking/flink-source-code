@@ -55,7 +55,8 @@ public class RpcTaskOperatorEventGateway implements TaskOperatorEventGateway {
 
     @Override
     public void sendOperatorEventToCoordinator(
-            OperatorID operator, SerializedValue<OperatorEvent> event) {
+            OperatorID operator, SerializedValue<OperatorEvent> event
+    ) {
         final CompletableFuture<Acknowledge> result =
                 rpcGateway.sendOperatorEventToCoordinator(taskExecutionId, operator, event);
 

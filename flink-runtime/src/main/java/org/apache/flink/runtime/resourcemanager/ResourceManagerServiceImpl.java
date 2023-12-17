@@ -191,7 +191,7 @@ public class ResourceManagerServiceImpl implements ResourceManagerService, Leade
     // ------------------------------------------------------------------------
 
     /**
-     * 启动leader选举服务
+     * 启动resource manager leader选举服务
      *
      * @param newLeaderSessionID New leader session ID
      */
@@ -258,7 +258,7 @@ public class ResourceManagerServiceImpl implements ResourceManagerService, Leade
     // ------------------------------------------------------------------------
 
     /**
-     * 新leader选举启动
+     * 启动rm，新leader选举启动
      *
      * @param newLeaderSessionID
      * @throws Exception
@@ -284,6 +284,7 @@ public class ResourceManagerServiceImpl implements ResourceManagerService, Leade
                 .thenAcceptAsync(
                         (isStillLeader) -> {
                             if (isStillLeader) {
+//                                如果是standalone模式，啥也不做，默认模式这里边包含写入rm信息到zk
                                 leaderElectionService.confirmLeadership(newLeaderSessionID, newLeaderResourceManager.getAddress());
                             }
                         },
@@ -298,7 +299,7 @@ public class ResourceManagerServiceImpl implements ResourceManagerService, Leade
     private CompletableFuture<Boolean> startResourceManagerIfIsLeader(
             ResourceManager<?> resourceManager) {
         if (isLeader(resourceManager)) {
-            resourceManager.start();
+            resourceManager.start(); // 启动rm服务，这里调用了rpc服务，跳转到ResourceManager里的onStart()方法执行
             forwardTerminationFuture(resourceManager);
             return resourceManager.getStartedFuture().thenApply(ignore -> true);
         } else {

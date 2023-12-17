@@ -449,10 +449,8 @@ public class NetworkBufferPool
     // ------------------------------------------------------------------------
 
     @Override
-    public BufferPool createBufferPool(int numRequiredBuffers, int maxUsedBuffers)
-            throws IOException {
-        return internalCreateBufferPool(
-                numRequiredBuffers, maxUsedBuffers, 0, Integer.MAX_VALUE, 0);
+    public BufferPool createBufferPool(int numRequiredBuffers, int maxUsedBuffers) throws IOException {
+        return internalCreateBufferPool(numRequiredBuffers, maxUsedBuffers, 0, Integer.MAX_VALUE, 0);
     }
 
     @Override
@@ -468,16 +466,28 @@ public class NetworkBufferPool
                 maxUsedBuffers,
                 numSubpartitions,
                 maxBuffersPerChannel,
-                maxOverdraftBuffersPerGate);
+                maxOverdraftBuffersPerGate
+        );
     }
 
+    /**
+     * 创建缓冲区
+     *
+     * @param numRequiredBuffers
+     * @param maxUsedBuffers
+     * @param numSubpartitions
+     * @param maxBuffersPerChannel
+     * @param maxOverdraftBuffersPerGate
+     * @return
+     * @throws IOException
+     */
     private BufferPool internalCreateBufferPool(
-            int numRequiredBuffers,
-            int maxUsedBuffers,
-            int numSubpartitions,
-            int maxBuffersPerChannel,
-            int maxOverdraftBuffersPerGate)
-            throws IOException {
+            int numRequiredBuffers, // 最小缓冲区数量
+            int maxUsedBuffers, // 最大缓冲区数量
+            int numSubpartitions, // 子分区数量
+            int maxBuffersPerChannel,// 每个渠道最大buffer数量
+            int maxOverdraftBuffersPerGate // 每个网关（gate）的最大透支缓冲区数量，用于限制每个网关可以超额使用的缓冲区数量。
+    ) throws IOException {
 
         // It is necessary to use a separate lock from the one used for buffer
         // requests to ensure deadlock freedom for failure cases.
@@ -502,14 +512,14 @@ public class NetworkBufferPool
 
             // We are good to go, create a new buffer pool and redistribute
             // non-fixed size buffers.
-            LocalBufferPool localBufferPool =
-                    new LocalBufferPool(
+            LocalBufferPool localBufferPool = new LocalBufferPool(
                             this,
-                            numRequiredBuffers,
-                            maxUsedBuffers,
-                            numSubpartitions,
-                            maxBuffersPerChannel,
-                            maxOverdraftBuffersPerGate);
+                            numRequiredBuffers,// 最小缓冲区数量
+                            maxUsedBuffers,// 最大缓冲区数量
+                            numSubpartitions,// 子分区数量
+                            maxBuffersPerChannel,// 每个渠道最大buffer数量
+                            maxOverdraftBuffersPerGate// 每个网关（gate）的最大透支缓冲区数量，用于限制每个网关可以超额使用的缓冲区数量。
+                    );
 
             allBufferPools.add(localBufferPool);
 
@@ -517,11 +527,14 @@ public class NetworkBufferPool
                 resizableBufferPools.add(localBufferPool);
             }
 
+            // 重分配buffer
             redistributeBuffers();
 
             return localBufferPool;
         }
     }
+
+
 
     @Override
     public void destroyBufferPool(BufferPool bufferPool) {
@@ -619,9 +632,7 @@ public class NetworkBufferPool
         long totalCapacity = 0; // long to avoid int overflow
 
         for (LocalBufferPool bufferPool : resizableBufferPools) {
-            int excessMax =
-                    bufferPool.getMaxNumberOfMemorySegments()
-                            - bufferPool.getNumberOfRequiredMemorySegments();
+            int excessMax = bufferPool.getMaxNumberOfMemorySegments() - bufferPool.getNumberOfRequiredMemorySegments();
             totalCapacity += Math.min(numAvailableMemorySegment, excessMax);
         }
 
@@ -633,15 +644,12 @@ public class NetworkBufferPool
         // since one of the arguments of 'min(a,b)' is a positive int, this is actually
         // guaranteed to be within the 'int' domain
         // (we use a checked downCast to handle possible bugs more gracefully).
-        final int memorySegmentsToDistribute =
-                MathUtils.checkedDownCast(Math.min(numAvailableMemorySegment, totalCapacity));
+        final int memorySegmentsToDistribute = MathUtils.checkedDownCast(Math.min(numAvailableMemorySegment, totalCapacity));
 
         long totalPartsUsed = 0; // of totalCapacity
         int numDistributedMemorySegment = 0;
         for (LocalBufferPool bufferPool : resizableBufferPools) {
-            int excessMax =
-                    bufferPool.getMaxNumberOfMemorySegments()
-                            - bufferPool.getNumberOfRequiredMemorySegments();
+            int excessMax = bufferPool.getMaxNumberOfMemorySegments() - bufferPool.getNumberOfRequiredMemorySegments();
 
             // shortcut
             if (excessMax == 0) {
@@ -654,10 +662,7 @@ public class NetworkBufferPool
             // re-distributed up until here
             // the downcast will always succeed, because both arguments of the subtraction are in
             // the 'int' domain
-            final int mySize =
-                    MathUtils.checkedDownCast(
-                            memorySegmentsToDistribute * totalPartsUsed / totalCapacity
-                                    - numDistributedMemorySegment);
+            final int mySize = MathUtils.checkedDownCast(memorySegmentsToDistribute * totalPartsUsed / totalCapacity - numDistributedMemorySegment);
 
             numDistributedMemorySegment += mySize;
             bufferPool.setNumBuffers(bufferPool.getNumberOfRequiredMemorySegments() + mySize);
@@ -666,6 +671,9 @@ public class NetworkBufferPool
         assert (totalPartsUsed == totalCapacity);
         assert (numDistributedMemorySegment == memorySegmentsToDistribute);
     }
+
+
+
 
     private String getConfigDescription() {
         return String.format(

@@ -45,6 +45,7 @@ public class StandaloneDispatcher extends Dispatcher {
                 recoveredJobs,
                 recoveredDirtyJobResults,
                 dispatcherBootstrapFactory,
-                dispatcherServices);
+                dispatcherServices
+        );
     }
 }

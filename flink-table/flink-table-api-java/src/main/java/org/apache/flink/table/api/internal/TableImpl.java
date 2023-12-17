@@ -85,7 +85,8 @@ public class TableImpl implements Table {
             TableEnvironmentInternal tableEnvironment,
             QueryOperation operationTree,
             OperationTreeBuilder operationTreeBuilder,
-            LookupCallResolver lookupResolver) {
+            LookupCallResolver lookupResolver
+    ) {
         this.tableEnvironment = tableEnvironment;
         this.operationTree = operationTree;
         this.operationTreeBuilder = operationTreeBuilder;
@@ -101,7 +102,8 @@ public class TableImpl implements Table {
                 tableEnvironment,
                 operationTree,
                 operationTreeBuilder,
-                new LookupCallResolver(functionLookup));
+                new LookupCallResolver(functionLookup)
+        );
     }
 
     @Override

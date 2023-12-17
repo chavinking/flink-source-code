@@ -91,8 +91,7 @@ public class DispatcherRestEndpoint extends WebMonitorEndpoint<DispatcherGateway
         final Time timeout = restConfiguration.getTimeout();
 
         JobSubmitHandler jobSubmitHandler =
-                new JobSubmitHandler(
-                        leaderRetriever, timeout, responseHeaders, executor, clusterConfiguration);
+                new JobSubmitHandler(leaderRetriever, timeout, responseHeaders, executor, clusterConfiguration);
 
         handlers.add(Tuple2.of(jobSubmitHandler.getMessageHeaders(), jobSubmitHandler));
 

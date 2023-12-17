@@ -136,8 +136,7 @@ public class TaskExecutorLocalStateStoresManager {
                                 + "register a new TaskLocalStateStore.");
             }
 
-            Map<JobVertexSubtaskKey, OwnedTaskLocalStateStore> taskStateManagers =
-                    this.taskStateStoresByAllocationID.get(allocationID);
+            Map<JobVertexSubtaskKey, OwnedTaskLocalStateStore> taskStateManagers = this.taskStateStoresByAllocationID.get(allocationID);
 
             if (taskStateManagers == null) {
                 taskStateManagers = new HashMap<>();

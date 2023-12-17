@@ -59,11 +59,13 @@ public class StandaloneSessionClusterEntrypoint extends SessionClusterEntrypoint
                 ClusterEntrypointUtils.parseParametersOrExit(
                         args,
                         new EntrypointClusterConfigurationParserFactory(),
-                        StandaloneSessionClusterEntrypoint.class);
+                        StandaloneSessionClusterEntrypoint.class
+                );
+
 //        解析配置文件参数
         Configuration configuration = loadConfiguration(entrypointClusterConfiguration);
 
-//        创建集群组件对象
+//        传入配置参数，创建集群组件对象
         StandaloneSessionClusterEntrypoint entrypoint = new StandaloneSessionClusterEntrypoint(configuration);
 
         // 启动组件

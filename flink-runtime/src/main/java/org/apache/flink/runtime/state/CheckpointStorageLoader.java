@@ -161,8 +161,8 @@ public class CheckpointStorageLoader {
             StateBackend configuredStateBackend,
             Configuration config,
             ClassLoader classLoader,
-            @Nullable Logger logger)
-            throws IllegalConfigurationException, DynamicCodeLoadingException {
+            @Nullable Logger logger
+    ) throws IllegalConfigurationException, DynamicCodeLoadingException {
 
         Preconditions.checkNotNull(config, "config");
         Preconditions.checkNotNull(classLoader, "classLoader");
@@ -179,10 +179,7 @@ public class CheckpointStorageLoader {
 
         // Legacy state backends always take precedence for backwards compatibility.
         StateBackend rootStateBackend =
-                (configuredStateBackend instanceof DelegatingStateBackend)
-                        ? ((DelegatingStateBackend) configuredStateBackend)
-                                .getDelegatedStateBackend()
-                        : configuredStateBackend;
+                (configuredStateBackend instanceof DelegatingStateBackend) ? ((DelegatingStateBackend) configuredStateBackend).getDelegatedStateBackend() : configuredStateBackend;
 
         if (rootStateBackend instanceof CheckpointStorage) {
             if (logger != null) {
@@ -218,8 +215,7 @@ public class CheckpointStorageLoader {
                                 CheckpointingOptions.CHECKPOINT_STORAGE.key());
                     }
                 }
-                return ((ConfigurableCheckpointStorage) fromApplication)
-                        .configure(config, classLoader);
+                return ((ConfigurableCheckpointStorage) fromApplication).configure(config, classLoader);
             }
             if (logger != null) {
                 logger.info("Using application defined checkpoint storage: {}", fromApplication);
@@ -227,9 +223,12 @@ public class CheckpointStorageLoader {
             return fromApplication;
         }
 
-        return fromConfig(config, classLoader, logger)
-                .orElseGet(() -> createDefaultCheckpointStorage(config, classLoader, logger));
+        return fromConfig(config, classLoader, logger).orElseGet(() -> createDefaultCheckpointStorage(config, classLoader, logger));
     }
+
+
+
+
 
     /**
      * Creates a default checkpoint storage instance if none was explicitly configured. For
@@ -244,8 +243,7 @@ public class CheckpointStorageLoader {
      * @throws IllegalConfigurationException May be thrown by the CheckpointStorageFactory when
      *     creating / configuring the checkpoint storage in the factory.
      */
-    private static CheckpointStorage createDefaultCheckpointStorage(
-            ReadableConfig config, ClassLoader classLoader, @Nullable Logger logger) {
+    private static CheckpointStorage createDefaultCheckpointStorage(ReadableConfig config, ClassLoader classLoader, @Nullable Logger logger) {
 
         if (config.getOptional(CheckpointingOptions.CHECKPOINTS_DIRECTORY).isPresent()) {
             return createFileSystemCheckpointStorage(config, classLoader, logger);
@@ -254,8 +252,7 @@ public class CheckpointStorageLoader {
         return createJobManagerCheckpointStorage(config, classLoader, logger);
     }
 
-    private static CheckpointStorage createFileSystemCheckpointStorage(
-            ReadableConfig config, ClassLoader classLoader, @Nullable Logger logger) {
+    private static CheckpointStorage createFileSystemCheckpointStorage(ReadableConfig config, ClassLoader classLoader, @Nullable Logger logger) {
         FileSystemCheckpointStorage storage =
                 FileSystemCheckpointStorage.createFromConfig(config, classLoader);
         if (logger != null) {
@@ -267,8 +264,7 @@ public class CheckpointStorageLoader {
         return storage;
     }
 
-    private static CheckpointStorage createJobManagerCheckpointStorage(
-            ReadableConfig config, ClassLoader classLoader, @Nullable Logger logger) {
+    private static CheckpointStorage createJobManagerCheckpointStorage(ReadableConfig config, ClassLoader classLoader, @Nullable Logger logger) {
         if (logger != null) {
             logger.info("Checkpoint storage is set to '{}'", JOB_MANAGER_STORAGE_NAME);
         }

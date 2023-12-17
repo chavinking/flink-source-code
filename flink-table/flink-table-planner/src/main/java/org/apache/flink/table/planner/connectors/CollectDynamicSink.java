@@ -75,7 +75,8 @@ public final class CollectDynamicSink implements DynamicTableSink {
             Duration socketTimeout,
             ClassLoader classLoader,
             ZoneId sessionZoneId,
-            boolean legacyCastBehaviour) {
+            boolean legacyCastBehaviour
+    ) {
         this.tableIdentifier = tableIdentifier;
         this.consumedDataType = consumedDataType;
         this.maxBatchSize = maxBatchSize;
@@ -86,9 +87,7 @@ public final class CollectDynamicSink implements DynamicTableSink {
     }
 
     public ResultProvider getSelectResultProvider() {
-        return new CollectResultProvider(
-                new RowDataToStringConverterImpl(
-                        consumedDataType, sessionZoneId, classLoader, legacyCastBehaviour));
+        return new CollectResultProvider(new RowDataToStringConverterImpl(consumedDataType, sessionZoneId, classLoader, legacyCastBehaviour));
     }
 
     @Override

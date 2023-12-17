@@ -213,12 +213,10 @@ public class TaskManagerRunner implements FatalErrorHandler {
             rpcService = createRpcService(configuration, highAvailabilityServices, rpcSystem);
 
             this.resourceId =
-                    getTaskManagerResourceID(
-                            configuration, rpcService.getAddress(), rpcService.getPort());
+                    getTaskManagerResourceID(configuration, rpcService.getAddress(), rpcService.getPort());
 
             this.workingDirectory =
-                    ClusterEntrypointUtils.createTaskManagerWorkingDirectory(
-                            configuration, resourceId);
+                    ClusterEntrypointUtils.createTaskManagerWorkingDirectory(configuration, resourceId);
 
             LOG.info("Using working directory: {}", workingDirectory);
 

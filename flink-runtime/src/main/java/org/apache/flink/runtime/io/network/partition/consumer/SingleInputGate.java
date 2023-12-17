@@ -316,6 +316,9 @@ public class SingleInputGate extends IndexedInputGate {
         }
     }
 
+
+
+
     @VisibleForTesting
     public void convertRecoveredInputChannels() {
         LOG.debug("Converting recovered input channels ({} channels)", getNumberOfInputChannels());
@@ -323,8 +326,7 @@ public class SingleInputGate extends IndexedInputGate {
             InputChannel inputChannel = entry.getValue();
             if (inputChannel instanceof RecoveredInputChannel) {
                 try {
-                    InputChannel realInputChannel =
-                            ((RecoveredInputChannel) inputChannel).toInputChannel();
+                    InputChannel realInputChannel = ((RecoveredInputChannel) inputChannel).toInputChannel();
                     inputChannel.releaseAllResources();
                     entry.setValue(realInputChannel);
                     channels[inputChannel.getChannelIndex()] = realInputChannel;
@@ -335,6 +337,9 @@ public class SingleInputGate extends IndexedInputGate {
             }
         }
     }
+
+
+
 
     private void internalRequestPartitions() {
         for (InputChannel inputChannel : inputChannels.values()) {
@@ -411,11 +416,15 @@ public class SingleInputGate extends IndexedInputGate {
         }
 
         checkState(bufferDebloater != null, "Buffer debloater should not be null");
+
         final long currentThroughput = throughputCalculator.calculateThroughput();
         bufferDebloater
                 .recalculateBufferSize(currentThroughput, getBuffersInUseCount())
                 .ifPresent(this::announceBufferSize);
     }
+
+
+
 
     public Duration getLastEstimatedTimeToConsume() {
         return bufferDebloater.getLastEstimatedTimeToConsumeBuffers();
@@ -534,23 +543,22 @@ public class SingleInputGate extends IndexedInputGate {
                             + "but got "
                             + channels.length);
         }
+
         synchronized (requestLock) {
             System.arraycopy(channels, 0, this.channels, 0, numberOfInputChannels);
             for (InputChannel inputChannel : channels) {
-                IntermediateResultPartitionID partitionId =
-                        inputChannel.getPartitionId().getPartitionId();
+                IntermediateResultPartitionID partitionId = inputChannel.getPartitionId().getPartitionId();
                 int subpartitionIndex = inputChannel.getConsumedSubpartitionIndex();
-                if (inputChannels.put(
-                                        new SubpartitionInfo(partitionId, subpartitionIndex),
-                                        inputChannel)
-                                == null
-                        && inputChannel instanceof UnknownInputChannel) {
-
+                if (inputChannels.put(new SubpartitionInfo(partitionId, subpartitionIndex), inputChannel) == null && inputChannel instanceof UnknownInputChannel) {
                     numberOfUninitializedChannels++;
                 }
             }
         }
     }
+
+
+
+
 
     public void updateInputChannel(
             ResourceID localLocation, NettyShuffleDescriptor shuffleDescriptor)

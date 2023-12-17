@@ -289,8 +289,7 @@ public class AdaptiveBatchScheduler extends DefaultScheduler {
     }
 
     private void initializeOperatorCoordinatorsFor(ExecutionJobVertex vertex) {
-        operatorCoordinatorHandler.registerAndStartNewCoordinators(
-                vertex.getOperatorCoordinators(), getMainThreadExecutor());
+        operatorCoordinatorHandler.registerAndStartNewCoordinators(vertex.getOperatorCoordinators(), getMainThreadExecutor());
     }
 
     /**

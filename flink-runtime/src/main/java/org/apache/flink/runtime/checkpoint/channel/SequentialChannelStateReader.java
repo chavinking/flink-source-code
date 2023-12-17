@@ -28,8 +28,7 @@ public interface SequentialChannelStateReader extends AutoCloseable {
 
     void readInputData(InputGate[] inputGates) throws IOException, InterruptedException;
 
-    void readOutputData(ResultPartitionWriter[] writers, boolean notifyAndBlockOnCompletion)
-            throws IOException, InterruptedException;
+    void readOutputData(ResultPartitionWriter[] writers, boolean notifyAndBlockOnCompletion) throws IOException, InterruptedException;
 
     @Override
     void close() throws Exception;

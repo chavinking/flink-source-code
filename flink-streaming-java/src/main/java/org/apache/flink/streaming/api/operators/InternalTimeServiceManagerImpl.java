@@ -97,8 +97,7 @@ public class InternalTimeServiceManagerImpl<K> implements InternalTimeServiceMan
             ClassLoader userClassloader,
             KeyContext keyContext,
             ProcessingTimeService processingTimeService,
-            Iterable<KeyGroupStatePartitionStreamProvider> rawKeyedStates)
-            throws Exception {
+            Iterable<KeyGroupStatePartitionStreamProvider> rawKeyedStates) throws Exception {
         final KeyGroupRange keyGroupRange = keyedStateBackend.getKeyGroupRange();
 
         final InternalTimeServiceManagerImpl<K> timeServiceManager =
@@ -113,8 +112,7 @@ public class InternalTimeServiceManagerImpl<K> implements InternalTimeServiceMan
                     keyGroupRange.contains(keyGroupIdx),
                     "Key Group " + keyGroupIdx + " does not belong to the local range.");
 
-            timeServiceManager.restoreStateForKeyGroup(
-                    streamProvider.getStream(), keyGroupIdx, userClassloader);
+            timeServiceManager.restoreStateForKeyGroup(streamProvider.getStream(), keyGroupIdx, userClassloader);
         }
 
         return timeServiceManager;
@@ -184,8 +182,7 @@ public class InternalTimeServiceManagerImpl<K> implements InternalTimeServiceMan
     //////////////////				Fault Tolerance Methods				///////////////////
 
     @Override
-    public void snapshotToRawKeyedState(KeyedStateCheckpointOutputStream out, String operatorName)
-            throws Exception {
+    public void snapshotToRawKeyedState(KeyedStateCheckpointOutputStream out, String operatorName) throws Exception {
         try {
             KeyGroupsList allKeyGroups = out.getKeyGroupList();
             for (int keyGroupIdx : allKeyGroups) {
@@ -212,8 +209,7 @@ public class InternalTimeServiceManagerImpl<K> implements InternalTimeServiceMan
         }
     }
 
-    private void snapshotStateForKeyGroup(DataOutputView stream, int keyGroupIdx)
-            throws IOException {
+    private void snapshotStateForKeyGroup(DataOutputView stream, int keyGroupIdx) throws IOException {
         InternalTimerServiceSerializationProxy<K> serializationProxy =
                 new InternalTimerServiceSerializationProxy<>(this, keyGroupIdx);
 

@@ -341,14 +341,13 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                 checkNotNull(slotPoolServiceSchedulerFactory)
                         .createSlotPoolService(
                                 jid,
-                                createDeclarativeSlotPoolFactory(
-                                        jobMasterConfiguration.getConfiguration()));
+                                createDeclarativeSlotPoolFactory(jobMasterConfiguration.getConfiguration())
+                        );
         this.partitionTracker =
                 checkNotNull(partitionTrackerFactory)
                         .create(
                                 resourceID -> {
-                                    return Optional.ofNullable(
-                                                    registeredTaskManagers.get(resourceID))
+                                    return Optional.ofNullable(registeredTaskManagers.get(resourceID))
                                             .map(TaskManagerRegistration::getTaskExecutorGateway);
                                 });
 
@@ -356,8 +355,10 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         this.jobManagerJobMetricGroup = jobMetricGroupFactory.create(jobGraph);
         this.jobStatusListener = new JobManagerJobStatusListener();
 
+
         /**
          * 在这里实现 jobgraph到executiongraph的转换
+         * 这里实例默认DefaultScheduler实现，包含了ExecutionGraph实例
          *
          */
         this.schedulerNG =
@@ -365,7 +366,9 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                         slotPoolServiceSchedulerFactory,
                         executionDeploymentTracker,
                         jobManagerJobMetricGroup,
-                        jobStatusListener);
+                        jobStatusListener
+                );
+
 
         this.heartbeatServices = checkNotNull(heartbeatServices);
         this.taskManagerHeartbeatManager = NoOpHeartbeatManager.getInstance();
@@ -401,7 +404,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                         getMainThreadExecutor(),
                         fatalErrorHandler,
                         jobStatusListener,
-                        blocklistHandler::addNewBlockedNodes);
+                        blocklistHandler::addNewBlockedNodes
+                );
 
         return scheduler;
     }
@@ -596,7 +600,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
     public CompletableFuture<Acknowledge> sendOperatorEventToCoordinator(
             final ExecutionAttemptID task,
             final OperatorID operatorID,
-            final SerializedValue<OperatorEvent> serializedEvent) {
+            final SerializedValue<OperatorEvent> serializedEvent
+    ) {
 
         try {
             final OperatorEvent evt = serializedEvent.deserializeValue(userCodeLoader);
@@ -873,7 +878,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
             @Nullable final String targetDirectory,
             final boolean cancelJob,
             final SavepointFormatType formatType,
-            final Time timeout) {
+            final Time timeout
+    ) {
 
         return schedulerNG.triggerSavepoint(targetDirectory, cancelJob, formatType);
     }

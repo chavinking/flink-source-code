@@ -390,8 +390,7 @@ public final class FunctionCatalog {
             }
 
             @Override
-            public Optional<ContextResolvedFunction> lookupFunction(
-                    UnresolvedIdentifier identifier) {
+            public Optional<ContextResolvedFunction> lookupFunction(UnresolvedIdentifier identifier) {
                 return FunctionCatalog.this.lookupFunction(identifier);
             }
 

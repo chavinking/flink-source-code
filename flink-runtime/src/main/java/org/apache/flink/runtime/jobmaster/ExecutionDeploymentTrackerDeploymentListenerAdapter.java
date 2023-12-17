@@ -29,8 +29,7 @@ public class ExecutionDeploymentTrackerDeploymentListenerAdapter
         implements ExecutionDeploymentListener {
     private final ExecutionDeploymentTracker executionDeploymentTracker;
 
-    public ExecutionDeploymentTrackerDeploymentListenerAdapter(
-            ExecutionDeploymentTracker executionDeploymentTracker) {
+    public ExecutionDeploymentTrackerDeploymentListenerAdapter(ExecutionDeploymentTracker executionDeploymentTracker) {
         this.executionDeploymentTracker = executionDeploymentTracker;
     }
 

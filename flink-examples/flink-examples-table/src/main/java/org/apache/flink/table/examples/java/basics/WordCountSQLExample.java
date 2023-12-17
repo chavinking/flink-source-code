@@ -27,8 +27,7 @@ public final class WordCountSQLExample {
     public static void main(String[] args) throws Exception {
 
         // set up the Table API
-        final EnvironmentSettings settings =
-                EnvironmentSettings.newInstance().inBatchMode().build();
+        final EnvironmentSettings settings = EnvironmentSettings.newInstance().inBatchMode().build();
         final TableEnvironment tableEnv = TableEnvironment.create(settings);
 
         // execute a Flink SQL job and print the result locally
@@ -42,7 +41,8 @@ public final class WordCountSQLExample {
                                 // name the table and its columns
                                 + "AS WordTable(word, frequency)\n"
                                 // group for aggregation
-                                + "GROUP BY word")
+                                + "GROUP BY word"
+                )
                 .print();
     }
 }

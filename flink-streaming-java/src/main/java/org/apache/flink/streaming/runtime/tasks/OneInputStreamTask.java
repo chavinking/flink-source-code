@@ -91,24 +91,40 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
         super(env, timeProvider);
     }
 
+    /**
+     * OneInputStreamTask 初始化
+     *
+     * @throws Exception
+     */
     @Override
     public void init() throws Exception {
+
+        // 获取配置和输入源数量
         StreamConfig configuration = getConfiguration();
         int numberOfInputs = configuration.getNumberOfNetworkInputs();
 
+//        存在输入源
         if (numberOfInputs > 0) {
+            /**
+             * 创建检查点inputGate
+             *
+             * CheckpointedInputGate 是 Flink 中用于从输入通道读取数据并支持检查点的输入门（Input Gate）。
+             * 输入门是 Flink 数据流任务中的一个重要组件，用于接收来自上游任务的数据，并在执行检查点时将数据持久化到状态后端，以支持故障恢复和一致性保证。
+             */
             CheckpointedInputGate inputGate = createCheckpointedInputGate();
+
             Counter numRecordsIn = setupNumRecordsInCounter(mainOperator);
+
             DataOutput<IN> output = createDataOutput(numRecordsIn);
             StreamTaskInput<IN> input = createTaskInput(inputGate);
 
-            StreamConfig.InputConfig[] inputConfigs =
-                    configuration.getInputs(getUserCodeClassLoader());
+            StreamConfig.InputConfig[] inputConfigs = configuration.getInputs(getUserCodeClassLoader());
             StreamConfig.InputConfig inputConfig = inputConfigs[0];
             if (requiresSorting(inputConfig)) {
                 checkState(
                         !configuration.isCheckpointingEnabled(),
                         "Checkpointing is not allowed with sorted inputs.");
+
                 input = wrapWithSorted(input);
             }
 
@@ -118,7 +134,9 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
                     .reuseRecordsInputCounter(numRecordsIn);
 
             inputProcessor = new StreamOneInputProcessor<>(input, output, operatorChain);
+
         }
+
         mainOperator
                 .getMetricGroup()
                 .gauge(MetricNames.IO_CURRENT_INPUT_WATERMARK, inputWatermarkGauge);
@@ -127,6 +145,9 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
                 .getMetricGroup()
                 .gauge(MetricNames.IO_CURRENT_INPUT_WATERMARK, inputWatermarkGauge::getValue);
     }
+
+
+
 
     @Override
     protected Optional<CheckpointBarrierHandler> getCheckpointBarrierHandler() {
@@ -149,15 +170,34 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
                         userCodeClassLoader),
                 getJobConfiguration(),
                 this,
-                getExecutionConfig());
+                getExecutionConfig()
+        );
     }
 
     @SuppressWarnings("unchecked")
     private CheckpointedInputGate createCheckpointedInputGate() {
+
+//        获取所有的inputgate对象，并且保存为数组
         IndexedInputGate[] inputGates = getEnvironment().getAllInputGates();
 
-        checkpointBarrierHandler =
-                InputProcessorUtil.createCheckpointBarrierHandler(
+        /**
+         * 这段代码创建了一个 CheckpointBarrierHandler 对象，并将其赋值给变量 checkpointBarrierHandler。下面是对代码的解释：
+         *
+         * InputProcessorUtil.createCheckpointBarrierHandler(...)：调用 InputProcessorUtil 工具类的静态方法 createCheckpointBarrierHandler
+         * 来创建一个 CheckpointBarrierHandler 对象。该方法可能包含了创建和配置 CheckpointBarrierHandler 对象所需的逻辑。
+         * this：作为参数传递给方法的当前对象，可能是指当前的任务实例。
+         * configuration：作为参数传递给方法的配置对象，用于配置 CheckpointBarrierHandler。
+         * getCheckpointCoordinator()：调用一个方法（getCheckpointCoordinator()）来获取检查点协调器（Checkpoint Coordinator）的实例。
+         * getTaskNameWithSubtaskAndId()：调用一个方法（getTaskNameWithSubtaskAndId()）来获取任务的名称、子任务和标识符的组合。
+         * new List[] {Arrays.asList(inputGates)}：作为参数传递给方法的输入门（InputGate）对象的列表。可能是一个包含输入门的数组或列表。
+         * Collections.emptyList()：作为参数传递给方法的空列表，表示不使用额外的约束条件。
+         * mainMailboxExecutor：作为参数传递给方法的邮箱执行器（MailboxExecutor）对象。该邮箱执行器用于异步执行 CheckpointBarrierHandler 中的操作。
+         * systemTimerService：作为参数传递给方法的系统定时器服务（SystemTimerService）对象，用于计时器相关的操作。
+         * 通过调用 InputProcessorUtil.createCheckpointBarrierHandler(...) 方法，可以创建一个经过配置的 CheckpointBarrierHandler 对象，该对象用于处理检查点相关的任务操作。将创建的 CheckpointBarrierHandler 对象赋值给 checkpointBarrierHandler 变量后，可以在后续的代码中使用该对象来处理检查点相关的任务操作，例如处理检查点屏障和状态快照等。
+         *
+         * 需要注意的是，具体的 createCheckpointBarrierHandler(...) 方法的实现和使用细节取决于上下文和应用程序的需求。要全面理解代码的含义和功能，需要查看 InputProcessorUtil.createCheckpointBarrierHandler(...) 方法的实现，并了解 CheckpointBarrierHandler 类的定义和使用方式。
+         */
+        checkpointBarrierHandler = InputProcessorUtil.createCheckpointBarrierHandler(
                         this,
                         configuration,
                         getCheckpointCoordinator(),
@@ -165,32 +205,38 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
                         new List[] {Arrays.asList(inputGates)},
                         Collections.emptyList(),
                         mainMailboxExecutor,
-                        systemTimerService);
+                        systemTimerService
+                );
 
-        CheckpointedInputGate[] checkpointedInputGates =
-                InputProcessorUtil.createCheckpointedMultipleInputGate(
+//        并行创建检查点inputgate
+        CheckpointedInputGate[] checkpointedInputGates = InputProcessorUtil.createCheckpointedMultipleInputGate(
                         mainMailboxExecutor,
                         new List[] {Arrays.asList(inputGates)},
                         getEnvironment().getMetricGroup().getIOMetricGroup(),
                         checkpointBarrierHandler,
-                        configuration);
+                        configuration
+                );
 
         return Iterables.getOnlyElement(Arrays.asList(checkpointedInputGates));
     }
+
+
 
     private DataOutput<IN> createDataOutput(Counter numRecordsIn) {
         return new StreamTaskNetworkOutput<>(
                 operatorChain.getFinishedOnRestoreInputOrDefault(mainOperator),
                 inputWatermarkGauge,
-                numRecordsIn);
+                numRecordsIn
+        );
     }
 
+
+
     private StreamTaskInput<IN> createTaskInput(CheckpointedInputGate inputGate) {
+
         int numberOfInputChannels = inputGate.getNumberOfInputChannels();
         StatusWatermarkValve statusWatermarkValve = new StatusWatermarkValve(numberOfInputChannels);
-
-        TypeSerializer<IN> inSerializer =
-                configuration.getTypeSerializerIn1(getUserCodeClassLoader());
+        TypeSerializer<IN> inSerializer = configuration.getTypeSerializerIn1(getUserCodeClassLoader());
 
         return StreamTaskNetworkInputFactory.create(
                 inputGate,
@@ -199,13 +245,16 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
                 statusWatermarkValve,
                 0,
                 getEnvironment().getTaskStateManager().getInputRescalingDescriptor(),
-                gateIndex ->
-                        configuration
+                gateIndex -> configuration
                                 .getInPhysicalEdges(getUserCodeClassLoader())
                                 .get(gateIndex)
                                 .getPartitioner(),
-                getEnvironment().getTaskInfo());
+                getEnvironment().getTaskInfo()
+        );
     }
+
+
+
 
     /**
      * The network data output implementation used for processing stream elements from {@link
@@ -218,8 +267,7 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
         private final WatermarkGauge watermarkGauge;
         private final Counter numRecordsIn;
 
-        private StreamTaskNetworkOutput(
-                Input<IN> operator, WatermarkGauge watermarkGauge, Counter numRecordsIn) {
+        private StreamTaskNetworkOutput(Input<IN> operator, WatermarkGauge watermarkGauge, Counter numRecordsIn) {
 
             this.operator = checkNotNull(operator);
             this.watermarkGauge = checkNotNull(watermarkGauge);

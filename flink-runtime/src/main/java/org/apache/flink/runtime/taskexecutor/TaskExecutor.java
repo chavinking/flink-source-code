@@ -598,13 +598,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         return stackTracesFuture.thenApply(TaskThreadInfoResponse::new);
     }
 
+
+
+
     // ----------------------------------------------------------------------
     // Task lifecycle RPCs
     // ----------------------------------------------------------------------
-
     @Override
-    public CompletableFuture<Acknowledge> submitTask(
-            TaskDeploymentDescriptor tdd, JobMasterId jobMasterId, Time timeout) {
+    public CompletableFuture<Acknowledge> submitTask(TaskDeploymentDescriptor tdd, JobMasterId jobMasterId, Time timeout) {
 
         try {
             final JobID jobId = tdd.getJobId();
@@ -658,13 +659,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             // deserialize the pre-serialized information
             final JobInformation jobInformation;
             final TaskInformation taskInformation;
-            try {
-                jobInformation =
-                        tdd.getSerializedJobInformation()
-                                .deserializeValue(getClass().getClassLoader());
-                taskInformation =
-                        tdd.getSerializedTaskInformation()
-                                .deserializeValue(getClass().getClassLoader());
+            try { // 这两句代码中包含了大量的配合信息，在后边代码中会频繁用到
+                jobInformation = tdd.getSerializedJobInformation().deserializeValue(getClass().getClassLoader());
+//                这段代码里定义了如何获取taskConfiguration
+                taskInformation = tdd.getSerializedTaskInformation().deserializeValue(getClass().getClassLoader());
             } catch (IOException | ClassNotFoundException e) {
                 throw new TaskSubmissionException(
                         "Could not deserialize the job or task information.", e);
@@ -679,37 +677,33 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                                 + ")");
             }
 
-            TaskManagerJobMetricGroup jobGroup =
-                    taskManagerMetricGroup.addJob(
-                            jobInformation.getJobId(), jobInformation.getJobName());
+            TaskManagerJobMetricGroup jobGroup = taskManagerMetricGroup.addJob(jobInformation.getJobId(), jobInformation.getJobName());
 
             // note that a pre-existing job group can NOT be closed concurrently - this is done by
             // the same TM thread in removeJobMetricsGroup
-            TaskMetricGroup taskMetricGroup =
-                    jobGroup.addTask(tdd.getExecutionAttemptId(), taskInformation.getTaskName());
+            TaskMetricGroup taskMetricGroup = jobGroup.addTask(tdd.getExecutionAttemptId(), taskInformation.getTaskName());
 
             InputSplitProvider inputSplitProvider =
                     new RpcInputSplitProvider(
                             jobManagerConnection.getJobManagerGateway(),
                             taskInformation.getJobVertexId(),
                             tdd.getExecutionAttemptId(),
-                            taskManagerConfiguration.getRpcTimeout());
+                            taskManagerConfiguration.getRpcTimeout()
+                    );
 
             final TaskOperatorEventGateway taskOperatorEventGateway =
                     new RpcTaskOperatorEventGateway(
                             jobManagerConnection.getJobManagerGateway(),
                             executionAttemptID,
-                            (t) -> runAsync(() -> failTask(executionAttemptID, t)));
+                            (t) -> runAsync(() -> failTask(executionAttemptID, t))
+                    );
 
             TaskManagerActions taskManagerActions = jobManagerConnection.getTaskManagerActions();
             CheckpointResponder checkpointResponder = jobManagerConnection.getCheckpointResponder();
-            GlobalAggregateManager aggregateManager =
-                    jobManagerConnection.getGlobalAggregateManager();
+            GlobalAggregateManager aggregateManager = jobManagerConnection.getGlobalAggregateManager();
 
-            LibraryCacheManager.ClassLoaderHandle classLoaderHandle =
-                    jobManagerConnection.getClassLoaderHandle();
-            PartitionProducerStateChecker partitionStateChecker =
-                    jobManagerConnection.getPartitionStateChecker();
+            LibraryCacheManager.ClassLoaderHandle classLoaderHandle = jobManagerConnection.getClassLoaderHandle();
+            PartitionProducerStateChecker partitionStateChecker = jobManagerConnection.getPartitionStateChecker();
 
             final TaskLocalStateStore localStateStore =
                     localStateStoresManager.localStateStoreForSubtask(
@@ -718,7 +712,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                             taskInformation.getJobVertexId(),
                             tdd.getSubtaskIndex(),
                             taskManagerConfiguration.getConfiguration(),
-                            jobInformation.getJobConfiguration());
+                            jobInformation.getJobConfiguration()
+                    );
 
             // TODO: Pass config value from user program and do overriding here.
             final StateChangelogStorage<?> changelogStorage;
@@ -728,7 +723,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                                 jobId,
                                 taskManagerConfiguration.getConfiguration(),
                                 jobGroup,
-                                localStateStore.getLocalRecoveryConfig());
+                                localStateStore.getLocalRecoveryConfig()
+                        );
             } catch (IOException e) {
                 throw new TaskSubmissionException(e);
             }
@@ -743,7 +739,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                             changelogStorage,
                             changelogStoragesManager,
                             taskRestore,
-                            checkpointResponder);
+                            checkpointResponder
+                    );
 
             MemoryManager memoryManager;
             try {
@@ -752,14 +749,45 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 throw new TaskSubmissionException("Could not submit task.", e);
             }
 
+
+            /**
+             * 创建 Task：
+             * jobInformation: 任务所属的作业（Job）的信息。
+             * taskInformation: 任务的信息。
+             * tdd.getExecutionAttemptId(): 执行尝试的唯一标识符。
+             * tdd.getAllocationId(): 任务分配的唯一标识符。
+             *
+             * tdd.getProducedPartitions(): 任务输出的结果集。
+             * tdd.getInputGates(): 上游输入数据的门户。
+             *
+             * memoryManager: 内存管理器，用于管理任务使用的内存。
+             * taskExecutorServices.getIOManager(): 任务执行器的输入/输出（I/O）管理器。
+             * taskExecutorServices.getShuffleEnvironment(): 任务执行器的Shuffle环境，用于数据交换和排序。
+             * taskExecutorServices.getKvStateService(): 任务执行器的键值状态服务，用于管理任务的状态。
+             * taskExecutorServices.getBroadcastVariableManager(): 任务执行器的广播变量管理器，用于管理广播变量。
+             * taskExecutorServices.getTaskEventDispatcher(): 任务执行器的任务事件调度器，用于调度任务事件。
+             * externalResourceInfoProvider: 外部资源信息提供者，用于获取外部资源的信息。
+             * taskStateManager: 任务状态管理器，用于管理任务的状态。
+             * taskManagerActions: 任务管理器操作，用于执行任务管理器的操作。
+             * inputSplitProvider: 输入分片提供者，用于提供输入分片。
+             * checkpointResponder: 检查点响应器，用于响应检查点操作。
+             * taskOperatorEventGateway: 任务操作事件网关，用于发送任务操作事件。
+             * aggregateManager: 聚合管理器，用于管理聚合操作。
+             * classLoaderHandle: 类加载器句柄，用于加载任务所需的类。
+             * fileCache: 文件缓存，用于缓存任务所需的文件。
+             * taskManagerConfiguration: 任务管理器的配置信息。
+             * taskMetricGroup: 任务度量组，用于度量任务的指标。
+             * partitionStateChecker: 分区状态检查器，用于检查分区的状态。
+             * getRpcService().getScheduledExecutor(): 调度执行器，用于执行任务的调度操作。
+             */
             Task task =
                     new Task(
                             jobInformation,
                             taskInformation,
                             tdd.getExecutionAttemptId(),
                             tdd.getAllocationId(),
-                            tdd.getProducedPartitions(),
-                            tdd.getInputGates(),
+                            tdd.getProducedPartitions(), // 输出结果集
+                            tdd.getInputGates(), // 上游输入数据门户
                             memoryManager,
                             taskExecutorServices.getIOManager(),
                             taskExecutorServices.getShuffleEnvironment(),
@@ -778,7 +806,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                             taskManagerConfiguration,
                             taskMetricGroup,
                             partitionStateChecker,
-                            getRpcService().getScheduledExecutor());
+                            getRpcService().getScheduledExecutor()
+                    );
 
             taskMetricGroup.gauge(MetricNames.IS_BACK_PRESSURED, task::isBackPressured);
 
@@ -797,15 +826,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             }
 
             if (taskAdded) {
+//                启动任务
                 task.startTaskThread();
 
-                setupResultPartitionBookkeeping(
-                        tdd.getJobId(), tdd.getProducedPartitions(), task.getTerminationFuture());
+                setupResultPartitionBookkeeping(tdd.getJobId(), tdd.getProducedPartitions(), task.getTerminationFuture());
                 return CompletableFuture.completedFuture(Acknowledge.get());
             } else {
-                final String message =
-                        "TaskManager already contains a task for id " + task.getExecutionId() + '.';
-
+                final String message = "TaskManager already contains a task for id " + task.getExecutionId() + '.';
                 log.debug(message);
                 throw new TaskSubmissionException(message);
             }
@@ -817,7 +844,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private void setupResultPartitionBookkeeping(
             JobID jobId,
             Collection<ResultPartitionDeploymentDescriptor> producedResultPartitions,
-            CompletableFuture<ExecutionState> terminationFuture) {
+            CompletableFuture<ExecutionState> terminationFuture
+    ) {
         final Set<ResultPartitionID> partitionsRequiringRelease =
                 filterPartitionsRequiringRelease(producedResultPartitions)
                         .peek(
@@ -1002,31 +1030,30 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             ExecutionAttemptID executionAttemptID,
             long checkpointId,
             long checkpointTimestamp,
-            CheckpointOptions checkpointOptions) {
+            CheckpointOptions checkpointOptions
+    ) {
         log.debug(
                 "Trigger checkpoint {}@{} for {}.",
                 checkpointId,
                 checkpointTimestamp,
-                executionAttemptID);
+                executionAttemptID
+        );
 
         final Task task = taskSlotTable.getTask(executionAttemptID);
 
         if (task != null) {
+            // 出发ck barrier
             task.triggerCheckpointBarrier(checkpointId, checkpointTimestamp, checkpointOptions);
-
             return CompletableFuture.completedFuture(Acknowledge.get());
         } else {
-            final String message =
-                    "TaskManager received a checkpoint request for unknown task "
-                            + executionAttemptID
-                            + '.';
-
+            final String message = "TaskManager received a checkpoint request for unknown task " + executionAttemptID + '.';
             log.debug(message);
-            return FutureUtils.completedExceptionally(
-                    new CheckpointException(
-                            message, CheckpointFailureReason.TASK_CHECKPOINT_FAILURE));
+            return FutureUtils.completedExceptionally(new CheckpointException(message, CheckpointFailureReason.TASK_CHECKPOINT_FAILURE));
         }
     }
+
+
+
 
     @Override
     public CompletableFuture<Acknowledge> confirmCheckpoint(
@@ -1527,8 +1554,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     private void startRegistrationTimeout() {
-        final Duration maxRegistrationDuration =
-                taskManagerConfiguration.getMaxRegistrationDuration();
+        final Duration maxRegistrationDuration = taskManagerConfiguration.getMaxRegistrationDuration();
 
         if (maxRegistrationDuration != null) {
             final UUID newRegistrationTimeoutId = UUID.randomUUID();
@@ -1543,8 +1569,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     private void registrationTimeout(@Nonnull UUID registrationTimeoutId) {
         if (registrationTimeoutId.equals(currentRegistrationTimeoutId)) {
-            final Duration maxRegistrationDuration =
-                    taskManagerConfiguration.getMaxRegistrationDuration();
+            final Duration maxRegistrationDuration = taskManagerConfiguration.getMaxRegistrationDuration();
 
             onFatalError(
                     new RegistrationTimeoutException(

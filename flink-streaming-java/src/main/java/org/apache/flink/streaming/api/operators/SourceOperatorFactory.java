@@ -90,11 +90,9 @@ public class SourceOperatorFactory<OUT> extends AbstractStreamOperatorFactory<OU
     }
 
     @Override
-    public <T extends StreamOperator<OUT>> T createStreamOperator(
-            StreamOperatorParameters<OUT> parameters) {
+    public <T extends StreamOperator<OUT>> T createStreamOperator(StreamOperatorParameters<OUT> parameters) {
         final OperatorID operatorId = parameters.getStreamConfig().getOperatorID();
-        final OperatorEventGateway gateway =
-                parameters.getOperatorEventDispatcher().getOperatorEventGateway(operatorId);
+        final OperatorEventGateway gateway = parameters.getOperatorEventDispatcher().getOperatorEventGateway(operatorId);
 
         final SourceOperator<OUT, ?> sourceOperator =
                 instantiateSourceOperator(
@@ -113,12 +111,14 @@ public class SourceOperatorFactory<OUT> extends AbstractStreamOperatorFactory<OU
                                 .getEnvironment()
                                 .getTaskManagerInfo()
                                 .getTaskManagerExternalAddress(),
-                        emitProgressiveWatermarks);
+                        emitProgressiveWatermarks
+                );
 
         sourceOperator.setup(
                 parameters.getContainingTask(),
                 parameters.getStreamConfig(),
-                parameters.getOutput());
+                parameters.getOutput()
+        );
         parameters.getOperatorEventDispatcher().registerEventHandler(operatorId, sourceOperator);
 
         // today's lunch is generics spaghetti
@@ -129,15 +129,15 @@ public class SourceOperatorFactory<OUT> extends AbstractStreamOperatorFactory<OU
     }
 
     @Override
-    public OperatorCoordinator.Provider getCoordinatorProvider(
-            String operatorName, OperatorID operatorID) {
+    public OperatorCoordinator.Provider getCoordinatorProvider(String operatorName, OperatorID operatorID) {
         return new SourceCoordinatorProvider<>(
                 operatorName,
                 operatorID,
                 source,
                 numCoordinatorWorkerThread,
                 watermarkStrategy.getAlignmentParameters(),
-                coordinatorListeningID);
+                coordinatorListeningID
+        );
     }
 
     @SuppressWarnings("rawtypes")
@@ -174,12 +174,9 @@ public class SourceOperatorFactory<OUT> extends AbstractStreamOperatorFactory<OU
         // strictly typed
         final FunctionWithException<SourceReaderContext, SourceReader<T, SplitT>, Exception>
                 typedReaderFactory =
-                        (FunctionWithException<
-                                        SourceReaderContext, SourceReader<T, SplitT>, Exception>)
-                                (FunctionWithException<?, ?, ?>) readerFactory;
+                        (FunctionWithException<SourceReaderContext, SourceReader<T, SplitT>, Exception>) (FunctionWithException<?, ?, ?>) readerFactory;
 
-        final SimpleVersionedSerializer<SplitT> typedSplitSerializer =
-                (SimpleVersionedSerializer<SplitT>) splitSerializer;
+        final SimpleVersionedSerializer<SplitT> typedSplitSerializer = (SimpleVersionedSerializer<SplitT>) splitSerializer;
 
         return new SourceOperator<>(
                 typedReaderFactory,
@@ -189,6 +186,7 @@ public class SourceOperatorFactory<OUT> extends AbstractStreamOperatorFactory<OU
                 timeService,
                 config,
                 localHostName,
-                emitProgressiveWatermarks);
+                emitProgressiveWatermarks
+        );
     }
 }

@@ -166,8 +166,7 @@ public class FineGrainedSlotManager implements SlotManager {
 
         if (failUnfulfillableRequest && !unfulfillableJobs.isEmpty()) {
             for (JobID jobId : unfulfillableJobs) {
-                resourceActions.notifyNotEnoughResourcesAvailable(
-                        jobId, resourceTracker.getAcquiredResources(jobId));
+                resourceActions.notifyNotEnoughResourcesAvailable(jobId, resourceTracker.getAcquiredResources(jobId));
             }
         }
     }
@@ -200,18 +199,19 @@ public class FineGrainedSlotManager implements SlotManager {
         resourceManagerId = Preconditions.checkNotNull(newResourceManagerId);
         mainThreadExecutor = Preconditions.checkNotNull(newMainThreadExecutor);
         resourceActions = Preconditions.checkNotNull(newResourceActions);
-        slotStatusSyncer.initialize(
-                taskManagerTracker, resourceTracker, resourceManagerId, mainThreadExecutor);
+        slotStatusSyncer.initialize(taskManagerTracker, resourceTracker, resourceManagerId, mainThreadExecutor);
         blockedTaskManagerChecker = Preconditions.checkNotNull(newBlockedTaskManagerChecker);
 
         started = true;
 
+//        开始调度曹管理器任务
         taskManagerTimeoutsCheck =
                 scheduledExecutor.scheduleWithFixedDelay(
                         () -> mainThreadExecutor.execute(this::checkTaskManagerTimeouts),
                         0L,
                         taskManagerTimeout.toMilliseconds(),
-                        TimeUnit.MILLISECONDS);
+                        TimeUnit.MILLISECONDS
+                );
 
         registerSlotManagerMetrics();
     }

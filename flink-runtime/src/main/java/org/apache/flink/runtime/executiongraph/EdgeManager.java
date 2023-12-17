@@ -34,8 +34,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 /** Class that manages all the connections between tasks. */
 public class EdgeManager {
 
-    private final Map<IntermediateResultPartitionID, List<ConsumerVertexGroup>> partitionConsumers =
-            new HashMap<>();
+    private final Map<IntermediateResultPartitionID, List<ConsumerVertexGroup>> partitionConsumers = new HashMap<>();
 
     private final Map<ExecutionVertexID, List<ConsumedPartitionGroup>> vertexConsumedPartitions =
             new HashMap<>();
@@ -65,8 +64,7 @@ public class EdgeManager {
         consumedPartitions.add(consumedPartitionGroup);
     }
 
-    private List<ConsumerVertexGroup> getConsumerVertexGroupsForPartitionInternal(
-            IntermediateResultPartitionID resultPartitionId) {
+    private List<ConsumerVertexGroup> getConsumerVertexGroupsForPartitionInternal(IntermediateResultPartitionID resultPartitionId) {
         return partitionConsumers.computeIfAbsent(resultPartitionId, id -> new ArrayList<>());
     }
 
@@ -75,10 +73,9 @@ public class EdgeManager {
         return vertexConsumedPartitions.computeIfAbsent(executionVertexId, id -> new ArrayList<>());
     }
 
-    public List<ConsumerVertexGroup> getConsumerVertexGroupsForPartition(
-            IntermediateResultPartitionID resultPartitionId) {
-        return Collections.unmodifiableList(
-                getConsumerVertexGroupsForPartitionInternal(resultPartitionId));
+    public List<ConsumerVertexGroup> getConsumerVertexGroupsForPartition(IntermediateResultPartitionID resultPartitionId) {
+        return Collections.unmodifiableList(getConsumerVertexGroupsForPartitionInternal(resultPartitionId)
+        );
     }
 
     public List<ConsumedPartitionGroup> getConsumedPartitionGroupsForVertex(
@@ -100,8 +97,7 @@ public class EdgeManager {
         return consumedPartitionsById.computeIfAbsent(resultPartitionId, id -> new ArrayList<>());
     }
 
-    public List<ConsumedPartitionGroup> getConsumedPartitionGroupsById(
-            IntermediateResultPartitionID resultPartitionId) {
+    public List<ConsumedPartitionGroup> getConsumedPartitionGroupsById(IntermediateResultPartitionID resultPartitionId) {
         return Collections.unmodifiableList(
                 getConsumedPartitionGroupsByIdInternal(resultPartitionId));
     }

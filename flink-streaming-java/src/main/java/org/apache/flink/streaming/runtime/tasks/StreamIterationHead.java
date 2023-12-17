@@ -105,6 +105,9 @@ public class StreamIterationHead<OUT> extends OneInputStreamTask<OUT, OUT> {
         }
     }
 
+
+
+
     @Override
     protected void cleanUpInternal() {
         // make sure that we remove the queue from the broker, to prevent a resource leak

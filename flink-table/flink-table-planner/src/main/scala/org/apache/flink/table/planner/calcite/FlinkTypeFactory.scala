@@ -659,6 +659,7 @@ object FlinkTypeFactory {
       relType.getFieldList.asScala
         .map(fieldType => toLogicalType(fieldType.getType))
         .toArray[LogicalType],
-      relType.getFieldNames.asScala.toArray)
+      relType.getFieldNames.asScala.toArray
+    )
   }
 }

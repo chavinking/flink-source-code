@@ -107,7 +107,7 @@ public class DefaultJobMasterServiceFactory implements JobMasterServiceFactory {
      */
     private JobMasterService internalCreateJobMasterService(UUID leaderSessionId, OnCompletionActions onCompletionActions) throws Exception {
 
-//        1 创建jobmaster服务
+//        1 创建jobmaster服务，在创建jobmaster的过程中执行jobgraph到executiongraph的转换操作
         final JobMaster jobMaster =
                 new JobMaster(
                         rpcService,

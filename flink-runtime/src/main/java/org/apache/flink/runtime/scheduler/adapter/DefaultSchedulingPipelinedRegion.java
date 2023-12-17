@@ -49,8 +49,7 @@ public class DefaultSchedulingPipelinedRegion implements SchedulingPipelinedRegi
 
     public DefaultSchedulingPipelinedRegion(
             Set<DefaultExecutionVertex> defaultExecutionVertices,
-            Function<IntermediateResultPartitionID, DefaultResultPartition>
-                    resultPartitionRetriever) {
+            Function<IntermediateResultPartitionID, DefaultResultPartition> resultPartitionRetriever) {
 
         Preconditions.checkNotNull(defaultExecutionVertices);
 

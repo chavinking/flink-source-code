@@ -32,8 +32,7 @@ public class StreamTaskFinishedOnRestoreSourceInput<T> extends StreamTaskSourceI
 
     private boolean emittedEndOfData = false;
 
-    public StreamTaskFinishedOnRestoreSourceInput(
-            SourceOperator<T, ?> operator, int inputGateIndex, int inputIndex) {
+    public StreamTaskFinishedOnRestoreSourceInput(SourceOperator<T, ?> operator, int inputGateIndex, int inputIndex) {
         super(operator, inputGateIndex, inputIndex);
     }
 

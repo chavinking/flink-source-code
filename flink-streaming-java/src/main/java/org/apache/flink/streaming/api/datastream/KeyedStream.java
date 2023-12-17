@@ -381,8 +381,7 @@ public class KeyedStream<T, KEY> extends DataStream<T> {
      * @return The transformed {@link DataStream}.
      */
     @PublicEvolving
-    public <R> SingleOutputStreamOperator<R> process(
-            KeyedProcessFunction<KEY, T, R> keyedProcessFunction) {
+    public <R> SingleOutputStreamOperator<R> process(KeyedProcessFunction<KEY, T, R> keyedProcessFunction) {
 
         TypeInformation<R> outType =
                 TypeExtractor.getUnaryOperatorReturnType(
@@ -417,8 +416,7 @@ public class KeyedStream<T, KEY> extends DataStream<T> {
     public <R> SingleOutputStreamOperator<R> process(
             KeyedProcessFunction<KEY, T, R> keyedProcessFunction, TypeInformation<R> outputType) {
 
-        KeyedProcessOperator<KEY, T, R> operator =
-                new KeyedProcessOperator<>(clean(keyedProcessFunction));
+        KeyedProcessOperator<KEY, T, R> operator = new KeyedProcessOperator<>(clean(keyedProcessFunction));
         return transform("KeyedProcess", outputType, operator);
     }
 

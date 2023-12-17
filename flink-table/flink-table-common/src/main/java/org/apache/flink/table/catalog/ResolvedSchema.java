@@ -85,11 +85,11 @@ public final class ResolvedSchema {
     }
 
     /** Shortcut for a resolved schema of only physical columns. */
-    public static ResolvedSchema physical(
-            List<String> columnNames, List<DataType> columnDataTypes) {
+    public static ResolvedSchema physical(List<String> columnNames, List<DataType> columnDataTypes) {
         Preconditions.checkArgument(
                 columnNames.size() == columnDataTypes.size(),
                 "Mismatch between number of columns names and data types.");
+
         final List<Column> columns =
                 IntStream.range(0, columnNames.size())
                         .mapToObj(i -> Column.physical(columnNames.get(i), columnDataTypes.get(i)))

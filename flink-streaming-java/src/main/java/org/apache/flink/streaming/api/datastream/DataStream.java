@@ -287,8 +287,7 @@ public class DataStream<T> {
      * @param key The KeySelector to be used for extracting the key for partitioning
      * @return The {@link DataStream} with partitioned state (i.e. KeyedStream)
      */
-    public <K> KeyedStream<T, K> keyBy(KeySelector<T, K> key) {
-        Preconditions.checkNotNull(key);
+    public <K> KeyedStream<T, K> keyBy(KeySelector<T, K> key) {Preconditions.checkNotNull(key);
         return new KeyedStream<>(this, clean(key));
     }
 
@@ -589,8 +588,7 @@ public class DataStream<T> {
      * @param <R> output type
      * @return The transformed {@link DataStream}.
      */
-    public <R> SingleOutputStreamOperator<R> map(
-            MapFunction<T, R> mapper, TypeInformation<R> outputType) {
+    public <R> SingleOutputStreamOperator<R> map(MapFunction<T, R> mapper, TypeInformation<R> outputType) {
         return transform("Map", outputType, new StreamMap<>(clean(mapper)));
     }
 

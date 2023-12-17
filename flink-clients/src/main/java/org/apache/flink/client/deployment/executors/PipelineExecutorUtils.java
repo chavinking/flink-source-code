@@ -53,15 +53,14 @@ public class PipelineExecutorUtils {
         checkNotNull(pipeline);
         checkNotNull(configuration);
 
-        final ExecutionConfigAccessor executionConfigAccessor =
-                ExecutionConfigAccessor.fromConfiguration(configuration);
+        final ExecutionConfigAccessor executionConfigAccessor = ExecutionConfigAccessor.fromConfiguration(configuration);
 
-        final JobGraph jobGraph =
-                FlinkPipelineTranslationUtil.getJobGraph(
+        final JobGraph jobGraph = FlinkPipelineTranslationUtil.getJobGraph(
                         userClassloader,
                         pipeline,
                         configuration,
-                        executionConfigAccessor.getParallelism());
+                        executionConfigAccessor.getParallelism()
+                );
 
         configuration
                 .getOptional(PipelineOptionsInternal.PIPELINE_FIXED_JOB_ID)

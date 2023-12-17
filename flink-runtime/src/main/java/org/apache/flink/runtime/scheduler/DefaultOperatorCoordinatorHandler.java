@@ -52,22 +52,18 @@ public class DefaultOperatorCoordinatorHandler implements OperatorCoordinatorHan
 
     private final GlobalFailureHandler globalFailureHandler;
 
-    public DefaultOperatorCoordinatorHandler(
-            ExecutionGraph executionGraph, GlobalFailureHandler globalFailureHandler) {
+    public DefaultOperatorCoordinatorHandler(ExecutionGraph executionGraph, GlobalFailureHandler globalFailureHandler) {
         this.executionGraph = executionGraph;
-
+        // 这行代码的含义是在创建调度器映射表，该表用于管理 Flink 作业中的任务调度
         this.coordinatorMap = createCoordinatorMap(executionGraph);
         this.globalFailureHandler = globalFailureHandler;
     }
 
-    private static Map<OperatorID, OperatorCoordinatorHolder> createCoordinatorMap(
-            ExecutionGraph executionGraph) {
-        return executionGraph.getAllVertices().values().stream()
-                .filter(ExecutionJobVertex::isInitialized)
-                .flatMap(v -> v.getOperatorCoordinators().stream())
-                .collect(
-                        Collectors.toMap(
-                                OperatorCoordinatorHolder::operatorId, Function.identity()));
+    private static Map<OperatorID, OperatorCoordinatorHolder> createCoordinatorMap(ExecutionGraph executionGraph) {
+        return executionGraph.getAllVertices().values().stream() // ExecutionJobVertex 流
+                .filter(ExecutionJobVertex::isInitialized)// 返回 ExecutionJobVertex 流中那些 ExecutionJobVertex包含的ExectuionVertex对象不为null的ExecutionJobVertex信息
+                .flatMap(v -> v.getOperatorCoordinators().stream()) // 返回 OperatorCoordinatorHolder 通过 ExecutionJobVertex 中包含 operatorCoordinators 属性示例的数据流
+                .collect(Collectors.toMap(OperatorCoordinatorHolder::operatorId, Function.identity()));
     }
 
     @Override
@@ -91,8 +87,8 @@ public class DefaultOperatorCoordinatorHandler implements OperatorCoordinatorHan
     public void deliverOperatorEventToCoordinator(
             final ExecutionAttemptID taskExecutionId,
             final OperatorID operatorId,
-            final OperatorEvent evt)
-            throws FlinkException {
+            final OperatorEvent evt
+    ) throws FlinkException {
 
         // Failure semantics (as per the javadocs of the method):
         // If the task manager sends an event for a non-running task or an non-existing operator
@@ -101,15 +97,12 @@ public class DefaultOperatorCoordinatorHandler implements OperatorCoordinatorHan
         // needs to cause a job failure.
 
         final Execution exec = executionGraph.getRegisteredExecutions().get(taskExecutionId);
-        if (exec == null
-                || exec.getState() != ExecutionState.RUNNING
-                        && exec.getState() != ExecutionState.INITIALIZING) {
+        if (exec == null || exec.getState() != ExecutionState.RUNNING && exec.getState() != ExecutionState.INITIALIZING) {
             // This situation is common when cancellation happens, or when the task failed while the
             // event was just being dispatched asynchronously on the TM side.
             // It should be fine in those expected situations to just ignore this event, but, to be
             // on the safe, we notify the TM that the event could not be delivered.
-            throw new TaskNotRunningException(
-                    "Task is not known or in state running on the JobManager.");
+            throw new TaskNotRunningException("Task is not known or in state running on the JobManager.");
         }
 
         final OperatorCoordinatorHolder coordinator = coordinatorMap.get(operatorId);
@@ -118,8 +111,7 @@ public class DefaultOperatorCoordinatorHandler implements OperatorCoordinatorHan
         }
 
         try {
-            coordinator.handleEventFromOperator(
-                    exec.getParallelSubtaskIndex(), exec.getAttemptNumber(), evt);
+            coordinator.handleEventFromOperator(exec.getParallelSubtaskIndex(), exec.getAttemptNumber(), evt);
         } catch (Throwable t) {
             ExceptionUtils.rethrowIfFatalErrorOrOOM(t);
             globalFailureHandler.handleGlobalFailure(t);

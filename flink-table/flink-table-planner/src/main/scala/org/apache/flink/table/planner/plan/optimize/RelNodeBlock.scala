@@ -384,9 +384,7 @@ object RelNodeBlockPlanBuilder {
    * @return
    *   Sink-RelNodeBlocks, each Sink-RelNodeBlock is a tree.
    */
-  def buildRelNodeBlockPlan(
-      sinkNodes: Seq[RelNode],
-      tableConfig: ReadableConfig): Seq[RelNodeBlock] = {
+  def buildRelNodeBlockPlan(sinkNodes: Seq[RelNode], tableConfig: ReadableConfig): Seq[RelNodeBlock] = {
     require(sinkNodes.nonEmpty)
 
     // expand QueryOperationCatalogViewTable in TableScan

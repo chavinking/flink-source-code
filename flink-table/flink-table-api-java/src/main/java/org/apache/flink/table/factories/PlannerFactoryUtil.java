@@ -33,6 +33,9 @@ import org.apache.flink.table.module.ModuleManager;
 @Internal
 public class PlannerFactoryUtil {
 
+    /**
+     * 创建执行器对象
+     */
     /** Discovers a planner factory and creates a planner instance. */
     public static Planner createPlanner(
             Executor executor,
@@ -40,12 +43,14 @@ public class PlannerFactoryUtil {
             ClassLoader userClassLoader,
             ModuleManager moduleManager,
             CatalogManager catalogManager,
-            FunctionCatalog functionCatalog) {
+            FunctionCatalog functionCatalog
+    ) {
         final PlannerFactory plannerFactory =
                 FactoryUtil.discoverFactory(
                         Thread.currentThread().getContextClassLoader(),
                         PlannerFactory.class,
-                        PlannerFactory.DEFAULT_IDENTIFIER);
+                        PlannerFactory.DEFAULT_IDENTIFIER
+                );
 
         final Context context =
                 new DefaultPlannerContext(
@@ -54,7 +59,9 @@ public class PlannerFactoryUtil {
                         userClassLoader,
                         moduleManager,
                         catalogManager,
-                        functionCatalog);
+                        functionCatalog
+                );
+
         return plannerFactory.create(context);
     }
 

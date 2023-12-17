@@ -52,7 +52,8 @@ public class BufferDebloater {
             int maxBufferSize,
             int minBufferSize,
             int bufferDebloatThresholdPercentages,
-            long numberOfSamples) {
+            long numberOfSamples
+    ) {
         this.owningTaskName = owningTaskName;
         this.gateIndex = gateIndex;
         this.targetTotalBufferSize = targetTotalBufferSize;
@@ -76,12 +77,9 @@ public class BufferDebloater {
 
     public OptionalInt recalculateBufferSize(long currentThroughput, int buffersInUse) {
         int actualBuffersInUse = Math.max(1, buffersInUse);
-        long desiredTotalBufferSizeInBytes =
-                (currentThroughput * targetTotalBufferSize) / MILLIS_IN_SECOND;
+        long desiredTotalBufferSizeInBytes = (currentThroughput * targetTotalBufferSize) / MILLIS_IN_SECOND;
 
-        int newSize =
-                bufferSizeEMA.calculateBufferSize(
-                        desiredTotalBufferSizeInBytes, actualBuffersInUse);
+        int newSize = bufferSizeEMA.calculateBufferSize(desiredTotalBufferSizeInBytes, actualBuffersInUse);
 
         lastEstimatedTimeToConsumeBuffers =
                 Duration.ofMillis(
@@ -112,6 +110,9 @@ public class BufferDebloater {
         lastBufferSize = newSize;
         return OptionalInt.of(newSize);
     }
+
+
+
 
     @VisibleForTesting
     boolean skipUpdate(int newSize) {

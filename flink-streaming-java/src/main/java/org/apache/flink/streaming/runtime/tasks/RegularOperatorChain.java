@@ -56,7 +56,8 @@ public class RegularOperatorChain<OUT, OP extends StreamOperator<OUT>>
 
     public RegularOperatorChain(
             StreamTask<OUT, OP> containingTask,
-            RecordWriterDelegate<SerializationDelegate<StreamRecord<OUT>>> recordWriterDelegate) {
+            RecordWriterDelegate<SerializationDelegate<StreamRecord<OUT>>> recordWriterDelegate
+    ) {
         super(containingTask, recordWriterDelegate);
     }
 
@@ -98,12 +99,21 @@ public class RegularOperatorChain<OUT, OP extends StreamOperator<OUT>>
         }
     }
 
+    /**
+     * 在StreamTask开始接收数据之前，需要初始化各个operator的状态（state）和开启operator（调用各个operator的open方法）。initializeStateAndOpenOperators正是用来完成这个工作的。
+     *
+     * @param streamTaskStateInitializer
+     * @throws Exception
+     */
     @Override
-    public void initializeStateAndOpenOperators(
-            StreamTaskStateInitializer streamTaskStateInitializer) throws Exception {
+    public void initializeStateAndOpenOperators(StreamTaskStateInitializer streamTaskStateInitializer) throws Exception {
         for (StreamOperatorWrapper<?, ?> operatorWrapper : getAllOperators(true)) {
             StreamOperator<?> operator = operatorWrapper.getStreamOperator();
+
+//            初始化状态
             operator.initializeState(streamTaskStateInitializer);
+
+//            执行用户定义的状态初始化
             operator.open();
         }
     }
@@ -183,8 +193,8 @@ public class RegularOperatorChain<OUT, OP extends StreamOperator<OUT>>
             CheckpointOptions checkpointOptions,
             Supplier<Boolean> isRunning,
             ChannelStateWriter.ChannelStateWriteResult channelStateWriteResult,
-            CheckpointStreamFactory storage)
-            throws Exception {
+            CheckpointStreamFactory storage
+    ) throws Exception {
         for (StreamOperatorWrapper<?, ?> operatorWrapper : getAllOperators(true)) {
             if (!operatorWrapper.isClosed()) {
                 operatorSnapshotsInProgress.put(
@@ -195,7 +205,9 @@ public class RegularOperatorChain<OUT, OP extends StreamOperator<OUT>>
                                 operatorWrapper.getStreamOperator(),
                                 isRunning,
                                 channelStateWriteResult,
-                                storage));
+                                storage
+                        )
+                );
             }
         }
         sendAcknowledgeCheckpointEvent(checkpointMetaData.getCheckpointId());
@@ -207,29 +219,33 @@ public class RegularOperatorChain<OUT, OP extends StreamOperator<OUT>>
             StreamOperator<?> op,
             Supplier<Boolean> isRunning,
             ChannelStateWriter.ChannelStateWriteResult channelStateWriteResult,
-            CheckpointStreamFactory storage)
-            throws Exception {
-        OperatorSnapshotFutures snapshotInProgress =
-                checkpointStreamOperator(
-                        op, checkpointMetaData, checkpointOptions, storage, isRunning);
+            CheckpointStreamFactory storage
+    ) throws Exception {
+
+        OperatorSnapshotFutures snapshotInProgress = checkpointStreamOperator(op, checkpointMetaData, checkpointOptions, storage, isRunning);
         snapshotChannelStates(op, channelStateWriteResult, snapshotInProgress);
 
         return snapshotInProgress;
     }
+
+
+
+
 
     private static OperatorSnapshotFutures checkpointStreamOperator(
             StreamOperator<?> op,
             CheckpointMetaData checkpointMetaData,
             CheckpointOptions checkpointOptions,
             CheckpointStreamFactory storageLocation,
-            Supplier<Boolean> isRunning)
-            throws Exception {
+            Supplier<Boolean> isRunning
+    ) throws Exception {
         try {
             return op.snapshotState(
                     checkpointMetaData.getCheckpointId(),
                     checkpointMetaData.getTimestamp(),
                     checkpointOptions,
-                    storageLocation);
+                    storageLocation
+            );
         } catch (Exception ex) {
             if (isRunning.get()) {
                 LOG.info(ex.getMessage(), ex);

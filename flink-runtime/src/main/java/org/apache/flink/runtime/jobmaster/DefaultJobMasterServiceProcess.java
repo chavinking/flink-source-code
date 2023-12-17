@@ -92,6 +92,7 @@ public class DefaultJobMasterServiceProcess
 //        *** 创建jobmster服务 ***
         this.jobMasterServiceFuture = jobMasterServiceFactory.createJobMasterService(leaderSessionId, this);
 
+
         jobMasterServiceFuture.whenComplete(
                 (jobMasterService, throwable) -> {
                     if (throwable != null) {

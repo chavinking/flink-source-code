@@ -78,11 +78,8 @@ public enum PackagedProgramUtils {
             @Nullable JobID jobID,
             boolean suppressOutput)
             throws ProgramInvocationException {
-        final Pipeline pipeline =
-                getPipelineFromProgram(
-                        packagedProgram, configuration, defaultParallelism, suppressOutput);
-        final JobGraph jobGraph =
-                FlinkPipelineTranslationUtil.getJobGraphUnderUserClassLoader(
+        final Pipeline pipeline = getPipelineFromProgram(packagedProgram, configuration, defaultParallelism, suppressOutput);
+        final JobGraph jobGraph = FlinkPipelineTranslationUtil.getJobGraphUnderUserClassLoader(
                         packagedProgram.getUserCodeClassLoader(),
                         pipeline,
                         configuration,

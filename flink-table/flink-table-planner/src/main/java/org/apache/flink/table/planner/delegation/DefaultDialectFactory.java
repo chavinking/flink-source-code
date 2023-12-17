@@ -49,6 +49,7 @@ public class DefaultDialectFactory implements DialectFactory {
                 context.getCatalogManager(),
                 context.getPlannerContext()::createFlinkPlanner,
                 context.getPlannerContext()::createCalciteParser,
-                context.getPlannerContext().getRexFactory());
+                context.getPlannerContext().getRexFactory()
+        );
     }
 }

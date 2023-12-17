@@ -51,11 +51,9 @@ public class WatermarkAssignerOperatorFactory extends AbstractStreamOperatorFact
     @Override
     public StreamOperator createStreamOperator(StreamOperatorParameters initializer) {
         WatermarkGenerator watermarkGenerator =
-                generatedWatermarkGenerator.newInstance(
-                        initializer.getContainingTask().getUserCodeClassLoader());
+                generatedWatermarkGenerator.newInstance(initializer.getContainingTask().getUserCodeClassLoader());
         WatermarkAssignerOperator operator =
-                new WatermarkAssignerOperator(
-                        rowtimeFieldIndex, watermarkGenerator, idleTimeout, processingTimeService);
+                new WatermarkAssignerOperator(rowtimeFieldIndex, watermarkGenerator, idleTimeout, processingTimeService);
         operator.setup(
                 initializer.getContainingTask(),
                 initializer.getStreamConfig(),

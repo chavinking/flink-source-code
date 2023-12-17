@@ -55,18 +55,22 @@ public class FlinkUserCodeClassLoaders {
             Consumer<Throwable> classLoadingExceptionHandler,
             boolean checkClassLoaderLeak) {
         FlinkUserCodeClassLoader classLoader =
-                new ChildFirstClassLoader(
-                        urls, parent, alwaysParentFirstPatterns, classLoadingExceptionHandler);
+                new ChildFirstClassLoader(urls, parent, alwaysParentFirstPatterns, classLoadingExceptionHandler);
         return wrapWithSafetyNet(classLoader, checkClassLoaderLeak);
     }
 
-    public static MutableURLClassLoader create(
-            final URL[] urls, final ClassLoader parent, final ReadableConfig config) {
-        final String[] alwaysParentFirstLoaderPatterns =
-                CoreOptions.getParentFirstLoaderPatterns(config);
+    /**
+     * 创建classloader
+     *
+     * @param urls
+     * @param parent
+     * @param config
+     * @return
+     */
+    public static MutableURLClassLoader create(final URL[] urls, final ClassLoader parent, final ReadableConfig config) {
+        final String[] alwaysParentFirstLoaderPatterns = CoreOptions.getParentFirstLoaderPatterns(config);
         final String classLoaderResolveOrder = config.get(CoreOptions.CLASSLOADER_RESOLVE_ORDER);
-        final FlinkUserCodeClassLoaders.ResolveOrder resolveOrder =
-                FlinkUserCodeClassLoaders.ResolveOrder.fromString(classLoaderResolveOrder);
+        final FlinkUserCodeClassLoaders.ResolveOrder resolveOrder = FlinkUserCodeClassLoaders.ResolveOrder.fromString(classLoaderResolveOrder);
         final boolean checkClassloaderLeak = config.get(CoreOptions.CHECK_LEAKED_CLASSLOADER);
         return create(
                 resolveOrder,
@@ -74,7 +78,8 @@ public class FlinkUserCodeClassLoaders {
                 parent,
                 alwaysParentFirstLoaderPatterns,
                 NOOP_EXCEPTION_HANDLER,
-                checkClassloaderLeak);
+                checkClassloaderLeak
+        );
     }
 
     public static MutableURLClassLoader create(
@@ -92,18 +97,19 @@ public class FlinkUserCodeClassLoaders {
                         parent,
                         alwaysParentFirstPatterns,
                         classLoadingExceptionHandler,
-                        checkClassLoaderLeak);
+                        checkClassLoaderLeak
+                );
             case PARENT_FIRST:
                 return parentFirst(
-                        urls, parent, classLoadingExceptionHandler, checkClassLoaderLeak);
+                        urls, parent, classLoadingExceptionHandler, checkClassLoaderLeak
+                );
             default:
                 throw new IllegalArgumentException(
                         "Unknown class resolution order: " + resolveOrder);
         }
     }
 
-    private static MutableURLClassLoader wrapWithSafetyNet(
-            FlinkUserCodeClassLoader classLoader, boolean check) {
+    private static MutableURLClassLoader wrapWithSafetyNet(FlinkUserCodeClassLoader classLoader, boolean check) {
         return check
                 ? new SafetyNetWrapperClassLoader(classLoader, classLoader.getParent())
                 : classLoader;

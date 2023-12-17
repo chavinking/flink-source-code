@@ -115,7 +115,6 @@ public class JvmShutdownSafeguard extends Thread {
 
         // install the blocking shutdown hook
         Thread shutdownHook = new JvmShutdownSafeguard(delayMillis);
-        ShutdownHookUtil.addShutdownHookThread(
-                shutdownHook, JvmShutdownSafeguard.class.getSimpleName(), logger);
+        ShutdownHookUtil.addShutdownHookThread(shutdownHook, JvmShutdownSafeguard.class.getSimpleName(), logger);
     }
 }

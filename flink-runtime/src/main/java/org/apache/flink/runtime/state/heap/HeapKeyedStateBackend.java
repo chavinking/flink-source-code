@@ -379,17 +379,17 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
             final long checkpointId,
             final long timestamp,
             @Nonnull final CheckpointStreamFactory streamFactory,
-            @Nonnull CheckpointOptions checkpointOptions)
-            throws Exception {
+            @Nonnull CheckpointOptions checkpointOptions
+    ) throws Exception {
 
         SnapshotStrategyRunner<KeyedStateHandle, ?> snapshotStrategyRunner =
                 new SnapshotStrategyRunner<>(
                         "Heap backend snapshot",
                         checkpointStrategy,
                         cancelStreamRegistry,
-                        snapshotExecutionType);
-        return snapshotStrategyRunner.snapshot(
-                checkpointId, timestamp, streamFactory, checkpointOptions);
+                        snapshotExecutionType
+                );
+        return snapshotStrategyRunner.snapshot(checkpointId, timestamp, streamFactory, checkpointOptions);
     }
 
     @Nonnull

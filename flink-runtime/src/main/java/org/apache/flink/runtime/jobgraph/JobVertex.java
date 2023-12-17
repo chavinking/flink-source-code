@@ -175,8 +175,7 @@ public class JobVertex implements java.io.Serializable {
     public JobVertex(String name, JobVertexID id) {
         this.name = name == null ? DEFAULT_NAME : name;
         this.id = id == null ? new JobVertexID() : id;
-        OperatorIDPair operatorIDPair =
-                OperatorIDPair.generatedIDOnly(OperatorID.fromJobVertexID(this.id));
+        OperatorIDPair operatorIDPair = OperatorIDPair.generatedIDOnly(OperatorID.fromJobVertexID(this.id));
         this.operatorIDs = Collections.singletonList(operatorIDPair);
     }
 
@@ -483,10 +482,9 @@ public class JobVertex implements java.io.Serializable {
     }
 
     // --------------------------------------------------------------------------------------------
-    public IntermediateDataSet getOrCreateResultDataSet(
-            IntermediateDataSetID id, ResultPartitionType partitionType) {
-        return this.results.computeIfAbsent(
-                id, key -> new IntermediateDataSet(id, partitionType, this));
+    public IntermediateDataSet getOrCreateResultDataSet(IntermediateDataSetID id, ResultPartitionType partitionType) {
+//        创建中间数据集合
+        return this.results.computeIfAbsent(id, key -> new IntermediateDataSet(id, partitionType, this));
     }
 
     public JobEdge connectNewDataSetAsInput(
@@ -503,20 +501,26 @@ public class JobVertex implements java.io.Serializable {
                 input, distPattern, partitionType, new IntermediateDataSetID(), isBroadcast);
     }
 
+//        JobVertex -> JobVertex.results[n] -> IntermediateDataSet.consumers[n] -> JobEdge.target
     public JobEdge connectNewDataSetAsInput(
             JobVertex input,
             DistributionPattern distPattern,
-            ResultPartitionType partitionType,
+            ResultPartitionType partitionType, // output获取
             IntermediateDataSetID intermediateDataSetId,
-            boolean isBroadcast) {
+            boolean isBroadcast // output获取
+    ) {
 
-        IntermediateDataSet dataSet =
-                input.getOrCreateResultDataSet(intermediateDataSetId, partitionType);
+        // 从chain链开始节点中获取 intermediateDataSetId ，根据intermediateDataSetId创建中间数据集
+        IntermediateDataSet dataSet = input.getOrCreateResultDataSet(intermediateDataSetId, partitionType);
 
         JobEdge edge = new JobEdge(dataSet, this, distPattern, isBroadcast);
+
+//        连接关系
         this.inputs.add(edge);
         dataSet.addConsumer(edge);
         return edge;
+
+
     }
 
     // --------------------------------------------------------------------------------------------

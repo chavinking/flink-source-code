@@ -47,7 +47,8 @@ public class FinishedOperatorChain<OUT, OP extends StreamOperator<OUT>>
 
     public FinishedOperatorChain(
             StreamTask<OUT, OP> containingTask,
-            RecordWriterDelegate<SerializationDelegate<StreamRecord<OUT>>> recordWriterDelegate) {
+            RecordWriterDelegate<SerializationDelegate<StreamRecord<OUT>>> recordWriterDelegate
+    ) {
         super(containingTask, recordWriterDelegate);
     }
 
@@ -101,18 +102,19 @@ public class FinishedOperatorChain<OUT, OP extends StreamOperator<OUT>>
             CheckpointOptions checkpointOptions,
             Supplier<Boolean> isRunning,
             ChannelStateWriter.ChannelStateWriteResult channelStateWriteResult,
-            CheckpointStreamFactory storage)
-            throws Exception {
+            CheckpointStreamFactory storage
+    ) throws Exception {
         for (StreamOperatorWrapper<?, ?> operatorWrapper : getAllOperators(true)) {
             StreamOperator<?> operator = operatorWrapper.getStreamOperator();
-
             if (operator == getMainOperator() || operator == getTailOperator()) {
                 OperatorSnapshotFutures snapshotInProgress = new OperatorSnapshotFutures();
+
                 snapshotChannelStates(operator, channelStateWriteResult, snapshotInProgress);
-                operatorSnapshotsInProgress.put(
-                        operatorWrapper.getStreamOperator().getOperatorID(), snapshotInProgress);
+
+                operatorSnapshotsInProgress.put(operatorWrapper.getStreamOperator().getOperatorID(), snapshotInProgress);
             }
         }
+
         sendAcknowledgeCheckpointEvent(checkpointMetaData.getCheckpointId());
     }
 }

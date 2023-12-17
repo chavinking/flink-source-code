@@ -87,8 +87,7 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
 
         checkArgument(timeout >= ExecutionOptions.DISABLED_NETWORK_BUFFER_TIMEOUT);
         this.flushAlways = (timeout == ExecutionOptions.FLUSH_AFTER_EVERY_RECORD);
-        if (timeout == ExecutionOptions.DISABLED_NETWORK_BUFFER_TIMEOUT
-                || timeout == ExecutionOptions.FLUSH_AFTER_EVERY_RECORD) {
+        if (timeout == ExecutionOptions.DISABLED_NETWORK_BUFFER_TIMEOUT || timeout == ExecutionOptions.FLUSH_AFTER_EVERY_RECORD) {
             outputFlusher = null;
         } else {
             String threadName =

@@ -41,21 +41,26 @@ public class PlannerQueryOperation implements QueryOperation {
     private final RelNode calciteTree;
     private final ResolvedSchema resolvedSchema;
 
+
+
     public PlannerQueryOperation(RelNode calciteTree) {
+
+//        保存算术语法树
         this.calciteTree = calciteTree;
 
         RelDataType rowType = calciteTree.getRowType();
         String[] fieldNames = rowType.getFieldNames().toArray(new String[0]);
         DataType[] fieldTypes =
                 rowType.getFieldList().stream()
-                        .map(
-                                field ->
-                                        LogicalTypeDataTypeConverter.fromLogicalTypeToDataType(
-                                                FlinkTypeFactory.toLogicalType(field.getType())))
+                        .map(field -> LogicalTypeDataTypeConverter.fromLogicalTypeToDataType(FlinkTypeFactory.toLogicalType(field.getType())))
                         .toArray(DataType[]::new);
 
         this.resolvedSchema = ResolvedSchema.physical(fieldNames, fieldTypes);
     }
+
+
+
+
 
     public RelNode getCalciteTree() {
         return calciteTree;

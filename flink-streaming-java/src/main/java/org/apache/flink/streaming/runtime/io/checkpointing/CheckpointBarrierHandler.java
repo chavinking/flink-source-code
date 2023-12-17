@@ -92,8 +92,10 @@ public abstract class CheckpointBarrierHandler implements Closeable {
     public void close() throws IOException {}
 
     public abstract void processBarrier(
-            CheckpointBarrier receivedBarrier, InputChannelInfo channelInfo, boolean isRpcTriggered)
-            throws IOException;
+            CheckpointBarrier receivedBarrier,
+            InputChannelInfo channelInfo,
+            boolean isRpcTriggered
+    ) throws IOException;
 
     public abstract void processBarrierAnnouncement(
             CheckpointBarrier announcedBarrier, int sequenceNumber, InputChannelInfo channelInfo)
@@ -145,7 +147,10 @@ public abstract class CheckpointBarrierHandler implements Closeable {
         }
 
         toNotifyOnCheckpoint.triggerCheckpointOnBarrier(
-                checkpointMetaData, checkpointBarrier.getCheckpointOptions(), checkpointMetrics);
+                checkpointMetaData,
+                checkpointBarrier.getCheckpointOptions(),
+                checkpointMetrics
+        );
     }
 
     protected void notifyAbortOnCancellationBarrier(long checkpointId) throws IOException {

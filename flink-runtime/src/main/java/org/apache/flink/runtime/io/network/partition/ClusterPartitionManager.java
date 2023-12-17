@@ -60,6 +60,5 @@ public interface ClusterPartitionManager {
      * @param intermediateDataSetID The id of the dataset.
      * @return shuffle descriptors of the cluster partitions.
      */
-    CompletableFuture<List<ShuffleDescriptor>> getClusterPartitionsShuffleDescriptors(
-            IntermediateDataSetID intermediateDataSetID);
+    CompletableFuture<List<ShuffleDescriptor>> getClusterPartitionsShuffleDescriptors(IntermediateDataSetID intermediateDataSetID);
 }

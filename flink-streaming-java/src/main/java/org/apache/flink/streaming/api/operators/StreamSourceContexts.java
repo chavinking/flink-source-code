@@ -194,6 +194,11 @@ public class StreamSourceContexts {
         @Override
         public void collect(T element) {
             synchronized (lock) {
+                /**
+                 * element:输入数据
+                 * reuse：装数据的容器
+                 * collect：执行reuse对象的序列化
+                 */
                 output.collect(reuse.replace(element));
             }
         }
@@ -588,7 +593,8 @@ public class StreamSourceContexts {
                 nextCheck =
                         this.timeService.registerTimer(
                                 this.timeService.getCurrentProcessingTime() + idleTimeout,
-                                new IdlenessDetectionTask());
+                                new IdlenessDetectionTask()
+                        );
             }
         }
 

@@ -53,13 +53,11 @@ public abstract class SimpleTransformationTranslator<OUT, T extends Transformati
     }
 
     @Override
-    public final Collection<Integer> translateForStreaming(
-            final T transformation, final Context context) {
+    public final Collection<Integer> translateForStreaming(final T transformation, final Context context) {
         checkNotNull(transformation);
         checkNotNull(context);
 
-        final Collection<Integer> transformedIds =
-                translateForStreamingInternal(transformation, context);
+        final Collection<Integer> transformedIds = translateForStreamingInternal(transformation, context);
         configure(transformation, context);
 
         return transformedIds;
@@ -88,8 +86,7 @@ public abstract class SimpleTransformationTranslator<OUT, T extends Transformati
      *     corresponding to this transformation. These will be the nodes that a potential following
      *     transformation will need to connect to.
      */
-    protected abstract Collection<Integer> translateForStreamingInternal(
-            final T transformation, final Context context);
+    protected abstract Collection<Integer> translateForStreamingInternal(final T transformation, final Context context);
 
     private void configure(final T transformation, final Context context) {
         final StreamGraph streamGraph = context.getStreamGraph();

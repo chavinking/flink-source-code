@@ -266,7 +266,7 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
     }
 
     /**
-     * 初始化各种handlers
+     * 初始化各种handlers，用于处理来自web端的各种请求服务
      *
      * @param localAddressFuture future rest address of the RestServerEndpoint
      * @return

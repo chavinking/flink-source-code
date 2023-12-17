@@ -180,16 +180,12 @@ public class FileCache {
      * @param jobID The ID of the job for which the file is copied.
      * @return The handle to the task that copies the file.
      */
-    public Future<Path> createTmpFile(
-            String name, DistributedCacheEntry entry, JobID jobID, ExecutionAttemptID executionId)
-            throws Exception {
+    public Future<Path> createTmpFile(String name, DistributedCacheEntry entry, JobID jobID, ExecutionAttemptID executionId) throws Exception {
         synchronized (lock) {
-            Map<String, Future<Path>> jobEntries =
-                    entries.computeIfAbsent(jobID, k -> new HashMap<>());
+            Map<String, Future<Path>> jobEntries = entries.computeIfAbsent(jobID, k -> new HashMap<>());
 
             // register reference holder
-            final Set<ExecutionAttemptID> refHolders =
-                    jobRefHolders.computeIfAbsent(jobID, id -> new HashSet<>());
+            final Set<ExecutionAttemptID> refHolders = jobRefHolders.computeIfAbsent(jobID, id -> new HashSet<>());
             refHolders.add(executionId);
 
             Future<Path> fileEntry = jobEntries.get(name);

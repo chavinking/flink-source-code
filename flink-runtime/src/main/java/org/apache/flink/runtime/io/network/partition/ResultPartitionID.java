@@ -48,8 +48,7 @@ public final class ResultPartitionID implements Serializable {
         this(new IntermediateResultPartitionID(), randomId());
     }
 
-    public ResultPartitionID(
-            IntermediateResultPartitionID partitionId, ExecutionAttemptID producerId) {
+    public ResultPartitionID(IntermediateResultPartitionID partitionId, ExecutionAttemptID producerId) {
         this.partitionId = checkNotNull(partitionId);
         this.producerId = checkNotNull(producerId);
     }

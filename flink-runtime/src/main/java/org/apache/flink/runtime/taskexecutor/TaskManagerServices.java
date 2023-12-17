@@ -337,13 +337,15 @@ public class TaskManagerServices {
         final JobLeaderService jobLeaderService =
                 new DefaultJobLeaderService(
                         unresolvedTaskManagerLocation,
-                        taskManagerServicesConfiguration.getRetryingRegistrationConfiguration());
+                        taskManagerServicesConfiguration.getRetryingRegistrationConfiguration()
+                );
 
         final TaskExecutorLocalStateStoresManager taskStateManager =
                 new TaskExecutorLocalStateStoresManager(
                         taskManagerServicesConfiguration.isLocalRecoveryEnabled(),
                         taskManagerServicesConfiguration.getLocalRecoveryStateDirectories(),
-                        ioExecutor);
+                        ioExecutor
+                );
 
         final TaskExecutorStateChangelogStoragesManager changelogStoragesManager =
                 new TaskExecutorStateChangelogStoragesManager();
@@ -364,14 +366,14 @@ public class TaskManagerServices {
                                 taskManagerServicesConfiguration
                                         .getAlwaysParentFirstLoaderPatterns(),
                                 failOnJvmMetaspaceOomError ? fatalErrorHandler : null,
-                                checkClassLoaderLeak));
+                                checkClassLoaderLeak)
+                );
 
         final SlotAllocationSnapshotPersistenceService slotAllocationSnapshotPersistenceService;
 
         if (taskManagerServicesConfiguration.isLocalRecoveryEnabled()) {
             slotAllocationSnapshotPersistenceService =
-                    new FileSlotAllocationSnapshotPersistenceService(
-                            workingDirectory.getSlotAllocationSnapshotDirectory());
+                    new FileSlotAllocationSnapshotPersistenceService(workingDirectory.getSlotAllocationSnapshotDirectory());
         } else {
             slotAllocationSnapshotPersistenceService =
                     NoOpSlotAllocationSnapshotPersistenceService.INSTANCE;
@@ -439,8 +441,8 @@ public class TaskManagerServices {
                         ioExecutor);
 
         return ShuffleServiceLoader.loadShuffleServiceFactory(
-                        taskManagerServicesConfiguration.getConfiguration())
-                .createShuffleEnvironment(shuffleEnvironmentContext);
+                        taskManagerServicesConfiguration.getConfiguration()
+                ).createShuffleEnvironment(shuffleEnvironmentContext);
     }
 
     /**

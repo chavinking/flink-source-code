@@ -160,7 +160,10 @@ public abstract class ExecNodeBase<T> implements ExecNode<T> {
                             ExecNodeConfig.of(
                                     ((PlannerBase) planner).getTableConfig(),
                                     persistedConfig,
-                                    isCompiled));
+                                    isCompiled
+                            )
+                    );
+
             if (this instanceof SingleTransformationTranslator) {
                 if (inputsContainSingleton()) {
                     transformation.setParallelism(1);
@@ -190,8 +193,7 @@ public abstract class ExecNodeBase<T> implements ExecNode<T> {
      *     retrieving configuration from the {@code planner}. For more details check {@link
      *     ExecNodeConfig}.
      */
-    protected abstract Transformation<T> translateToPlanInternal(
-            PlannerBase planner, ExecNodeConfig config);
+    protected abstract Transformation<T> translateToPlanInternal(PlannerBase planner, ExecNodeConfig config);
 
     /** Whether singleton distribution is required. */
     protected boolean inputsContainSingleton() {

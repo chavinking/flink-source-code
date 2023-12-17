@@ -25,14 +25,17 @@ import java.util.regex.Pattern;
 /** Strategy to parse statement to {@link Operation} by regex. */
 public abstract class AbstractRegexParseStrategy implements ExtendedParseStrategy {
 
+    // 默认的正则匹配方式，忽略大小写，点可以匹配行结束标志
     protected static final int DEFAULT_PATTERN_FLAGS = Pattern.CASE_INSENSITIVE | Pattern.DOTALL;
 
+    // 这个pattern的用于匹配语句，如果语句和pattern匹配，则使用这个strategy解析
     protected Pattern pattern;
 
     protected AbstractRegexParseStrategy(Pattern pattern) {
         this.pattern = pattern;
     }
 
+    // 用于验证语句是否和pattern匹配的方法
     @Override
     public boolean match(String statement) {
         return pattern.matcher(statement.trim()).matches();

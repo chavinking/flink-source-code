@@ -122,9 +122,12 @@ public class CheckpointedInputGate implements PullingAsyncDataInput<BufferOrEven
         waitForPriorityEvents(inputGate, mailboxExecutor);
     }
 
+
+
+
+
     private void waitForPriorityEvents(InputGate inputGate, MailboxExecutor mailboxExecutor) {
-        final CompletableFuture<?> priorityEventAvailableFuture =
-                inputGate.getPriorityEventAvailableFuture();
+        final CompletableFuture<?> priorityEventAvailableFuture = inputGate.getPriorityEventAvailableFuture();
         assertNoException(
                 priorityEventAvailableFuture.thenRun(
                         () -> {
@@ -132,7 +135,8 @@ public class CheckpointedInputGate implements PullingAsyncDataInput<BufferOrEven
                                 mailboxExecutor.execute(
                                         this::processPriorityEvents,
                                         "process priority event @ gate %s",
-                                        inputGate);
+                                        inputGate
+                                );
                             } catch (RejectedExecutionException ex) {
                                 LOG.debug(
                                         "Ignored RejectedExecutionException in CheckpointedInputGate.waitForPriorityEvents");

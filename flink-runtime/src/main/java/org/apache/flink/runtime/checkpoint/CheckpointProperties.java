@@ -64,7 +64,8 @@ public class CheckpointProperties implements Serializable {
             boolean discardCancelled,
             boolean discardFailed,
             boolean discardSuspended,
-            boolean unclaimed) {
+            boolean unclaimed
+    ) {
 
         this.forced = forced;
         this.checkpointType = checkNotNull(checkpointType);
@@ -289,7 +290,9 @@ public class CheckpointProperties implements Serializable {
      * @return Checkpoint properties for a (manually triggered) savepoint.
      */
     public static CheckpointProperties forSavepoint(
-            boolean forced, SavepointFormatType formatType) {
+            boolean forced,
+            SavepointFormatType formatType
+    ) {
         return new CheckpointProperties(
                 forced,
                 SavepointType.savepoint(formatType),
@@ -298,7 +301,8 @@ public class CheckpointProperties implements Serializable {
                 false,
                 false,
                 false,
-                false);
+                false
+        );
     }
 
     /**

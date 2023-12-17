@@ -78,7 +78,8 @@ public class ResourceManager implements Closeable {
         this.localResourceDir =
                 new Path(
                         config.get(TableConfigOptions.RESOURCES_DOWNLOAD_DIR),
-                        String.format("flink-table-%s", UUID.randomUUID()));
+                        String.format("flink-table-%s", UUID.randomUUID())
+                );
         this.resourceInfos = new HashMap<>();
         this.userClassLoader = userClassLoader;
     }
@@ -162,8 +163,7 @@ public class ResourceManager implements Closeable {
      * TableConfig#getConfiguration()}.
      */
     public void addJarConfiguration(TableConfig tableConfig) {
-        final List<String> jars =
-                getLocalJarResources().stream().map(URL::toString).collect(Collectors.toList());
+        final List<String> jars = getLocalJarResources().stream().map(URL::toString).collect(Collectors.toList());
         if (jars.isEmpty()) {
             return;
         }

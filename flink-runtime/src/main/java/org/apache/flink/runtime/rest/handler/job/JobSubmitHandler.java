@@ -211,7 +211,8 @@ public final class JobSubmitHandler
                                 jobGraph,
                                 jarFiles,
                                 artifacts,
-                                () -> new BlobClient(address, configuration));
+                                () -> new BlobClient(address, configuration)
+                        );
                     } catch (FlinkException e) {
                         throw new CompletionException(
                                 new RestHandlerException(

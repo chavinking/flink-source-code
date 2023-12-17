@@ -35,10 +35,9 @@ public final class FlinkPipelineTranslationUtil {
             ClassLoader userClassloader,
             Pipeline pipeline,
             Configuration optimizerConfiguration,
-            int defaultParallelism) {
-
+            int defaultParallelism
+    ) {
         FlinkPipelineTranslator pipelineTranslator = getPipelineTranslator(userClassloader, pipeline);
-
         return pipelineTranslator.translateToJobGraph(pipeline, optimizerConfiguration, defaultParallelism);
     }
 
@@ -53,8 +52,7 @@ public final class FlinkPipelineTranslationUtil {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(userClassloader);
-            return FlinkPipelineTranslationUtil.getJobGraph(
-                    userClassloader, pipeline, configuration, defaultParallelism);
+            return FlinkPipelineTranslationUtil.getJobGraph(userClassloader, pipeline, configuration, defaultParallelism);
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
@@ -68,8 +66,7 @@ public final class FlinkPipelineTranslationUtil {
         return pipelineTranslator.translateToJSONExecutionPlan(pipeline);
     }
 
-    private static FlinkPipelineTranslator getPipelineTranslator(
-            ClassLoader userClassloader, Pipeline pipeline) {
+    private static FlinkPipelineTranslator getPipelineTranslator(ClassLoader userClassloader, Pipeline pipeline) {
         PlanTranslator planTranslator = new PlanTranslator();
 
         if (planTranslator.canTranslate(pipeline)) {

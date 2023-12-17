@@ -163,38 +163,50 @@ public class ExecutionJobVertex
         checkState(parallelismInfo.getParallelism() > 0);
         checkState(!isInitialized());
 
-//        设置taskVertices等于并行度
+//        *** taskVertices，inputs，producedDataSets 定义的都是当前ejv的数据结构
+
+//        设置taskVertices等于并行度，并行度 【当前节点的并行子节点集合】
+//        private ExecutionVertex[] taskVertices;
         this.taskVertices = new ExecutionVertex[parallelismInfo.getParallelism()];
-//        设置输入并行度
+
+//        设置输入并行度，输入边的数量【输入数据集】
+//        private List<IntermediateResult> inputs;
         this.inputs = new ArrayList<>(jobVertex.getInputs().size());
 
-        // create the intermediate results
-        // 设置 intermediate
+        // create the intermediate results 【输出数据集】
+        // 设置 intermediate,数量为jobVertex对应的输出数量
+        // private IntermediateResult[] producedDataSets;
         this.producedDataSets = new IntermediateResult[jobVertex.getNumberOfProducedIntermediateDataSets()];
 
-        for (int i = 0; i < jobVertex.getProducedDataSets().size(); i++) {
+
+
+//        创建jobvertex对应的输出 IntermediateResult 【初始化-输出数据集】
+        for (int i = 0; i < jobVertex.getProducedDataSets().size(); i++) { // jobVertex输出 result 集合
             final IntermediateDataSet result = jobVertex.getProducedDataSets().get(i);
 
-            this.producedDataSets[i] =
-                    new IntermediateResult(
+            // 将每一个 IntermediateDataSet 转换为 一个 IntermediateResult
+            this.producedDataSets[i] = new IntermediateResult(
                             result,
-                            this,
+                            this, // 上游是 ExecutionJobVertex
                             this.parallelismInfo.getParallelism(),
-                            result.getResultType());
+                            result.getResultType()
+                    );
         }
 
         // create all task vertices
         // 创建所有的ExecutionVertex
         for (int i = 0; i < this.parallelismInfo.getParallelism(); i++) {
-            ExecutionVertex vertex =
-                    createExecutionVertex(
+
+//            创建ExecutionVertex，并连接和 reusltpartition 的关系
+            ExecutionVertex vertex = createExecutionVertex(
                             this,
                             i,
                             producedDataSets,
                             timeout,
                             createTimestamp,
                             executionHistorySizeLimit,
-                            initialAttemptCounts.getAttemptCount(i));
+                            initialAttemptCounts.getAttemptCount(i)
+                    );
 
             this.taskVertices[i] = vertex;
         }
@@ -203,10 +215,10 @@ public class ExecutionJobVertex
         // execution vertices
         for (IntermediateResult ir : this.producedDataSets) {
             if (ir.getNumberOfAssignedPartitions() != this.parallelismInfo.getParallelism()) {
-                throw new RuntimeException(
-                        "The intermediate result's partitions were not correctly assigned.");
+                throw new RuntimeException("The intermediate result's partitions were not correctly assigned.");
             }
         }
+
 
         final List<SerializedValue<OperatorCoordinator.Provider>> coordinatorProviders = getJobVertex().getOperatorCoordinators();
         if (coordinatorProviders.isEmpty()) {
@@ -224,7 +236,6 @@ public class ExecutionJobVertex
             }
             this.operatorCoordinators = Collections.unmodifiableList(coordinators);
         }
-
         // set up the input splits, if the vertex has any
         try {
             @SuppressWarnings("unchecked")
@@ -246,8 +257,7 @@ public class ExecutionJobVertex
                 inputSplits = null;
             }
         } catch (Throwable t) {
-            throw new JobException(
-                    "Creating the input splits caused an error: " + t.getMessage(), t);
+            throw new JobException("Creating the input splits caused an error: " + t.getMessage(), t);
         }
     }
 
@@ -266,7 +276,8 @@ public class ExecutionJobVertex
                 timeout,
                 createTimestamp,
                 executionHistorySizeLimit,
-                initialAttemptCount);
+                initialAttemptCount
+        );
     }
 
     protected OperatorCoordinatorHolder createOperatorCoordinatorHolder(
@@ -391,14 +402,16 @@ public class ExecutionJobVertex
         return numExecutionVertexFinished;
     }
 
-    public Either<SerializedValue<TaskInformation>, PermanentBlobKey> getTaskInformationOrBlobKey()
-            throws IOException {
+    public Either<SerializedValue<TaskInformation>, PermanentBlobKey> getTaskInformationOrBlobKey() throws IOException {
         // only one thread should offload the task information, so let's also let only one thread
         // serialize the task information!
         synchronized (stateMonitor) {
             if (taskInformationOrBlobKey == null) {
                 final BlobWriter blobWriter = graph.getBlobWriter();
 
+                /**
+                 * 这段代码设置在ExecutionJobVertex执行图中的参数中，同时也设置了执行图信息到配置中，因此后续在使用时可以获取到配置信息
+                 */
                 final TaskInformation taskInformation =
                         new TaskInformation(
                                 jobVertex.getID(),
@@ -431,16 +444,17 @@ public class ExecutionJobVertex
     public void connectToPredecessors(Map<IntermediateDataSetID, IntermediateResult> intermediateDataSets) throws JobException {
         checkState(isInitialized());
 
+//        拿到输入边信息
         List<JobEdge> inputs = jobVertex.getInputs();
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug(
-                    String.format(
-                            "Connecting ExecutionJobVertex %s (%s) to %d predecessors.",
-                            jobVertex.getID(), jobVertex.getName(), inputs.size()));
+            LOG.debug(String.format("Connecting ExecutionJobVertex %s (%s) to %d predecessors.", jobVertex.getID(), jobVertex.getName(), inputs.size()));
         }
 
+
+//        遍历输入边
         for (int num = 0; num < inputs.size(); num++) {
+
             JobEdge edge = inputs.get(num);
 
             if (LOG.isDebugEnabled()) {
@@ -467,18 +481,24 @@ public class ExecutionJobVertex
             // fetch the intermediate result via ID. if it does not exist, then it either has not
             // been created, or the order
             // in which this method is called for the job vertices is not a topological order
+//            拿到输入边的上游数据集信息
             IntermediateResult ires = intermediateDataSets.get(edge.getSourceId());
             if (ires == null) {
-                throw new JobException(
-                        "Cannot connect this job graph to the previous graph. No previous intermediate result found for ID "
-                                + edge.getSourceId());
+                throw new JobException("Cannot connect this job graph to the previous graph. No previous intermediate result found for ID " + edge.getSourceId());
             }
 
+
+//            把上游数据结果集合加入ejv对应的inputs集合
             this.inputs.add(ires);
+
 
             EdgeManagerBuildUtil.connectVertexToResult(this, ires, edge.getDistributionPattern());
         }
+
     }
+
+
+
 
     // ---------------------------------------------------------------------------------------------
     //  Actions

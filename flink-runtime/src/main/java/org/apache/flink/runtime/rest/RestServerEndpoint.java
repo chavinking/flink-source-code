@@ -178,7 +178,7 @@ public abstract class RestServerEndpoint implements RestService {
             final Router router = new Router();
             final CompletableFuture<String> restAddressFuture = new CompletableFuture<>();
 
-            // 初始化handlers
+            // 初始化handlers，用于承接来自web端的各种请求
             handlers = initializeHandlers(restAddressFuture);
 
             /* sort the handlers such that they are ordered the following:
@@ -219,8 +219,7 @@ public abstract class RestServerEndpoint implements RestService {
                                             new FlinkHttpObjectAggregator(
                                                     maxContentLength, responseHeaders));
 
-                            for (InboundChannelHandlerFactory factory :
-                                    inboundChannelHandlerFactories) {
+                            for (InboundChannelHandlerFactory factory : inboundChannelHandlerFactories) {
                                 Optional<ChannelHandler> channelHandler =
                                         factory.createHandler(configuration, responseHeaders);
                                 if (channelHandler.isPresent()) {

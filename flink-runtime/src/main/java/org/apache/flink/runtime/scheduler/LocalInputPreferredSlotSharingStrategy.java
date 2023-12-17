@@ -86,12 +86,11 @@ class LocalInputPreferredSlotSharingStrategy
     }
 
     @Override
-    public void notifySchedulingTopologyUpdated(
-            SchedulingTopology schedulingTopology, List<ExecutionVertexID> newExecutionVertices) {
+    public void notifySchedulingTopologyUpdated(SchedulingTopology schedulingTopology, List<ExecutionVertexID> newExecutionVertices) {
 
         final Map<ExecutionVertexID, ExecutionSlotSharingGroup> newMap =
-                new LocalInputPreferredSlotSharingStrategy.ExecutionSlotSharingGroupBuilder(
-                                schedulingTopology, logicalSlotSharingGroups, coLocationGroups)
+                new LocalInputPreferredSlotSharingStrategy
+                        .ExecutionSlotSharingGroupBuilder(schedulingTopology, logicalSlotSharingGroups, coLocationGroups)
                         .build();
 
         for (ExecutionVertexID vertexId : newMap.keySet()) {

@@ -47,8 +47,7 @@ public class NettyShuffleUtils {
      * Calculates and returns the floating network buffer pool size used by the input gate. The
      * left/right value of the returned pair represent the min/max buffers require by the pool.
      */
-    public static Pair<Integer, Integer> getMinMaxFloatingBuffersPerInputGate(
-            final int numFloatingBuffersPerGate) {
+    public static Pair<Integer, Integer> getMinMaxFloatingBuffersPerInputGate(final int numFloatingBuffersPerGate) {
         // We should guarantee at-least one floating buffer for local channel state recovery.
         return Pair.of(1, numFloatingBuffersPerGate);
     }
@@ -64,17 +63,14 @@ public class NettyShuffleUtils {
             final int sortShuffleMinBuffers,
             final int numSubpartitions,
             final ResultPartitionType type) {
-        boolean isSortShuffle =
-                type.isBlockingOrBlockingPersistentResultPartition()
-                        && numSubpartitions >= sortShuffleMinParallelism;
+
+//        子分区数量大于等于shuffer最下并行度
+        boolean isSortShuffle = type.isBlockingOrBlockingPersistentResultPartition() && numSubpartitions >= sortShuffleMinParallelism;
         int min = isSortShuffle ? sortShuffleMinBuffers : numSubpartitions + 1;
         int max =
                 type.isBounded()
-                        ? numSubpartitions * configuredNetworkBuffersPerChannel
-                                + numFloatingBuffersPerGate
-                        : (isSortShuffle
-                                ? Math.max(min, 4 * numSubpartitions)
-                                : NetworkBufferPool.UNBOUNDED_POOL_SIZE);
+                        ? numSubpartitions * configuredNetworkBuffersPerChannel + numFloatingBuffersPerGate
+                        : (isSortShuffle ? Math.max(min, 4 * numSubpartitions) : NetworkBufferPool.UNBOUNDED_POOL_SIZE);
         // for each upstream hash-based blocking/pipelined subpartition, at least one buffer is
         // needed even the configured network buffers per channel is 0 and this behavior is for
         // performance. If it's not guaranteed that each subpartition can get at least one buffer,

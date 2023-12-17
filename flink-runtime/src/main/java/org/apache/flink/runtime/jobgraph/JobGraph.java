@@ -412,14 +412,16 @@ public class JobGraph implements Serializable {
     //  Topological Graph Access
     // --------------------------------------------------------------------------------------------
 
+//    从源中得到拓扑排序的顶点
     public List<JobVertex> getVerticesSortedTopologicallyFromSources() throws InvalidProgramException {
         // early out on empty lists
         if (this.taskVertices.isEmpty()) {
             return Collections.emptyList();
         }
 
+//        存储有输入的JobVertex的集合
         List<JobVertex> sorted = new ArrayList<JobVertex>(this.taskVertices.size());
-        Set<JobVertex> remaining = new LinkedHashSet<JobVertex>(this.taskVertices.values());
+        Set<JobVertex> remaining = new LinkedHashSet<JobVertex>(this.taskVertices.values()); // 将定点信息转储到remaining
 
         // start by finding the vertices with no input edges
         // and the ones with disconnected inputs (that refer to some standalone data set)
@@ -428,8 +430,9 @@ public class JobGraph implements Serializable {
             while (iter.hasNext()) {
                 JobVertex vertex = iter.next();
 
+//                如果有输入边存在
                 if (vertex.hasNoConnectedInputs()) {
-                    sorted.add(vertex);
+                    sorted.add(vertex); // 将有输入边的定点存储到 sorted 集合中，只有订单没有输入
                     iter.remove();
                 }
             }
@@ -447,48 +450,58 @@ public class JobGraph implements Serializable {
             }
 
             JobVertex current = sorted.get(startNodePos++);
+
+            // 将没有处理过的节点加入到sorted集合中
             addNodesThatHaveNoNewPredecessors(current, sorted, remaining);
         }
 
         return sorted;
     }
 
+    /**
+     *
+     * @param start 开始节点
+     * @param target 不包含起始节点的节点集合
+     * @param remaining 所有节点集合-target集合的结果
+     */
     private void addNodesThatHaveNoNewPredecessors(JobVertex start, List<JobVertex> target, Set<JobVertex> remaining) {
 
         // forward traverse over all produced data sets and all their consumers
-        for (IntermediateDataSet dataSet : start.getProducedDataSets()) {
-            for (JobEdge edge : dataSet.getConsumers()) {
+        for (IntermediateDataSet dataSet : start.getProducedDataSets()) { // 遍历开始节点的输出中间数据集
+            for (JobEdge edge : dataSet.getConsumers()) { // 拿到中间节点的消费者 jobEdge
 
                 // a vertex can be added, if it has no predecessors that are still in the
                 // 'remaining' set
-                JobVertex v = edge.getTarget();
-                if (!remaining.contains(v)) {
+                JobVertex v = edge.getTarget(); // 拿到下一个节点信息
+                if (!remaining.contains(v)) { // 不包含就跳出本次循环
                     continue;
                 }
 
-                boolean hasNewPredecessors = false;
+                boolean hasNewPredecessors = false; // 当前节点是否有新的处理器
 
                 for (JobEdge e : v.getInputs()) {
                     // skip the edge through which we came
-                    if (e == edge) {
+                    if (e == edge) { // 跳过
                         continue;
                     }
 
                     IntermediateDataSet source = e.getSource();
-                    if (remaining.contains(source.getProducer())) {
+                    if (remaining.contains(source.getProducer())) { // 遍历回来到了start节点
                         hasNewPredecessors = true;
                         break;
                     }
                 }
 
                 if (!hasNewPredecessors) {
-                    target.add(v);
+                    target.add(v); // 没有新的处理节点就进入下一个节点
                     remaining.remove(v);
                     addNodesThatHaveNoNewPredecessors(v, target, remaining);
                 }
             }
         }
     }
+
+
 
     // --------------------------------------------------------------------------------------------
     //  Handling of attached JAR files
@@ -624,10 +637,8 @@ public class JobGraph implements Serializable {
     }
 
     public void writeUserArtifactEntriesToConfiguration() {
-        for (Map.Entry<String, DistributedCache.DistributedCacheEntry> userArtifact :
-                userArtifacts.entrySet()) {
-            DistributedCache.writeFileInfoToConfig(
-                    userArtifact.getKey(), userArtifact.getValue(), jobConfiguration);
+        for (Map.Entry<String, DistributedCache.DistributedCacheEntry> userArtifact : userArtifacts.entrySet()) {
+            DistributedCache.writeFileInfoToConfig(userArtifact.getKey(), userArtifact.getValue(), jobConfiguration);
         }
     }
 

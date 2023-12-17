@@ -541,8 +541,7 @@ public class ResourceProfile implements Serializable {
         return fromResourceSpec(resourceSpec, MemorySize.ZERO);
     }
 
-    public static ResourceProfile fromResourceSpec(
-            ResourceSpec resourceSpec, MemorySize networkMemory) {
+    public static ResourceProfile fromResourceSpec(ResourceSpec resourceSpec, MemorySize networkMemory) {
         if (ResourceSpec.UNKNOWN.equals(resourceSpec)) {
             return UNKNOWN;
         }

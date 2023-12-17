@@ -206,6 +206,10 @@ public class MailboxProcessor implements Closeable {
         }
     }
 
+
+
+
+
     /**
      * Runs the mailbox processing loop. This is where the main work is done. This loop can be
      * suspended at any time by calling {@link #suspend()}. For resuming the loop this method should
@@ -216,23 +220,27 @@ public class MailboxProcessor implements Closeable {
 
         final TaskMailbox localMailbox = mailbox;
 
-        checkState(
-                localMailbox.isMailboxThread(),
-                "Method must be executed by declared mailbox thread!");
+        checkState(localMailbox.isMailboxThread(), "Method must be executed by declared mailbox thread!");
 
         assert localMailbox.getState() == TaskMailbox.State.OPEN : "Mailbox must be opened!";
 
         final MailboxController mailboxController = new MailboxController(this);
 
+//        *** 主要执行代码
         while (isNextLoopPossible()) {
             // The blocking `processMail` call will not return until default action is available.
+            // 在默认动作可用之前，阻塞的' processMail '调用不会返回。
             processMail(localMailbox, false);
             if (isNextLoopPossible()) {
-                mailboxDefaultAction.runDefaultAction(
-                        mailboxController); // lock is acquired inside default action as needed
+                mailboxDefaultAction.runDefaultAction(mailboxController); // lock is acquired inside default action as needed
             }
         }
+
     }
+
+
+
+
 
     /** Suspend the running of the loop which was started by {@link #runMailboxLoop()}}. */
     public void suspend() {
@@ -354,6 +362,7 @@ public class MailboxProcessor implements Closeable {
         return processed;
     }
 
+
     private boolean processMailsWhenDefaultActionUnavailable() throws Exception {
         boolean processedSomething = false;
         Optional<Mail> maybeMail;
@@ -423,14 +432,14 @@ public class MailboxProcessor implements Closeable {
      * Calling this method signals that the mailbox-thread should (temporarily) stop invoking the
      * default action, e.g. because there is currently no input available.
      */
-    private MailboxDefaultAction.Suspension suspendDefaultAction(
-            @Nullable PeriodTimer suspensionTimer) {
+    private MailboxDefaultAction.Suspension suspendDefaultAction(@Nullable PeriodTimer suspensionTimer) {
 
         checkState(
                 mailbox.isMailboxThread(),
                 "Suspending must only be called from the mailbox thread!");
 
         checkState(suspendedDefaultAction == null, "Default action has already been suspended");
+
         if (suspendedDefaultAction == null) {
             suspendedDefaultAction = new DefaultActionSuspension(suspensionTimer);
         }

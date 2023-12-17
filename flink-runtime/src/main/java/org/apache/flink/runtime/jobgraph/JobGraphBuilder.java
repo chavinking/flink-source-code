@@ -92,8 +92,7 @@ public class JobGraphBuilder {
         return this;
     }
 
-    public JobGraphBuilder setJobCheckpointingSettings(
-            JobCheckpointingSettings newJobCheckpointingSettings) {
+    public JobGraphBuilder setJobCheckpointingSettings(JobCheckpointingSettings newJobCheckpointingSettings) {
         this.jobCheckpointingSettings = newJobCheckpointingSettings;
         return this;
     }

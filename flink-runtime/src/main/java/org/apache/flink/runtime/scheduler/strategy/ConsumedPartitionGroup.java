@@ -52,6 +52,7 @@ public class ConsumedPartitionGroup implements Iterable<IntermediateResultPartit
         checkArgument(
                 resultPartitions.size() > 0,
                 "The size of result partitions in the ConsumedPartitionGroup should be larger than 0.");
+
         this.numConsumers = numConsumers;
         this.intermediateDataSetID = resultPartitions.get(0).getIntermediateDataSetID();
         this.resultPartitionType = Preconditions.checkNotNull(resultPartitionType);
@@ -59,8 +60,7 @@ public class ConsumedPartitionGroup implements Iterable<IntermediateResultPartit
         // Sanity check: all the partitions in one ConsumedPartitionGroup should have the same
         // IntermediateDataSetID
         for (IntermediateResultPartitionID resultPartition : resultPartitions) {
-            checkArgument(
-                    resultPartition.getIntermediateDataSetID().equals(this.intermediateDataSetID));
+            checkArgument(resultPartition.getIntermediateDataSetID().equals(this.intermediateDataSetID));
         }
         this.resultPartitions = resultPartitions;
 

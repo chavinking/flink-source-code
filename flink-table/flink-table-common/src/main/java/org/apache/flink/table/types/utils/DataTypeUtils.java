@@ -205,9 +205,9 @@ public final class DataTypeUtils {
     public static DataType transform(
             @Nullable DataTypeFactory factory,
             DataType typeToTransform,
-            TypeTransformation... transformations) {
-        Preconditions.checkArgument(
-                transformations.length > 0, "transformations should not be empty.");
+            TypeTransformation... transformations
+    ) {
+        Preconditions.checkArgument(transformations.length > 0, "transformations should not be empty.");
         DataType newType = typeToTransform;
         for (TypeTransformation transformation : transformations) {
             newType = newType.accept(new DataTypeTransformer(factory, transformation));

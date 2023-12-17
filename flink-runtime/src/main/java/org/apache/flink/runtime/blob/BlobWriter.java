@@ -94,7 +94,8 @@ public interface BlobWriter {
     }
 
     static <T> Either<SerializedValue<T>, PermanentBlobKey> tryOffload(
-            SerializedValue<T> serializedValue, JobID jobId, BlobWriter blobWriter) {
+            SerializedValue<T> serializedValue, JobID jobId, BlobWriter blobWriter)
+    {
         Preconditions.checkNotNull(serializedValue);
         Preconditions.checkNotNull(jobId);
         Preconditions.checkNotNull(blobWriter);

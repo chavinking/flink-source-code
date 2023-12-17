@@ -32,8 +32,7 @@ final class DispatcherRunnerLeaderElectionLifecycleManager<
     private final T dispatcherRunner;
     private final LeaderElectionService leaderElectionService;
 
-    private DispatcherRunnerLeaderElectionLifecycleManager(
-            T dispatcherRunner, LeaderElectionService leaderElectionService) throws Exception {
+    private DispatcherRunnerLeaderElectionLifecycleManager(T dispatcherRunner, LeaderElectionService leaderElectionService) throws Exception {
         this.dispatcherRunner = dispatcherRunner;
         this.leaderElectionService = leaderElectionService;
 

@@ -330,6 +330,7 @@ public class JobMasterServiceLeadershipRunner implements JobManagerRunner, Leade
          */
         jobMasterServiceProcess = jobMasterServiceProcessFactory.create(leaderSessionId);
 
+
         forwardIfValidLeader(
                 leaderSessionId,
                 jobMasterServiceProcess.getJobMasterGatewayFuture(),
@@ -340,8 +341,7 @@ public class JobMasterServiceLeadershipRunner implements JobManagerRunner, Leade
         confirmLeadership(leaderSessionId, jobMasterServiceProcess.getLeaderAddressFuture());
     }
 
-    private void confirmLeadership(
-            UUID leaderSessionId, CompletableFuture<String> leaderAddressFuture) {
+    private void confirmLeadership(UUID leaderSessionId, CompletableFuture<String> leaderAddressFuture) {
         FutureUtils.assertNoException(
                 leaderAddressFuture.thenAccept(
                         address -> {
@@ -358,8 +358,7 @@ public class JobMasterServiceLeadershipRunner implements JobManagerRunner, Leade
                         }));
     }
 
-    private void forwardResultFuture(
-            UUID leaderSessionId, CompletableFuture<JobManagerRunnerResult> resultFuture) {
+    private void forwardResultFuture(UUID leaderSessionId, CompletableFuture<JobManagerRunnerResult> resultFuture) {
         resultFuture.whenComplete(
                 (jobManagerRunnerResult, throwable) -> {
                     synchronized (lock) {
@@ -375,8 +374,7 @@ public class JobMasterServiceLeadershipRunner implements JobManagerRunner, Leade
     }
 
     @GuardedBy("lock")
-    private void onJobCompletion(
-            JobManagerRunnerResult jobManagerRunnerResult, Throwable throwable) {
+    private void onJobCompletion(JobManagerRunnerResult jobManagerRunnerResult, Throwable throwable) {
         state = State.JOB_COMPLETED;
 
         LOG.debug("Completing the result for job {}.", getJobID());

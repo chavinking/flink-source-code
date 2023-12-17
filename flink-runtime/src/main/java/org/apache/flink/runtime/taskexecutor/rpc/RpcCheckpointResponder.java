@@ -72,7 +72,6 @@ public class RpcCheckpointResponder implements CheckpointResponder {
             CheckpointException checkpointException) {
 
         checkpointCoordinatorGateway.declineCheckpoint(
-                new DeclineCheckpoint(
-                        jobID, executionAttemptID, checkpointId, checkpointException));
+                new DeclineCheckpoint(jobID, executionAttemptID, checkpointId, checkpointException));
     }
 }

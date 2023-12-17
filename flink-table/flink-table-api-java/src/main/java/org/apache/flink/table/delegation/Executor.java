@@ -59,7 +59,8 @@ public interface Executor {
     Pipeline createPipeline(
             List<Transformation<?>> transformations,
             ReadableConfig tableConfiguration,
-            @Nullable String defaultJobName);
+            @Nullable String defaultJobName
+    );
 
     /**
      * Executes the given pipeline.

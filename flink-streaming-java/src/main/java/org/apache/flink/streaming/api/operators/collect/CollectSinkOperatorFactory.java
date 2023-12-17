@@ -32,8 +32,7 @@ import org.apache.flink.streaming.api.operators.StreamOperatorParameters;
 import java.time.Duration;
 
 /** The Factory class for {@link CollectSinkOperator}. */
-public class CollectSinkOperatorFactory<IN> extends SimpleUdfStreamOperatorFactory<Object>
-        implements CoordinatedOperatorFactory<Object> {
+public class CollectSinkOperatorFactory<IN> extends SimpleUdfStreamOperatorFactory<Object> implements CoordinatedOperatorFactory<Object> {
 
     private static final long serialVersionUID = 1L;
 
@@ -76,8 +75,7 @@ public class CollectSinkOperatorFactory<IN> extends SimpleUdfStreamOperatorFacto
     }
 
     @Override
-    public OperatorCoordinator.Provider getCoordinatorProvider(
-            String operatorName, OperatorID operatorID) {
+    public OperatorCoordinator.Provider getCoordinatorProvider(String operatorName, OperatorID operatorID) {
         operator.getOperatorIdFuture().complete(operatorID);
         return new CollectSinkOperatorCoordinator.Provider(operatorID, socketTimeoutMillis);
     }

@@ -78,7 +78,8 @@ public class OperatorSnapshotFutures {
                             inputChannelStateFuture,
             @Nonnull
                     Future<SnapshotResult<StateObjectCollection<ResultSubpartitionStateHandle>>>
-                            resultSubpartitionStateFuture) {
+                            resultSubpartitionStateFuture
+    ) {
         this.keyedStateManagedFuture = keyedStateManagedFuture;
         this.keyedStateRawFuture = keyedStateRawFuture;
         this.operatorStateManagedFuture = operatorStateManagedFuture;

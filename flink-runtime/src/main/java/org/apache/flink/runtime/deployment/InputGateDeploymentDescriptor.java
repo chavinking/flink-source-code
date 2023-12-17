@@ -151,14 +151,10 @@ public class InputGateDeploymentDescriptor implements Serializable {
         try {
             if (inputChannels == null) {
                 if (serializedInputChannels instanceof NonOffloaded) {
-                    NonOffloaded<ShuffleDescriptor[]> nonOffloadedSerializedValue =
-                            (NonOffloaded<ShuffleDescriptor[]>) serializedInputChannels;
-                    inputChannels =
-                            nonOffloadedSerializedValue.serializedValue.deserializeValue(
-                                    getClass().getClassLoader());
+                    NonOffloaded<ShuffleDescriptor[]> nonOffloadedSerializedValue = (NonOffloaded<ShuffleDescriptor[]>) serializedInputChannels;
+                    inputChannels = nonOffloadedSerializedValue.serializedValue.deserializeValue(getClass().getClassLoader());
                 } else {
-                    throw new IllegalStateException(
-                            "Trying to work with offloaded serialized shuffle descriptors.");
+                    throw new IllegalStateException("Trying to work with offloaded serialized shuffle descriptors.");
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -166,6 +162,7 @@ public class InputGateDeploymentDescriptor implements Serializable {
         }
         return inputChannels;
     }
+
 
     @Override
     public String toString() {

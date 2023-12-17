@@ -310,8 +310,7 @@ public class StreamConfig implements Serializable {
     public <T> TypeSerializer<T> getTypeSerializerSideOut(OutputTag<?> outputTag, ClassLoader cl) {
         Preconditions.checkNotNull(outputTag, "Side output id must not be null.");
         try {
-            return InstantiationUtil.readObjectFromConfig(
-                    this.config, TYPE_SERIALIZER_SIDEOUT_PREFIX + outputTag.getId(), cl);
+            return InstantiationUtil.readObjectFromConfig(this.config, TYPE_SERIALIZER_SIDEOUT_PREFIX + outputTag.getId(), cl);
         } catch (Exception e) {
             throw new StreamTaskException("Could not instantiate serializer.", e);
         }
@@ -439,8 +438,7 @@ public class StreamConfig implements Serializable {
 
     public List<NonChainedOutput> getOperatorNonChainedOutputs(ClassLoader cl) {
         try {
-            List<NonChainedOutput> nonChainedOutputs =
-                    InstantiationUtil.readObjectFromConfig(this.config, OP_NONCHAINED_OUTPUTS, cl);
+            List<NonChainedOutput> nonChainedOutputs = InstantiationUtil.readObjectFromConfig(this.config, OP_NONCHAINED_OUTPUTS, cl);
             return nonChainedOutputs == null ? new ArrayList<>() : nonChainedOutputs;
         } catch (Exception e) {
             throw new StreamTaskException("Could not instantiate non chained outputs.", e);
@@ -453,8 +451,7 @@ public class StreamConfig implements Serializable {
 
     public List<StreamEdge> getChainedOutputs(ClassLoader cl) {
         try {
-            List<StreamEdge> chainedOutputs =
-                    InstantiationUtil.readObjectFromConfig(this.config, CHAINED_OUTPUTS, cl);
+            List<StreamEdge> chainedOutputs = InstantiationUtil.readObjectFromConfig(this.config, CHAINED_OUTPUTS, cl);
             return chainedOutputs == null ? new ArrayList<StreamEdge>() : chainedOutputs;
         } catch (Exception e) {
             throw new StreamTaskException("Could not instantiate chained outputs.", e);
@@ -529,9 +526,7 @@ public class StreamConfig implements Serializable {
 
     public List<NonChainedOutput> getVertexNonChainedOutputs(ClassLoader cl) {
         try {
-            List<NonChainedOutput> nonChainedOutputs =
-                    InstantiationUtil.readObjectFromConfig(
-                            this.config, VERTEX_NONCHAINED_OUTPUTS, cl);
+            List<NonChainedOutput> nonChainedOutputs = InstantiationUtil.readObjectFromConfig(this.config, VERTEX_NONCHAINED_OUTPUTS, cl);
             return nonChainedOutputs == null ? new ArrayList<>() : nonChainedOutputs;
         } catch (Exception e) {
             throw new StreamTaskException("Could not instantiate outputs in order.", e);
@@ -547,8 +542,7 @@ public class StreamConfig implements Serializable {
 
     public Map<Integer, StreamConfig> getTransitiveChainedTaskConfigs(ClassLoader cl) {
         try {
-            Map<Integer, StreamConfig> confs =
-                    InstantiationUtil.readObjectFromConfig(this.config, CHAINED_TASK_CONFIG, cl);
+            Map<Integer, StreamConfig> confs = InstantiationUtil.readObjectFromConfig(this.config, CHAINED_TASK_CONFIG, cl);
             return confs == null ? new HashMap<Integer, StreamConfig>() : confs;
         } catch (Exception e) {
             throw new StreamTaskException("Could not instantiate configuration.", e);
@@ -854,7 +848,6 @@ public class StreamConfig implements Serializable {
 
     public static boolean requiresSorting(StreamConfig.InputConfig inputConfig) {
         return inputConfig instanceof StreamConfig.NetworkInputConfig
-                && ((StreamConfig.NetworkInputConfig) inputConfig).getInputRequirement()
-                        == StreamConfig.InputRequirement.SORTED;
+                && ((StreamConfig.NetworkInputConfig) inputConfig).getInputRequirement() == StreamConfig.InputRequirement.SORTED;
     }
 }

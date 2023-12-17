@@ -168,19 +168,14 @@ public class StreamNonDeterministicPhysicalPlanResolver {
      * OptimizerConfigOptions#TABLE_OPTIMIZER_NONDETERMINISTIC_UPDATE_STRATEGY} is in `TRY_RESOLVE`
      * mode. Will raise an error if the NDU issues in the given plan can not be completely solved.
      */
-    public static List<RelNode> resolvePhysicalPlan(
-            List<RelNode> expanded, TableConfig tableConfig) {
+    public static List<RelNode> resolvePhysicalPlan(List<RelNode> expanded, TableConfig tableConfig) {
         OptimizerConfigOptions.NonDeterministicUpdateStrategy handling =
                 tableConfig
                         .getConfiguration()
-                        .get(
-                                OptimizerConfigOptions
-                                        .TABLE_OPTIMIZER_NONDETERMINISTIC_UPDATE_STRATEGY);
+                        .get(OptimizerConfigOptions.TABLE_OPTIMIZER_NONDETERMINISTIC_UPDATE_STRATEGY);
         if (handling == OptimizerConfigOptions.NonDeterministicUpdateStrategy.TRY_RESOLVE) {
-            Preconditions.checkArgument(
-                    expanded.stream().allMatch(rel -> rel instanceof StreamPhysicalRel));
-            StreamNonDeterministicUpdatePlanVisitor planResolver =
-                    new StreamNonDeterministicUpdatePlanVisitor();
+            Preconditions.checkArgument(expanded.stream().allMatch(rel -> rel instanceof StreamPhysicalRel));
+            StreamNonDeterministicUpdatePlanVisitor planResolver = new StreamNonDeterministicUpdatePlanVisitor();
 
             return expanded.stream()
                     .map(rel -> (StreamPhysicalRel) rel)

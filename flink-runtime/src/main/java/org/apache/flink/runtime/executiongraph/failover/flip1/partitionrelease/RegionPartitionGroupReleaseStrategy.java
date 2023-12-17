@@ -58,8 +58,7 @@ public class RegionPartitionGroupReleaseStrategy
 
     public RegionPartitionGroupReleaseStrategy(final SchedulingTopology schedulingTopology) {
         this.schedulingTopology = checkNotNull(schedulingTopology);
-        this.consumerRegionGroupExecutionViewMaintainer =
-                new ConsumerRegionGroupExecutionViewMaintainer();
+        this.consumerRegionGroupExecutionViewMaintainer = new ConsumerRegionGroupExecutionViewMaintainer();
 
         schedulingTopology.registerSchedulingTopologyListener(this);
         notifySchedulingTopologyUpdatedInternal(schedulingTopology.getAllPipelinedRegions());

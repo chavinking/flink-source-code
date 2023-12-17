@@ -236,7 +236,8 @@ public class StreamGraphGenerator {
             List<Transformation<?>> transformations,
             ExecutionConfig executionConfig,
             CheckpointConfig checkpointConfig,
-            ReadableConfig configuration) {
+            ReadableConfig configuration
+    ) {
         this.transformations = checkNotNull(transformations);
         this.executionConfig = checkNotNull(executionConfig);
         this.checkpointConfig = new CheckpointConfig(checkpointConfig);
@@ -325,6 +326,7 @@ public class StreamGraphGenerator {
          * 转换Transformation为
          */
         for (Transformation<?> transformation : transformations) {
+//            一个一个算子的转换
             transform(transformation);
         }
 
@@ -542,7 +544,6 @@ public class StreamGraphGenerator {
          *
          * Optional.ifPresent(instance) 如果实例非空 则调用lambda表达式
          */
-
         transform
                 .getSlotSharingGroup()
                 .ifPresent(
@@ -571,9 +572,7 @@ public class StreamGraphGenerator {
         transform.getOutputType();
 
         @SuppressWarnings("unchecked")
-        final TransformationTranslator<?, Transformation<?>> translator =
-                (TransformationTranslator<?, Transformation<?>>)
-                        translatorMap.get(transform.getClass());
+        final TransformationTranslator<?, Transformation<?>> translator = (TransformationTranslator<?, Transformation<?>>) translatorMap.get(transform.getClass());
 
         Collection<Integer> transformedIds;
         /**
@@ -596,6 +595,8 @@ public class StreamGraphGenerator {
 
     private Collection<Integer> legacyTransform(Transformation<?> transform) {
         Collection<Integer> transformedIds;
+
+//        主要的转换逻辑
         if (transform instanceof FeedbackTransformation<?>) {
             transformedIds = transformFeedback((FeedbackTransformation<?>) transform);
         } else if (transform instanceof CoFeedbackTransformation<?>) {
@@ -829,7 +830,7 @@ public class StreamGraphGenerator {
         checkNotNull(transform);
 
         /**
-         * 递归处理父对象
+         * 递归处理父对象，获取输入的节点IDs
          */
         final List<Collection<Integer>> allInputIds = getParentInputIds(transform.getInputs());
 

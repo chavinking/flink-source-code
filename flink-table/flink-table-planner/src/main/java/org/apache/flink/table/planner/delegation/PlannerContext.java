@@ -146,9 +146,7 @@ public class PlannerContext {
                 .sqlToRelConverterConfig(getSqlToRelConverterConfig())
                 .operatorTable(getSqlOperatorTable(getCalciteConfig()))
                 // set the executor to evaluate constant expressions
-                .executor(
-                        new ExpressionReducer(
-                                context.getTableConfig(), context.getClassLoader(), false))
+                .executor(new ExpressionReducer(context.getTableConfig(), context.getClassLoader(), false))
                 .context(context)
                 .traitDefs(traitDefs)
                 .build();
@@ -168,8 +166,7 @@ public class PlannerContext {
     }
 
     public FlinkPlannerImpl createFlinkPlanner() {
-        return new FlinkPlannerImpl(
-                createFrameworkConfig(), this::createCatalogReader, typeFactory, cluster);
+        return new FlinkPlannerImpl(createFrameworkConfig(), this::createCatalogReader, typeFactory, cluster);
     }
 
     public CalciteParser createCalciteParser() {

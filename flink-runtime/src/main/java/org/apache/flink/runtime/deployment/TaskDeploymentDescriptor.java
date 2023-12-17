@@ -145,6 +145,7 @@ public final class TaskDeploymentDescriptor implements Serializable {
 
         this.taskRestore = taskRestore;
 
+        // 输入&输出
         this.producedPartitions = Preconditions.checkNotNull(resultPartitionDeploymentDescriptors);
         this.inputGates = Preconditions.checkNotNull(inputGateDeploymentDescriptors);
     }
@@ -158,8 +159,7 @@ public final class TaskDeploymentDescriptor implements Serializable {
      */
     public SerializedValue<JobInformation> getSerializedJobInformation() {
         if (serializedJobInformation instanceof NonOffloaded) {
-            NonOffloaded<JobInformation> jobInformation =
-                    (NonOffloaded<JobInformation>) serializedJobInformation;
+            NonOffloaded<JobInformation> jobInformation = (NonOffloaded<JobInformation>) serializedJobInformation;
             return jobInformation.serializedValue;
         } else {
             throw new IllegalStateException(
@@ -176,8 +176,7 @@ public final class TaskDeploymentDescriptor implements Serializable {
      */
     public SerializedValue<TaskInformation> getSerializedTaskInformation() {
         if (serializedTaskInformation instanceof NonOffloaded) {
-            NonOffloaded<TaskInformation> taskInformation =
-                    (NonOffloaded<TaskInformation>) serializedTaskInformation;
+            NonOffloaded<TaskInformation> taskInformation = (NonOffloaded<TaskInformation>) serializedTaskInformation;
             return taskInformation.serializedValue;
         } else {
             throw new IllegalStateException(

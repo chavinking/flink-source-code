@@ -66,26 +66,30 @@ public final class SnapshotStrategyRunner<T extends StateObject, SR extends Snap
         this.executionType = executionType;
     }
 
+
+
     @Nonnull
     public final RunnableFuture<SnapshotResult<T>> snapshot(
             long checkpointId,
             long timestamp,
             @Nonnull CheckpointStreamFactory streamFactory,
-            @Nonnull CheckpointOptions checkpointOptions)
-            throws Exception {
+            @Nonnull CheckpointOptions checkpointOptions
+    ) throws Exception {
+
         long startTime = System.currentTimeMillis();
+
         SR snapshotResources = snapshotStrategy.syncPrepareResources(checkpointId);
         logCompletedInternal(LOG_SYNC_COMPLETED_TEMPLATE, streamFactory, startTime);
-        SnapshotStrategy.SnapshotResultSupplier<T> asyncSnapshot =
-                snapshotStrategy.asyncSnapshot(
+
+        SnapshotStrategy.SnapshotResultSupplier<T> asyncSnapshot = snapshotStrategy.asyncSnapshot(
                         snapshotResources,
                         checkpointId,
                         timestamp,
                         streamFactory,
-                        checkpointOptions);
+                        checkpointOptions
+        );
 
-        FutureTask<SnapshotResult<T>> asyncSnapshotTask =
-                new AsyncSnapshotCallable<SnapshotResult<T>>() {
+        FutureTask<SnapshotResult<T>> asyncSnapshotTask = new AsyncSnapshotCallable<SnapshotResult<T>>() {
                     @Override
                     protected SnapshotResult<T> callInternal() throws Exception {
                         return asyncSnapshot.get(snapshotCloseableRegistry);
@@ -100,8 +104,7 @@ public final class SnapshotStrategyRunner<T extends StateObject, SR extends Snap
 
                     @Override
                     protected void logAsyncSnapshotComplete(long startTime) {
-                        logCompletedInternal(
-                                LOG_ASYNC_COMPLETED_TEMPLATE, streamFactory, startTime);
+                        logCompletedInternal(LOG_ASYNC_COMPLETED_TEMPLATE, streamFactory, startTime);
                     }
                 }.toAsyncSnapshotFutureTask(cancelStreamRegistry);
 
@@ -110,15 +113,19 @@ public final class SnapshotStrategyRunner<T extends StateObject, SR extends Snap
         }
 
         return asyncSnapshotTask;
+
     }
 
+
+
+
     private void logCompletedInternal(
-            @Nonnull String template, @Nonnull Object checkpointOutDescription, long startTime) {
+            @Nonnull String template, @Nonnull Object checkpointOutDescription, long startTime
+    ) {
 
         long duration = (System.currentTimeMillis() - startTime);
 
-        LOG.debug(
-                template, description, checkpointOutDescription, Thread.currentThread(), duration);
+        LOG.debug(template, description, checkpointOutDescription, Thread.currentThread(), duration);
     }
 
     @Override

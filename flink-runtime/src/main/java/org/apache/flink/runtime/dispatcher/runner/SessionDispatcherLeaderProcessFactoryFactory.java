@@ -45,8 +45,7 @@ public class SessionDispatcherLeaderProcessFactoryFactory
             FatalErrorHandler fatalErrorHandler) {
         final AbstractDispatcherLeaderProcess.DispatcherGatewayServiceFactory
                 dispatcherGatewayServiceFactory =
-                        new DefaultDispatcherGatewayServiceFactory(
-                                dispatcherFactory, rpcService, partialDispatcherServices);
+                        new DefaultDispatcherGatewayServiceFactory(dispatcherFactory, rpcService, partialDispatcherServices);
 
         return new SessionDispatcherLeaderProcessFactory(
                 dispatcherGatewayServiceFactory,

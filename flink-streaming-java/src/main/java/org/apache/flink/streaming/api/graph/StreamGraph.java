@@ -103,8 +103,7 @@ public class StreamGraph implements Pipeline {
 
     private boolean chaining;
 
-    private Collection<Tuple2<String, DistributedCache.DistributedCacheEntry>> userArtifacts =
-            Collections.emptyList();
+    private Collection<Tuple2<String, DistributedCache.DistributedCacheEntry>> userArtifacts = Collections.emptyList();
 
     private TimeCharacteristic timeCharacteristic;
 
@@ -120,8 +119,7 @@ public class StreamGraph implements Pipeline {
     private Set<Integer> sinks;
     private Set<Integer> expandedSinks;
     private Map<Integer, Tuple2<Integer, OutputTag>> virtualSideOutputNodes;
-    private Map<Integer, Tuple3<Integer, StreamPartitioner<?>, StreamExchangeMode>>
-            virtualPartitionNodes;
+    private Map<Integer, Tuple3<Integer, StreamPartitioner<?>, StreamExchangeMode>> virtualPartitionNodes;
 
     protected Map<Integer, String> vertexIDtoBrokerID;
     protected Map<Integer, Long> vertexIDtoLoopTimeout;
@@ -133,8 +131,7 @@ public class StreamGraph implements Pipeline {
     private InternalTimeServiceManager.Provider timerServiceProvider;
     private JobType jobType = JobType.STREAMING;
     private Map<String, ResourceProfile> slotSharingGroupResources;
-    private PipelineOptions.VertexDescriptionMode descriptionMode =
-            PipelineOptions.VertexDescriptionMode.TREE;
+    private PipelineOptions.VertexDescriptionMode descriptionMode = PipelineOptions.VertexDescriptionMode.TREE;
     private boolean vertexNameIncludeIndexPrefix = false;
 
     private final List<JobStatusHook> jobStatusHooks = new ArrayList<>();
@@ -142,7 +139,8 @@ public class StreamGraph implements Pipeline {
     public StreamGraph(
             ExecutionConfig executionConfig,
             CheckpointConfig checkpointConfig,
-            SavepointRestoreSettings savepointRestoreSettings) {
+            SavepointRestoreSettings savepointRestoreSettings
+    ) {
         this.executionConfig = checkNotNull(executionConfig);
         this.checkpointConfig = checkNotNull(checkpointConfig);
         this.savepointRestoreSettings = checkNotNull(savepointRestoreSettings);
@@ -698,6 +696,8 @@ public class StreamGraph implements Pipeline {
             OutputTag outputTag,
             StreamExchangeMode exchangeMode,
             IntermediateDataSetID intermediateDataSetId) {
+
+//        获取上游节点和下游节点数据
         StreamNode upstreamNode = getStreamNode(upStreamVertexID);
         StreamNode downstreamNode = getStreamNode(downStreamVertexID);
 
@@ -1025,11 +1025,15 @@ public class StreamGraph implements Pipeline {
         return getJobGraph(Thread.currentThread().getContextClassLoader(), null);
     }
 
+
+
     /** Gets the assembled {@link JobGraph} with a specified {@link JobID}. */
     public JobGraph getJobGraph(ClassLoader userClassLoader, @Nullable JobID jobID) {
 //        创建JobGraph
         return StreamingJobGraphGenerator.createJobGraph(userClassLoader, this, jobID);
     }
+
+
 
     public String getStreamingPlanAsJSON() {
         try {

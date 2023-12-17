@@ -166,15 +166,14 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
                 jobGraph.getName(),
                 jobGraph.getJobID());
 
-        this.executionFailureHandler =
-                new ExecutionFailureHandler(
-                        getSchedulingTopology(), failoverStrategy, restartBackoffTimeStrategy);
-        this.schedulingStrategy =
-                schedulingStrategyFactory.createInstance(this, getSchedulingTopology());
+        this.executionFailureHandler = new ExecutionFailureHandler(getSchedulingTopology(), failoverStrategy, restartBackoffTimeStrategy);
 
-        this.executionSlotAllocator =
-                checkNotNull(executionSlotAllocatorFactory)
-                        .createInstance(new DefaultExecutionSlotAllocationContext());
+        /**
+         * 初始化调度策略
+         */
+        this.schedulingStrategy = schedulingStrategyFactory.createInstance(this, getSchedulingTopology());
+
+        this.executionSlotAllocator = checkNotNull(executionSlotAllocatorFactory).createInstance(new DefaultExecutionSlotAllocationContext());
 
         this.verticesWaitingForRestart = new HashSet<>();
         startUpAction.accept(mainThreadExecutor);
@@ -187,7 +186,8 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
                         executionVertexVersioner,
                         rpcTimeout,
                         this::startReserveAllocation,
-                        mainThreadExecutor);
+                        mainThreadExecutor
+                );
     }
 
     // ------------------------------------------------------------------------
@@ -208,10 +208,9 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
 
     @Override
     protected void startSchedulingInternal() {
-        log.info(
-                "Starting scheduling with scheduling strategy [{}]",
-                schedulingStrategy.getClass().getName());
+        log.info("Starting scheduling with scheduling strategy [{}]", schedulingStrategy.getClass().getName());
 
+//        转化为运行状态
         transitionToRunning();
 
 //        开始调度
@@ -430,9 +429,14 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
                 .forEach(e -> executionSlotAllocator.cancel(e.getAttemptId()));
     }
 
+
     private Execution getCurrentExecutionOfVertex(ExecutionVertexID executionVertexId) {
         return getExecutionVertex(executionVertexId).getCurrentExecutionAttempt();
     }
+
+
+
+
 
     // ------------------------------------------------------------------------
     // SchedulerOperations
@@ -441,12 +445,20 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
     /**
      * jobmaster 调度服务启动入口类
      *
+     * 用于调度每一个ExecutionVertex，verticesToDeploy一共5个元素
+     *
      * @param verticesToDeploy The execution vertices to deploy
      */
     @Override
     public void allocateSlotsAndDeploy(final List<ExecutionVertexID> verticesToDeploy) {
+        /**
+         * 这段代码的作用是使用 executionVertexVersioner 记录需要部署的 ExecutionVertex 的版本信息。在 Flink 中，为了避免不同 ExecutionVertex 之间的版本冲突，每个 ExecutionVertex 都有一个唯一的版本号，当 ExecutionGraph 发生修改时，需要更新 ExecutionVertex 的版本号。具体来说，这个方法将所有需要部署的 ExecutionVertex 对象保存到 verticesToDeploy 集合中，并根据这些 ExecutionVertex 对象计算它们的版本号，最终返回一个 Map，其中键为 ExecutionVertexID，值为对应的版本号 ExecutionVertexVersion。
+         *
+         * 需要注意的是，这里的版本号并不是直接对 ExecutionVertex 进行修改，而是通过记录修改来生成版本号，从而避免对 ExecutionVertex 对象的频繁修改。此外，在后续的执行过程中，Flink 还会使用版本号来实现任务的快速失败重试、多版本协调等功能。
+         */
         final Map<ExecutionVertexID, ExecutionVertexVersion> requiredVersionByVertex = executionVertexVersioner.recordVertexModifications(verticesToDeploy);
 
+//        这里可以获取到5个执行器
         final List<Execution> executionsToDeploy =
                 verticesToDeploy.stream()
                         .map(this::getCurrentExecutionOfVertex)
@@ -454,6 +466,11 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
 
         executionDeployer.allocateSlotsAndDeploy(executionsToDeploy, requiredVersionByVertex);
     }
+
+
+
+
+
 
     private void startReserveAllocation(
             ExecutionVertexID executionVertexId, AllocationID newAllocation) {

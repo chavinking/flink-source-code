@@ -46,10 +46,17 @@ import scala.collection.JavaConversions._
 class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
   extends CommonSubGraphBasedOptimizer {
 
+
+
+  /**
+   *  Flink SQL执行计划优化入口
+   */
   override protected def doOptimize(roots: Seq[RelNode]): Seq[RelNodeBlock] = {
+
     val tableConfig = planner.getTableConfig
     // build RelNodeBlock plan
     val sinkBlocks = RelNodeBlockPlanBuilder.buildRelNodeBlockPlan(roots, tableConfig)
+
     // infer trait properties for sink block
     sinkBlocks.foreach {
       sinkBlock =>
@@ -80,7 +87,8 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
         block.getPlan,
         block.isUpdateBeforeRequired,
         block.getMiniBatchInterval,
-        isSinkBlock = true)
+        isSinkBlock = true
+      )
       block.setOptimizedPlan(optimizedTree)
       return sinkBlocks
     }
@@ -88,6 +96,7 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
     // TODO FLINK-24048: Move changeLog inference out of optimizing phase
     // infer modifyKind property for each blocks independently
     sinkBlocks.foreach(b => optimizeBlock(b, isSinkBlock = true))
+
     // infer and propagate updateKind and miniBatchInterval property for each blocks
     sinkBlocks.foreach {
       b =>
@@ -95,14 +104,18 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
           b,
           b.isUpdateBeforeRequired,
           b.getMiniBatchInterval,
-          isSinkBlock = true)
+          isSinkBlock = true
+        )
     }
+
     // clear the intermediate result
     sinkBlocks.foreach(resetIntermediateResult)
     // optimize recursively RelNodeBlock
     sinkBlocks.foreach(b => optimizeBlock(b, isSinkBlock = true))
     sinkBlocks
   }
+
+
 
   private def optimizeBlock(block: RelNodeBlock, isSinkBlock: Boolean): Unit = {
     block.children.foreach {
@@ -165,8 +178,7 @@ class StreamCommonSubGraphBasedOptimizer(planner: StreamPlanner)
 
     val tableConfig = planner.getTableConfig
     val calciteConfig = TableConfigUtils.getCalciteConfig(tableConfig)
-    val programs = calciteConfig.getStreamProgram
-      .getOrElse(FlinkStreamProgram.buildProgram(tableConfig))
+    val programs = calciteConfig.getStreamProgram.getOrElse(FlinkStreamProgram.buildProgram(tableConfig))
     Preconditions.checkNotNull(programs)
 
     val context = unwrapContext(relNode)

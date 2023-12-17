@@ -27,8 +27,7 @@ import java.util.Set;
 /** Common utils for processing vertex groups. */
 public final class VertexGroupComputeUtil {
 
-    public static <V> Set<V> mergeVertexGroups(
-            final Set<V> group1, final Set<V> group2, final Map<V, Set<V>> vertexToGroup) {
+    public static <V> Set<V> mergeVertexGroups(final Set<V> group1, final Set<V> group2, final Map<V, Set<V>> vertexToGroup) {
 
         // merge the smaller group into the larger one to reduce the cost
         final Set<V> smallerSet;

@@ -109,15 +109,15 @@ public class MasterHooks {
             MasterTriggerRestoreHook<T> hook,
             long checkpointId,
             long timestamp,
-            Executor executor) {
+            Executor executor
+    ) {
 
         final String id = hook.getIdentifier();
         final SimpleVersionedSerializer<T> serializer = hook.createCheckpointDataSerializer();
 
         try {
             // call the hook!
-            final CompletableFuture<T> resultFuture =
-                    hook.triggerCheckpoint(checkpointId, timestamp, executor);
+            final CompletableFuture<T> resultFuture = hook.triggerCheckpoint(checkpointId, timestamp, executor);
 
             if (resultFuture == null) {
                 return CompletableFuture.completedFuture(null);
@@ -133,7 +133,6 @@ public class MasterHooks {
                                     try {
                                         final int version = serializer.getVersion();
                                         final byte[] bytes = serializer.serialize(result);
-
                                         return new MasterState(id, bytes, version);
                                     } catch (Throwable t) {
                                         ExceptionUtils.rethrowIfFatalErrorOrOOM(t);
@@ -145,26 +144,17 @@ public class MasterHooks {
                                                         t));
                                     }
                                 } else {
-                                    throw new CompletionException(
-                                            new FlinkException(
-                                                    "Checkpoint hook '"
-                                                            + id
-                                                            + " is stateful but creates no serializer"));
+                                    throw new CompletionException(new FlinkException("Checkpoint hook '" + id + " is stateful but creates no serializer"));
                                 }
-                            })
+                            }
+                    )
                     .exceptionally(
                             (throwable) -> {
-                                throw new CompletionException(
-                                        new FlinkException(
-                                                "Checkpoint master hook '"
-                                                        + id
-                                                        + "' produced an exception",
-                                                throwable.getCause()));
+                                throw new CompletionException(new FlinkException("Checkpoint master hook '" + id + "' produced an exception",throwable.getCause()));
                             });
+
         } catch (Throwable t) {
-            return FutureUtils.completedExceptionally(
-                    new FlinkException(
-                            "Error while triggering checkpoint master hook '" + id + '\'', t));
+            return FutureUtils.completedExceptionally(new FlinkException("Error while triggering checkpoint master hook '" + id + '\'', t));
         }
     }
 
@@ -331,14 +321,20 @@ public class MasterHooks {
         @Nullable
         @Override
         public CompletableFuture<T> triggerCheckpoint(
-                long checkpointId, long timestamp, final Executor executor) throws Exception {
-            final Executor wrappedExecutor =
-                    command -> executor.execute(new WrappedCommand(userClassLoader, command));
+                long checkpointId,
+                long timestamp,
+                final Executor executor
+        ) throws Exception {
+            final Executor wrappedExecutor = command -> executor.execute(new WrappedCommand(userClassLoader, command));
 
             return LambdaUtil.withContextClassLoader(
                     userClassLoader,
-                    () -> hook.triggerCheckpoint(checkpointId, timestamp, wrappedExecutor));
+                    () -> hook.triggerCheckpoint(checkpointId, timestamp, wrappedExecutor)
+            );
         }
+
+
+
 
         @Override
         public void restoreCheckpoint(long checkpointId, @Nullable T checkpointData)

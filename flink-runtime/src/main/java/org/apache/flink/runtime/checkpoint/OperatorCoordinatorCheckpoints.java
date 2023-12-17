@@ -43,8 +43,9 @@ import java.util.concurrent.Executor;
 final class OperatorCoordinatorCheckpoints {
 
     public static CompletableFuture<CoordinatorSnapshot> triggerCoordinatorCheckpoint(
-            final OperatorCoordinatorCheckpointContext coordinatorContext, final long checkpointId)
-            throws Exception {
+            final OperatorCoordinatorCheckpointContext coordinatorContext,
+            final long checkpointId
+    ) throws Exception {
 
         final CompletableFuture<byte[]> checkpointFuture = new CompletableFuture<>();
         coordinatorContext.checkpointCoordinator(checkpointId, checkpointFuture);
@@ -53,32 +54,38 @@ final class OperatorCoordinatorCheckpoints {
                 (state) ->
                         new CoordinatorSnapshot(
                                 coordinatorContext,
-                                new ByteStreamStateHandle(
-                                        coordinatorContext.operatorId().toString(), state)));
+                                new ByteStreamStateHandle(coordinatorContext.operatorId().toString(), state)
+                        )
+        );
     }
+
+
+
 
     public static CompletableFuture<AllCoordinatorSnapshots> triggerAllCoordinatorCheckpoints(
             final Collection<OperatorCoordinatorCheckpointContext> coordinators,
-            final long checkpointId)
-            throws Exception {
+            final long checkpointId
+    ) throws Exception {
 
-        final Collection<CompletableFuture<CoordinatorSnapshot>> individualSnapshots =
-                new ArrayList<>(coordinators.size());
+        final Collection<CompletableFuture<CoordinatorSnapshot>> individualSnapshots = new ArrayList<>(coordinators.size());
 
         for (final OperatorCoordinatorCheckpointContext coordinator : coordinators) {
             final CompletableFuture<CoordinatorSnapshot> checkpointFuture =
+                    // 重点方法
                     triggerCoordinatorCheckpoint(coordinator, checkpointId);
             individualSnapshots.add(checkpointFuture);
         }
-
         return FutureUtils.combineAll(individualSnapshots).thenApply(AllCoordinatorSnapshots::new);
     }
+
+
+
 
     public static CompletableFuture<Void> triggerAndAcknowledgeAllCoordinatorCheckpoints(
             final Collection<OperatorCoordinatorCheckpointContext> coordinators,
             final PendingCheckpoint checkpoint,
-            final Executor acknowledgeExecutor)
-            throws Exception {
+            final Executor acknowledgeExecutor
+    ) throws Exception {
 
         final CompletableFuture<AllCoordinatorSnapshots> snapshots =
                 triggerAllCoordinatorCheckpoints(coordinators, checkpoint.getCheckpointID());
@@ -91,19 +98,23 @@ final class OperatorCoordinatorCheckpoints {
                         throw new CompletionException(e);
                     }
                 },
-                acknowledgeExecutor);
+                acknowledgeExecutor
+        );
+
     }
+
+
+
 
     public static CompletableFuture<Void>
             triggerAndAcknowledgeAllCoordinatorCheckpointsWithCompletion(
                     final Collection<OperatorCoordinatorCheckpointContext> coordinators,
                     final PendingCheckpoint checkpoint,
-                    final Executor acknowledgeExecutor)
-                    throws CompletionException {
+                    final Executor acknowledgeExecutor
+    ) throws CompletionException {
 
         try {
-            return triggerAndAcknowledgeAllCoordinatorCheckpoints(
-                    coordinators, checkpoint, acknowledgeExecutor);
+            return triggerAndAcknowledgeAllCoordinatorCheckpoints(coordinators, checkpoint, acknowledgeExecutor);
         } catch (Exception e) {
             throw new CompletionException(e);
         }
@@ -112,26 +123,22 @@ final class OperatorCoordinatorCheckpoints {
     // ------------------------------------------------------------------------
 
     private static void acknowledgeAllCoordinators(
-            PendingCheckpoint checkpoint, Collection<CoordinatorSnapshot> snapshots)
-            throws CheckpointException {
+            PendingCheckpoint checkpoint,
+            Collection<CoordinatorSnapshot> snapshots
+    ) throws CheckpointException {
         for (final CoordinatorSnapshot snapshot : snapshots) {
             final PendingCheckpoint.TaskAcknowledgeResult result =
                     checkpoint.acknowledgeCoordinatorState(snapshot.coordinator, snapshot.state);
 
             if (result != PendingCheckpoint.TaskAcknowledgeResult.SUCCESS) {
-                final String errorMessage =
-                        "Coordinator state not acknowledged successfully: " + result;
-                final Throwable error =
-                        checkpoint.isDisposed() ? checkpoint.getFailureCause() : null;
-
+                final String errorMessage = "Coordinator state not acknowledged successfully: " + result;
+                final Throwable error = checkpoint.isDisposed() ? checkpoint.getFailureCause() : null;
                 CheckpointFailureReason reason = CheckpointFailureReason.TRIGGER_CHECKPOINT_FAILURE;
                 if (error != null) {
-                    final Optional<IOException> ioExceptionOptional =
-                            ExceptionUtils.findThrowable(error, IOException.class);
+                    final Optional<IOException> ioExceptionOptional = ExceptionUtils.findThrowable(error, IOException.class);
                     if (ioExceptionOptional.isPresent()) {
                         reason = CheckpointFailureReason.IO_EXCEPTION;
                     }
-
                     throw new CheckpointException(errorMessage, reason, error);
                 } else {
                     throw new CheckpointException(errorMessage, reason);
@@ -139,6 +146,11 @@ final class OperatorCoordinatorCheckpoints {
             }
         }
     }
+
+
+
+
+
 
     // ------------------------------------------------------------------------
 

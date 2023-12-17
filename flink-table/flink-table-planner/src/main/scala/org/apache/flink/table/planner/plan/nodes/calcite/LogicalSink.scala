@@ -34,15 +34,22 @@ import scala.collection.JavaConversions._
  * [[DynamicTableSink]]. This class corresponds to Calcite logical rel.
  */
 final class LogicalSink(
-    cluster: RelOptCluster,
-    traitSet: RelTraitSet,
-    input: RelNode,
-    hints: util.List[RelHint],
-    contextResolvedTable: ContextResolvedTable,
-    tableSink: DynamicTableSink,
-    val staticPartitions: Map[String, String],
-    val abilitySpecs: Array[SinkAbilitySpec])
-  extends Sink(cluster, traitSet, input, hints, contextResolvedTable, tableSink) {
+                            cluster: RelOptCluster,
+                            traitSet: RelTraitSet,
+                            input: RelNode,
+                            hints: util.List[RelHint],
+                            contextResolvedTable: ContextResolvedTable,
+                            tableSink: DynamicTableSink,
+                            val staticPartitions: Map[String, String],
+                            val abilitySpecs: Array[SinkAbilitySpec]
+                       ) extends Sink(
+  cluster,
+  traitSet,
+  input,
+  hints,
+  contextResolvedTable,
+  tableSink
+) {
 
   override def copy(traitSet: RelTraitSet, inputs: util.List[RelNode]): RelNode = {
     new LogicalSink(
@@ -53,12 +60,12 @@ final class LogicalSink(
       contextResolvedTable,
       tableSink,
       staticPartitions,
-      abilitySpecs)
+      abilitySpecs
+    )
   }
 }
 
 object LogicalSink {
-
   def create(
       input: RelNode,
       hints: util.List[RelHint],
@@ -66,6 +73,7 @@ object LogicalSink {
       tableSink: DynamicTableSink,
       staticPartitions: util.Map[String, String],
       abilitySpecs: Array[SinkAbilitySpec]): LogicalSink = {
+
     val traits = input.getCluster.traitSetOf(Convention.NONE)
     new LogicalSink(
       input.getCluster,
@@ -75,6 +83,8 @@ object LogicalSink {
       contextResolvedTable,
       tableSink,
       staticPartitions.toMap,
-      abilitySpecs)
+      abilitySpecs
+    )
   }
+
 }

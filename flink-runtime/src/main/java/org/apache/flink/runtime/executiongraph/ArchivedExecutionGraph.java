@@ -352,8 +352,8 @@ public class ArchivedExecutionGraph implements AccessExecutionGraph, Serializabl
     }
 
     /**
-     * Create a sparse ArchivedExecutionGraph for a job. Most fields will be empty, only job status
-     * and error-related fields are set.
+     * Create a sparse ArchivedExecutionGraph for a job. Most fields will be empty, only job status and error-related fields are set.
+     * 为作业创建一个稀疏的ArchivedExecutionGraph。大多数字段将为空，只设置作业状态和错误相关字段。
      */
     public static ArchivedExecutionGraph createSparseArchivedExecutionGraph(
             JobID jobId,
@@ -376,8 +376,7 @@ public class ArchivedExecutionGraph implements AccessExecutionGraph, Serializabl
 
         ErrorInfo failureInfo = null;
         if (throwable != null) {
-            Preconditions.checkState(
-                    jobStatus == JobStatus.FAILED || jobStatus == JobStatus.SUSPENDED);
+            Preconditions.checkState(jobStatus == JobStatus.FAILED || jobStatus == JobStatus.SUSPENDED);
             long failureTime = System.currentTimeMillis();
             failureInfo = new ErrorInfo(throwable, failureTime);
             timestamps[jobStatus.ordinal()] = failureTime;
@@ -405,6 +404,7 @@ public class ArchivedExecutionGraph implements AccessExecutionGraph, Serializabl
                 checkpointingSettings == null
                         ? TernaryBoolean.UNDEFINED
                         : checkpointingSettings.isChangelogStateBackendEnabled(),
-                checkpointingSettings == null ? null : "Unknown");
+                checkpointingSettings == null ? null : "Unknown"
+        );
     }
 }

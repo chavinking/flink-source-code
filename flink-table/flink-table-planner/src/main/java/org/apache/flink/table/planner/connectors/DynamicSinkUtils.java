@@ -84,57 +84,59 @@ import static org.apache.flink.table.types.logical.utils.LogicalTypeCasts.suppor
 @Internal
 public final class DynamicSinkUtils {
 
+
     /** Converts an {@link TableResult#collect()} sink to a {@link RelNode}. */
     public static RelNode convertCollectToRel(
             FlinkRelBuilder relBuilder,
             RelNode input,
             CollectModifyOperation collectModifyOperation,
             ReadableConfig configuration,
-            ClassLoader classLoader) {
-        final DataTypeFactory dataTypeFactory =
-                unwrapContext(relBuilder).getCatalogManager().getDataTypeFactory();
+            ClassLoader classLoader
+    ) {
+        final DataTypeFactory dataTypeFactory = unwrapContext(relBuilder).getCatalogManager().getDataTypeFactory();
         final ResolvedSchema childSchema = collectModifyOperation.getChild().getResolvedSchema();
-        final ResolvedSchema schema =
-                ResolvedSchema.physical(
-                        childSchema.getColumnNames(), childSchema.getColumnDataTypes());
-        final ResolvedCatalogTable catalogTable =
-                new ResolvedCatalogTable(
-                        new ExternalCatalogTable(
-                                Schema.newBuilder().fromResolvedSchema(schema).build()),
-                        schema);
-        final ContextResolvedTable contextResolvedTable =
-                ContextResolvedTable.anonymous("collect", catalogTable);
-
+        final ResolvedSchema schema = ResolvedSchema.physical(childSchema.getColumnNames(), childSchema.getColumnDataTypes());
+        final ResolvedCatalogTable catalogTable = new ResolvedCatalogTable(
+                        new ExternalCatalogTable(Schema.newBuilder().fromResolvedSchema(schema).build()),
+                        schema
+        );
+        final ContextResolvedTable contextResolvedTable = ContextResolvedTable.anonymous("collect", catalogTable);
         final DataType consumedDataType = fixCollectDataType(dataTypeFactory, schema);
-
         final String zone = configuration.get(TableConfigOptions.LOCAL_TIME_ZONE);
-        final ZoneId zoneId =
-                TableConfigOptions.LOCAL_TIME_ZONE.defaultValue().equals(zone)
+        final ZoneId zoneId = TableConfigOptions.LOCAL_TIME_ZONE.defaultValue().equals(zone)
                         ? ZoneId.systemDefault()
                         : ZoneId.of(zone);
 
         final CollectDynamicSink tableSink =
                 new CollectDynamicSink(
-                        contextResolvedTable.getIdentifier(),
-                        consumedDataType,
+                        contextResolvedTable.getIdentifier(), // 生成的唯一ID字符串
+                        consumedDataType, // 封装了输出的数据结构信息
                         configuration.get(CollectSinkOperatorFactory.MAX_BATCH_SIZE),
                         configuration.get(CollectSinkOperatorFactory.SOCKET_TIMEOUT),
                         classLoader,
                         zoneId,
                         configuration
                                 .get(ExecutionConfigOptions.TABLE_EXEC_LEGACY_CAST_BEHAVIOUR)
-                                .isEnabled());
+                                .isEnabled()
+                );
         collectModifyOperation.setSelectResultProvider(tableSink.getSelectResultProvider());
         collectModifyOperation.setConsumedDataType(consumedDataType);
+
         return convertSinkToRel(
                 relBuilder,
-                input,
+                input, // 原始的RelNode
                 Collections.emptyMap(), // dynamicOptions
-                contextResolvedTable,
+                contextResolvedTable,// 生成的唯一ID字符串对象
                 Collections.emptyMap(), // staticPartitions
                 false,
-                tableSink);
+                tableSink
+        );
     }
+
+
+
+
+
 
     /**
      * Converts an external sink (i.e. further {@link DataStream} transformations) to a {@link
@@ -177,36 +179,52 @@ public final class DynamicSinkUtils {
                 sink);
     }
 
+    /*
+            return convertSinkToRel(
+                relBuilder,// RelBuilder对象
+                input, // 原始的RelNode
+                Collections.emptyMap(), // dynamicOptions
+                contextResolvedTable,// 生成的唯一ID字符串对象
+                Collections.emptyMap(), // staticPartitions
+                false,
+                tableSink
+        );
+     */
     private static RelNode convertSinkToRel(
-            FlinkRelBuilder relBuilder,
-            RelNode input,
-            Map<String, String> dynamicOptions,
-            ContextResolvedTable contextResolvedTable,
-            Map<String, String> staticPartitions,
-            boolean isOverwrite,
-            DynamicTableSink sink) {
-        final DataTypeFactory dataTypeFactory =
-                unwrapContext(relBuilder).getCatalogManager().getDataTypeFactory();
+            FlinkRelBuilder relBuilder, // RelBuilder对象
+            RelNode input, // 原始的RelNode
+            Map<String, String> dynamicOptions, // 空集合
+            ContextResolvedTable contextResolvedTable, // 生成的唯一ID字符串对象
+            Map<String, String> staticPartitions, // 空集合
+            boolean isOverwrite, // false
+            DynamicTableSink sink // 封装的sink对象
+    ) {
+        final DataTypeFactory dataTypeFactory = unwrapContext(relBuilder).getCatalogManager().getDataTypeFactory();
         final FlinkTypeFactory typeFactory = unwrapTypeFactory(relBuilder);
         final ResolvedSchema schema = contextResolvedTable.getResolvedSchema();
         final String tableDebugName = contextResolvedTable.getIdentifier().asSummaryString();
-
         List<SinkAbilitySpec> sinkAbilitySpecs = new ArrayList<>();
 
-        // 1. prepare table sink
+
+        // 1. prepare table sink 准备表sink
         prepareDynamicSink(
-                tableDebugName,
-                staticPartitions,
-                isOverwrite,
-                sink,
+                tableDebugName, // 表唯一名字
+                staticPartitions, // 空集合
+                isOverwrite, // false
+                sink, // 封装的sink对象
                 contextResolvedTable.getResolvedTable(),
-                sinkAbilitySpecs);
+                sinkAbilitySpecs
+        );
         sinkAbilitySpecs.forEach(spec -> spec.apply(sink));
 
         // 2. validate the query schema to the sink's table schema and apply cast if possible
-        final RelNode query =
-                validateSchemaAndApplyImplicitCast(
-                        input, schema, tableDebugName, dataTypeFactory, typeFactory);
+        final RelNode query = validateSchemaAndApplyImplicitCast(
+                input,
+                schema,
+                tableDebugName,
+                dataTypeFactory,
+                typeFactory
+        );
         relBuilder.push(query);
 
         // 3. convert the sink's table schema to the consumed data type of the sink
@@ -219,16 +237,21 @@ public final class DynamicSinkUtils {
         if (!dynamicOptions.isEmpty()) {
             hints.add(RelHint.builder("OPTIONS").hintOptions(dynamicOptions).build());
         }
-        final RelNode finalQuery = relBuilder.build();
+        final RelNode finalQuery = relBuilder.build(); // 正常来说 finalQuery就是原始RelNode对象
 
         return LogicalSink.create(
-                finalQuery,
-                hints,
-                contextResolvedTable,
-                sink,
-                staticPartitions,
-                sinkAbilitySpecs.toArray(new SinkAbilitySpec[0]));
+                finalQuery, // 原始SQL对应的Relnode对象
+                hints, // hints集合
+                contextResolvedTable, // 生成的唯一ID字符串对象
+                sink, // 封装的sink对象
+                staticPartitions, // 静态分区
+                sinkAbilitySpecs.toArray(new SinkAbilitySpec[0]) // sink特征转数组
+        );
     }
+
+
+
+
 
     /**
      * Checks if the given query can be written into the given sink's table schema.
@@ -242,19 +265,18 @@ public final class DynamicSinkUtils {
             ResolvedSchema sinkSchema,
             String tableDebugName,
             DataTypeFactory dataTypeFactory,
-            FlinkTypeFactory typeFactory) {
+            FlinkTypeFactory typeFactory
+    ) {
+
+        // 获取查询字段和字段类型 和 sink的字段和字段类型
         final RowType queryType = FlinkTypeFactory.toLogicalRowType(query.getRowType());
         final List<RowField> queryFields = queryType.getFields();
-
-        final RowType sinkType =
-                (RowType)
-                        fixSinkDataType(dataTypeFactory, sinkSchema.toSinkRowDataType())
-                                .getLogicalType();
+        final RowType sinkType = (RowType) fixSinkDataType(dataTypeFactory, sinkSchema.toSinkRowDataType()).getLogicalType();
         final List<RowField> sinkFields = sinkType.getFields();
 
+        // 判断查询输出字段和SINK字段是否匹配，如果不匹配抛出错误
         if (queryFields.size() != sinkFields.size()) {
-            throw createSchemaMismatchException(
-                    "Different number of columns.", tableDebugName, queryFields, sinkFields);
+            throw createSchemaMismatchException("Different number of columns.", tableDebugName, queryFields, sinkFields);
         }
 
         boolean requiresCasting = false;
@@ -268,31 +290,38 @@ public final class DynamicSinkUtils {
                                 sinkFields.get(i).getName(), i),
                         tableDebugName,
                         queryFields,
-                        sinkFields);
+                        sinkFields
+                );
             }
             if (!supportsAvoidingCast(queryColumnType, sinkColumnType)) {
                 requiresCasting = true;
             }
         }
 
+        // 如果需要转换则在这里进行类型转换
         if (requiresCasting) {
             final RelDataType castRelDataType = typeFactory.buildRelNodeRowType(sinkType);
             return RelOptUtil.createCastRel(query, castRelDataType, true);
         }
+
         return query;
     }
+
+
+
+
 
     // --------------------------------------------------------------------------------------------
 
     /** Temporary solution until we drop legacy types. */
-    private static DataType fixCollectDataType(
-            DataTypeFactory dataTypeFactory, ResolvedSchema schema) {
+    private static DataType fixCollectDataType(DataTypeFactory dataTypeFactory, ResolvedSchema schema) {
         final DataType fixedDataType =
                 DataTypeUtils.transform(
                         dataTypeFactory,
                         schema.toSourceRowDataType(),
                         TypeTransformations.legacyRawToTypeInfoRaw(),
-                        TypeTransformations.legacyToNonLegacy());
+                        TypeTransformations.legacyToNonLegacy()
+                );
         // TODO erase the conversion class earlier when dropping legacy code, esp. FLINK-22321
         return TypeConversions.fromLogicalToDataType(fixedDataType.getLogicalType());
     }
@@ -307,7 +336,8 @@ public final class DynamicSinkUtils {
             FlinkRelBuilder relBuilder,
             FlinkTypeFactory typeFactory,
             ResolvedSchema schema,
-            DynamicTableSink sink) {
+            DynamicTableSink sink
+    ) {
         final RexBuilder rexBuilder = relBuilder.getRexBuilder();
         final List<Column> columns = schema.getColumns();
 
@@ -318,8 +348,7 @@ public final class DynamicSinkUtils {
                         .collect(
                                 Collectors.toMap(
                                         pos -> {
-                                            final MetadataColumn metadataColumn =
-                                                    (MetadataColumn) columns.get(pos);
+                                            final MetadataColumn metadataColumn = (MetadataColumn) columns.get(pos);
                                             return metadataColumn
                                                     .getMetadataKey()
                                                     .orElse(metadataColumn.getName());
@@ -387,6 +416,15 @@ public final class DynamicSinkUtils {
     /**
      * Prepares the given {@link DynamicTableSink}. It check whether the sink is compatible with the
      * INSERT INTO clause and applies initial parameters.
+     *
+     *         prepareDynamicSink(
+     *                 tableDebugName, // 表唯一名字
+     *                 staticPartitions, // 空集合
+     *                 isOverwrite, // false
+     *                 sink, // 封装的sink对象
+     *                 contextResolvedTable.getResolvedTable(),
+     *                 sinkAbilitySpecs
+     *         );
      */
     private static void prepareDynamicSink(
             String tableDebugName,
@@ -394,13 +432,18 @@ public final class DynamicSinkUtils {
             boolean isOverwrite,
             DynamicTableSink sink,
             ResolvedCatalogTable table,
-            List<SinkAbilitySpec> sinkAbilitySpecs) {
+            List<SinkAbilitySpec> sinkAbilitySpecs
+    ) {
+        // 检查验证、没有实际含义
         validatePartitioning(tableDebugName, staticPartitions, sink, table.getPartitionKeys());
 
+        // 验证是否overwrite语义
         validateAndApplyOverwrite(tableDebugName, isOverwrite, sink, sinkAbilitySpecs);
 
+        // 检验并且应用元数据
         validateAndApplyMetadata(tableDebugName, sink, table.getResolvedSchema(), sinkAbilitySpecs);
     }
+
 
     /**
      * Returns a list of required metadata columns. Ordered by the iteration order of {@link
@@ -409,8 +452,7 @@ public final class DynamicSinkUtils {
      * <p>This method assumes that sink and schema have been validated via {@link
      * #prepareDynamicSink}.
      */
-    private static List<MetadataColumn> createRequiredMetadataColumns(
-            ResolvedSchema schema, DynamicTableSink sink) {
+    private static List<MetadataColumn> createRequiredMetadataColumns(ResolvedSchema schema, DynamicTableSink sink) {
         final List<Column> tableColumns = schema.getColumns();
         final List<Integer> metadataColumns = extractPersistedMetadataColumns(schema);
 
@@ -459,7 +501,8 @@ public final class DynamicSinkUtils {
     }
 
     private static DataType fixSinkDataType(
-            DataTypeFactory dataTypeFactory, DataType sinkDataType) {
+            DataTypeFactory dataTypeFactory, DataType sinkDataType
+    ) {
         // we ignore NULL constraint, the NULL constraint will be checked during runtime
         // see StreamExecSink and BatchExecSink
         return DataTypeUtils.transform(
@@ -467,14 +510,16 @@ public final class DynamicSinkUtils {
                 sinkDataType,
                 TypeTransformations.legacyRawToTypeInfoRaw(),
                 TypeTransformations.legacyToNonLegacy(),
-                TypeTransformations.toNullable());
+                TypeTransformations.toNullable()
+        );
     }
 
     private static void validatePartitioning(
             String tableDebugName,
             Map<String, String> staticPartitions,
             DynamicTableSink sink,
-            List<String> partitionKeys) {
+            List<String> partitionKeys
+    ) {
         if (!partitionKeys.isEmpty()) {
             if (!(sink instanceof SupportsPartitioning)) {
                 throw new TableException(
@@ -497,14 +542,16 @@ public final class DynamicSinkUtils {
                                                 "Static partition column '%s' should be in the partition keys list %s for table '%s'.",
                                                 p, partitionKeys, tableDebugName));
                             }
-                        });
+                        }
+                        );
     }
 
     private static void validateAndApplyOverwrite(
             String tableDebugName,
             boolean isOverwrite,
             DynamicTableSink sink,
-            List<SinkAbilitySpec> sinkAbilitySpecs) {
+            List<SinkAbilitySpec> sinkAbilitySpecs
+    ) {
         if (!isOverwrite) {
             return;
         }
@@ -556,9 +603,10 @@ public final class DynamicSinkUtils {
             String tableDebugName,
             DynamicTableSink sink,
             ResolvedSchema schema,
-            List<SinkAbilitySpec> sinkAbilitySpecs) {
+            List<SinkAbilitySpec> sinkAbilitySpecs
+    ) {
         final List<Column> columns = schema.getColumns();
-        final List<Integer> metadataColumns = extractPersistedMetadataColumns(schema);
+        final List<Integer> metadataColumns = extractPersistedMetadataColumns(schema); // 提取持久化的元数据列
 
         if (metadataColumns.isEmpty()) {
             return;
@@ -575,13 +623,11 @@ public final class DynamicSinkUtils {
                             SupportsWritingMetadata.class.getSimpleName()));
         }
 
-        final Map<String, DataType> metadataMap =
-                ((SupportsWritingMetadata) sink).listWritableMetadata();
+        final Map<String, DataType> metadataMap = ((SupportsWritingMetadata) sink).listWritableMetadata();
         metadataColumns.forEach(
                 pos -> {
                     final MetadataColumn metadataColumn = (MetadataColumn) columns.get(pos);
-                    final String metadataKey =
-                            metadataColumn.getMetadataKey().orElse(metadataColumn.getName());
+                    final String metadataKey = metadataColumn.getMetadataKey().orElse(metadataColumn.getName());
                     final LogicalType metadataType = metadataColumn.getDataType().getLogicalType();
                     final DataType expectedMetadataDataType = metadataMap.get(metadataKey);
                     // check that metadata key is valid
@@ -598,8 +644,7 @@ public final class DynamicSinkUtils {
                                         String.join("\n", metadataMap.keySet())));
                     }
                     // check that types are compatible
-                    if (!supportsExplicitCast(
-                            metadataType, expectedMetadataDataType.getLogicalType())) {
+                    if (!supportsExplicitCast(metadataType, expectedMetadataDataType.getLogicalType())) {
                         if (metadataKey.equals(metadataColumn.getName())) {
                             throw new ValidationException(
                                     String.format(
@@ -623,14 +668,18 @@ public final class DynamicSinkUtils {
                                             expectedMetadataDataType.getLogicalType()));
                         }
                     }
-                });
+                }
+                );
 
         sinkAbilitySpecs.add(
                 new WritingMetadataSpec(
-                        createRequiredMetadataColumns(schema, sink).stream()
+                        createRequiredMetadataColumns(schema, sink)
+                                .stream()
                                 .map(col -> col.getMetadataKey().orElse(col.getName()))
                                 .collect(Collectors.toList()),
-                        createConsumedType(schema, sink)));
+                        createConsumedType(schema, sink)
+                )
+        );
     }
 
     /**

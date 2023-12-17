@@ -163,7 +163,8 @@ public final class CatalogManager {
                     dataTypeFactory != null
                             ? dataTypeFactory
                             : new DataTypeFactoryImpl(classLoader, config, executionConfig),
-                    new ManagedTableListener(classLoader, config));
+                    new ManagedTableListener(classLoader, config)
+            );
         }
     }
 

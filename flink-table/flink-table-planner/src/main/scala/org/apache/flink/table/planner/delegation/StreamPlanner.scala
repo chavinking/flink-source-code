@@ -80,6 +80,7 @@ class StreamPlanner(
 
   override protected def translateToPlan(execGraph: ExecNodeGraph): util.List[Transformation[_]] = {
     beforeTranslation()
+
     val planner = createDummyPlanner()
     val transformations = execGraph.getRootNodes.map {
       case node: StreamExecNode[_] => node.translateToPlan(planner)
@@ -88,6 +89,7 @@ class StreamPlanner(
           "Cannot generate DataStream due to an invalid logical plan. " +
             "This is a bug and should not happen. Please file an issue.")
     }
+
     afterTranslation()
     transformations ++ planner.extraTransformations
   }

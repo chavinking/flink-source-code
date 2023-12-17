@@ -49,7 +49,8 @@ public class BufferCompressor {
         this.internalBuffer =
                 new NetworkBuffer(
                         MemorySegmentFactory.wrap(internalBufferArray),
-                        FreeingBufferRecycler.INSTANCE);
+                        FreeingBufferRecycler.INSTANCE
+                );
         this.blockCompressor =
                 BlockCompressionFactory.createBlockCompressionFactory(factoryName).getCompressor();
     }

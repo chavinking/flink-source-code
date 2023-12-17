@@ -85,7 +85,10 @@ public interface TaskExecutorGateway
      * @return Future acknowledge of the successful operation
      */
     CompletableFuture<Acknowledge> submitTask(
-            TaskDeploymentDescriptor tdd, JobMasterId jobMasterId, @RpcTimeout Time timeout);
+            TaskDeploymentDescriptor tdd,
+            JobMasterId jobMasterId,
+            @RpcTimeout Time timeout
+    );
 
     /**
      * Update the task where the given partitions can be found.

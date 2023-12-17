@@ -48,11 +48,13 @@ public class StreamTaskSourceInput<T> implements StreamTaskInput<T>, Checkpointa
     private final List<InputChannelInfo> inputChannelInfos;
     private final int inputIndex;
 
-    public StreamTaskSourceInput(
-            SourceOperator<T, ?> operator, int inputGateIndex, int inputIndex) {
+    public StreamTaskSourceInput(SourceOperator<T, ?> operator, int inputGateIndex, int inputIndex) {
         this.operator = checkNotNull(operator);
         this.inputGateIndex = inputGateIndex;
-        inputChannelInfos = Collections.singletonList(new InputChannelInfo(inputGateIndex, 0));
+        inputChannelInfos = Collections.singletonList(
+                // 创建输入channel对象
+                new InputChannelInfo(inputGateIndex, 0)
+        );
         isBlockedAvailability.resetAvailable();
         this.inputIndex = inputIndex;
     }

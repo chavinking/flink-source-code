@@ -63,7 +63,6 @@ public class StandaloneLeaderElectionService implements LeaderElectionService {
 
     @Override
     public boolean hasLeadership(@Nonnull UUID leaderSessionId) {
-        return (contender != null
-                && HighAvailabilityServices.DEFAULT_LEADER_ID.equals(leaderSessionId));
+        return (contender != null && HighAvailabilityServices.DEFAULT_LEADER_ID.equals(leaderSessionId));
     }
 }

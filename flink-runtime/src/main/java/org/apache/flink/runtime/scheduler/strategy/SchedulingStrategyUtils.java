@@ -37,8 +37,7 @@ class SchedulingStrategyUtils {
                 .collect(Collectors.toList());
     }
 
-    static List<SchedulingPipelinedRegion> sortPipelinedRegionsInTopologicalOrder(
-            final SchedulingTopology topology, final Set<SchedulingPipelinedRegion> regions) {
+    static List<SchedulingPipelinedRegion> sortPipelinedRegionsInTopologicalOrder(final SchedulingTopology topology, final Set<SchedulingPipelinedRegion> regions) {
 
         // Avoid the O(V) (V is the number of vertices in the topology) sorting
         // complexity if the given set of regions is small enough
@@ -48,6 +47,9 @@ class SchedulingStrategyUtils {
             return Collections.singletonList(regions.iterator().next());
         }
 
+        /**
+         * 这段代码的作用是从一个调度图中找出所有属于一组指定 Region 的 ExecutionVertex，并将这些 ExecutionVertex 所属的 Region 进行去重，最终返回一个列表。
+         */
         return IterableUtils.toStream(topology.getVertices())
                 .map(SchedulingExecutionVertex::getId)
                 .map(topology::getPipelinedRegionOfVertex)

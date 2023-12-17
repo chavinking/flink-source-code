@@ -115,12 +115,15 @@ public class StandaloneResourceManager extends ResourceManager<ResourceID> {
         return resourceID;
     }
 
+//    周期性启动
     private void startStartupPeriod() {
+//        设置失败不能完成请求
         setFailUnfulfillableRequest(false);
 
         final long startupPeriodMillis = startupPeriodTime.toMilliseconds();
 
         if (startupPeriodMillis > 0) {
+//            异步调度运行
             scheduleRunAsync(
                     () -> setFailUnfulfillableRequest(true),
                     startupPeriodMillis,

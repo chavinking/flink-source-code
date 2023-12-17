@@ -73,7 +73,8 @@ final class HeapSnapshotResources<K> implements FullSnapshotResources<K> {
             StreamCompressionDecorator streamCompressionDecorator,
             KeyGroupRange keyGroupRange,
             TypeSerializer<K> keySerializer,
-            int totalKeyGroups) {
+            int totalKeyGroups
+    ) {
 
         if (registeredKVStates.isEmpty() && registeredPQStates.isEmpty()) {
             return new HeapSnapshotResources<>(

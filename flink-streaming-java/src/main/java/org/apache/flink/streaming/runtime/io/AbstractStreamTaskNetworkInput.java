@@ -70,9 +70,7 @@ public abstract class AbstractStreamTaskNetworkInput<
             Map<InputChannelInfo, R> recordDeserializers) {
         super();
         this.checkpointedInputGate = checkpointedInputGate;
-        deserializationDelegate =
-                new NonReusingDeserializationDelegate<>(
-                        new StreamElementSerializer<>(inputSerializer));
+        deserializationDelegate = new NonReusingDeserializationDelegate<>(new StreamElementSerializer<>(inputSerializer));
         this.inputSerializer = inputSerializer;
 
         for (InputChannelInfo i : checkpointedInputGate.getChannelInfos()) {

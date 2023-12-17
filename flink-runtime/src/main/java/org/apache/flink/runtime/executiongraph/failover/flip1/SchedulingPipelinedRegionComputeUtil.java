@@ -45,17 +45,15 @@ public final class SchedulingPipelinedRegionComputeUtil {
 
     public static Set<Set<SchedulingExecutionVertex>> computePipelinedRegions(
             final Iterable<? extends SchedulingExecutionVertex> topologicallySortedVertices,
-            final Function<ExecutionVertexID, ? extends SchedulingExecutionVertex>
-                    executionVertexRetriever,
-            final Function<IntermediateResultPartitionID, ? extends SchedulingResultPartition>
-                    resultPartitionRetriever) {
+            final Function<ExecutionVertexID, ? extends SchedulingExecutionVertex> executionVertexRetriever,
+            final Function<IntermediateResultPartitionID, ? extends SchedulingResultPartition> resultPartitionRetriever
+    ) {
 
         final Map<SchedulingExecutionVertex, Set<SchedulingExecutionVertex>> vertexToRegion =
                 buildRawRegions(
                         topologicallySortedVertices,
-                        vertex ->
-                                getMustBePipelinedConsumedResults(
-                                        vertex, resultPartitionRetriever));
+                        vertex -> getMustBePipelinedConsumedResults(vertex, resultPartitionRetriever)
+                );
 
         return mergeRegionsOnCycles(vertexToRegion, executionVertexRetriever);
     }
@@ -68,27 +66,19 @@ public final class SchedulingPipelinedRegionComputeUtil {
      */
     private static Set<Set<SchedulingExecutionVertex>> mergeRegionsOnCycles(
             final Map<SchedulingExecutionVertex, Set<SchedulingExecutionVertex>> vertexToRegion,
-            final Function<ExecutionVertexID, ? extends SchedulingExecutionVertex>
-                    executionVertexRetriever) {
+            final Function<ExecutionVertexID, ? extends SchedulingExecutionVertex> executionVertexRetriever) {
 
-        final List<Set<SchedulingExecutionVertex>> regionList =
-                new ArrayList<>(uniqueVertexGroups(vertexToRegion));
-        final List<List<Integer>> outEdges =
-                buildOutEdgesDesc(vertexToRegion, regionList, executionVertexRetriever);
-        final Set<Set<Integer>> sccs =
-                StronglyConnectedComponentsComputeUtils.computeStronglyConnectedComponents(
-                        outEdges.size(), outEdges);
+        final List<Set<SchedulingExecutionVertex>> regionList = new ArrayList<>(uniqueVertexGroups(vertexToRegion));
+        final List<List<Integer>> outEdges = buildOutEdgesDesc(vertexToRegion, regionList, executionVertexRetriever);
+        final Set<Set<Integer>> sccs = StronglyConnectedComponentsComputeUtils.computeStronglyConnectedComponents(outEdges.size(), outEdges);
 
-        final Set<Set<SchedulingExecutionVertex>> mergedRegions =
-                Collections.newSetFromMap(new IdentityHashMap<>());
+        final Set<Set<SchedulingExecutionVertex>> mergedRegions = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Set<Integer> scc : sccs) {
             checkState(scc.size() > 0);
 
             Set<SchedulingExecutionVertex> mergedRegion = new HashSet<>();
             for (int regionIndex : scc) {
-                mergedRegion =
-                        mergeVertexGroups(
-                                mergedRegion, regionList.get(regionIndex), vertexToRegion);
+                mergedRegion = mergeVertexGroups(mergedRegion, regionList.get(regionIndex), vertexToRegion);
             }
             mergedRegions.add(mergedRegion);
         }
@@ -141,13 +131,11 @@ public final class SchedulingPipelinedRegionComputeUtil {
 
     private static Iterable<SchedulingResultPartition> getMustBePipelinedConsumedResults(
             SchedulingExecutionVertex vertex,
-            Function<IntermediateResultPartitionID, ? extends SchedulingResultPartition>
-                    resultPartitionRetriever) {
+            Function<IntermediateResultPartitionID, ? extends SchedulingResultPartition> resultPartitionRetriever) {
         List<SchedulingResultPartition> mustBePipelinedConsumedResults = new ArrayList<>();
         for (ConsumedPartitionGroup consumedPartitionGroup : vertex.getConsumedPartitionGroups()) {
             for (IntermediateResultPartitionID partitionId : consumedPartitionGroup) {
-                SchedulingResultPartition consumedResult =
-                        resultPartitionRetriever.apply(partitionId);
+                SchedulingResultPartition consumedResult = resultPartitionRetriever.apply(partitionId);
                 if (!consumedResult.getResultType().mustBePipelinedConsumed()) {
                     // The result types of partitions in one ConsumedPartitionGroup are all the same
                     break;

@@ -84,6 +84,7 @@ abstract class AbstractOneInputTransformationTranslator<IN, OUT, OP extends Tran
         streamGraph.setParallelism(transformationId, parallelism);
         streamGraph.setMaxParallelism(transformationId, transformation.getMaxParallelism());
 
+//        拿到父节点算子信息
         final List<Transformation<?>> parentTransformations = transformation.getInputs();
         checkState(
                 parentTransformations.size() == 1,

@@ -44,7 +44,9 @@ public class ShuffleUtils {
             Class<SD> shuffleDescriptorClass,
             ShuffleDescriptor shuffleDescriptor,
             Function<UnknownShuffleDescriptor, T> functionOfUnknownDescriptor,
-            Function<SD, T> functionOfKnownDescriptor) {
+            Function<SD, T> functionOfKnownDescriptor
+    ) {
+
         if (shuffleDescriptor.isUnknown()) {
             return functionOfUnknownDescriptor.apply((UnknownShuffleDescriptor) shuffleDescriptor);
         } else if (shuffleDescriptorClass.equals(shuffleDescriptor.getClass())) {
@@ -54,7 +56,8 @@ public class ShuffleUtils {
                     String.format(
                             "Unsupported ShuffleDescriptor type <%s>, only <%s> is supported",
                             shuffleDescriptor.getClass().getName(),
-                            shuffleDescriptorClass.getName()));
+                            shuffleDescriptorClass.getName())
+            );
         }
     }
 }

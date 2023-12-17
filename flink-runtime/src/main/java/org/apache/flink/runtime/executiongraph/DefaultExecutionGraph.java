@@ -329,9 +329,7 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
 
         this.partitionLocationConstraint = checkNotNull(partitionLocationConstraint);
 
-        this.jobInformationOrBlobKey =
-                BlobWriter.serializeAndTryOffload(
-                        jobInformation, jobInformation.getJobId(), blobWriter);
+        this.jobInformationOrBlobKey = BlobWriter.serializeAndTryOffload(jobInformation, jobInformation.getJobId(), blobWriter);
 
         this.futureExecutor = checkNotNull(futureExecutor);
         this.ioExecutor = checkNotNull(ioExecutor);
@@ -351,8 +349,7 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
 
         this.rpcTimeout = checkNotNull(rpcTimeout);
 
-        this.partitionGroupReleaseStrategyFactory =
-                checkNotNull(partitionGroupReleaseStrategyFactory);
+        this.partitionGroupReleaseStrategyFactory = checkNotNull(partitionGroupReleaseStrategyFactory);
 
         this.kvStateLocationRegistry =
                 new KvStateLocationRegistry(jobInformation.getJobId(), getAllVertices());
@@ -363,15 +360,15 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
         this.jobMasterMainThreadExecutor =
                 new ComponentMainThreadExecutor.DummyComponentMainThreadExecutor(
                         "ExecutionGraph is not initialized with proper main thread executor. "
-                                + "Call to ExecutionGraph.start(...) required.");
+                                + "Call to ExecutionGraph.start(...) required."
+                );
 
         this.shuffleMaster = checkNotNull(shuffleMaster);
 
         this.partitionTracker = checkNotNull(partitionTracker);
 
         this.resultPartitionAvailabilityChecker =
-                new ExecutionGraphResultPartitionAvailabilityChecker(
-                        this::createResultPartitionId, partitionTracker);
+                new ExecutionGraphResultPartitionAvailabilityChecker(this::createResultPartitionId, partitionTracker);
 
         this.executionDeploymentListener = executionDeploymentListener;
         this.executionStateUpdateListener = executionStateUpdateListener;
@@ -444,6 +441,21 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
         return Optional.ofNullable(changelogStorageName);
     }
 
+
+    /**
+     * 创建CheckpointCoordinator，这是负责checkpoint的核心实现类，同时会给job添加一个监听器CheckpointCoordinatorDeActivator（只有设置了checkpoint才会注册这个监听器），
+     * CheckpointCoordinatorDeActivator负责checkpoint的启动和停止。
+     *
+     * @param chkConfig
+     * @param masterHooks
+     * @param checkpointIDCounter
+     * @param checkpointStore
+     * @param checkpointStateBackend
+     * @param checkpointStorage
+     * @param statsTracker
+     * @param checkpointsCleaner
+     * @param changelogStorageName
+     */
     @Override
     public void enableCheckpointing(
             CheckpointCoordinatorConfiguration chkConfig,
@@ -454,20 +466,20 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
             CheckpointStorage checkpointStorage,
             CheckpointStatsTracker statsTracker,
             CheckpointsCleaner checkpointsCleaner,
-            String changelogStorageName) {
+            String changelogStorageName
+    ) {
 
         checkState(state == JobStatus.CREATED, "Job must be in CREATED state");
         checkState(checkpointCoordinator == null, "checkpointing already enabled");
 
-        final Collection<OperatorCoordinatorCheckpointContext> operatorCoordinators =
-                buildOpCoordinatorCheckpointContexts();
+        final Collection<OperatorCoordinatorCheckpointContext> operatorCoordinators = buildOpCoordinatorCheckpointContexts();
 
         checkpointStatsTracker = checkNotNull(statsTracker, "CheckpointStatsTracker");
-        checkpointCoordinatorConfiguration =
-                checkNotNull(chkConfig, "CheckpointCoordinatorConfiguration");
+        checkpointCoordinatorConfiguration = checkNotNull(chkConfig, "CheckpointCoordinatorConfiguration");
 
-        CheckpointFailureManager failureManager =
-                new CheckpointFailureManager(
+
+
+        CheckpointFailureManager failureManager = new CheckpointFailureManager(
                         chkConfig.getTolerableCheckpointFailureNumber(),
                         new CheckpointFailureManager.FailJobCallback() {
                             @Override
@@ -477,46 +489,45 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
 
                             @Override
                             public void failJobDueToTaskFailure(
-                                    Throwable cause, ExecutionAttemptID failingTask) {
-                                getJobMasterMainThreadExecutor()
-                                        .execute(
-                                                () ->
-                                                        failGlobalIfExecutionIsStillRunning(
-                                                                cause, failingTask));
+                                    Throwable cause, ExecutionAttemptID failingTask
+                            ) {
+                                getJobMasterMainThreadExecutor().execute(() -> failGlobalIfExecutionIsStillRunning(cause, failingTask));
                             }
-                        });
+                        }
+                 );
+
 
         checkState(checkpointCoordinatorTimer == null);
 
-        checkpointCoordinatorTimer =
-                Executors.newSingleThreadScheduledExecutor(
-                        new DispatcherThreadFactory(
-                                Thread.currentThread().getThreadGroup(), "Checkpoint Timer"));
+        checkpointCoordinatorTimer = Executors.newSingleThreadScheduledExecutor(
+                        new DispatcherThreadFactory(Thread.currentThread().getThreadGroup(), "Checkpoint Timer")
+                );
 
         // create the coordinator that triggers and commits checkpoints and holds the state
-        checkpointCoordinator =
-                new CheckpointCoordinator(
+        checkpointCoordinator = new CheckpointCoordinator(
                         jobInformation.getJobId(),
                         chkConfig,
-                        operatorCoordinators,
-                        checkpointIDCounter,
-                        checkpointStore,
-                        checkpointStorage,
-                        ioExecutor,
-                        checkpointsCleaner,
+                        operatorCoordinators, // 这是一组操作符协调器（OperatorCoordinator）对象，用于协调每个操作符的状态。
+                        checkpointIDCounter, // 这是一个计数器，用于生成唯一的检查点 ID。每次执行检查点时，都会生成一个新的检查点 ID。
+                        checkpointStore, // 这是一个用于存储检查点元数据的存储后端。
+                        checkpointStorage, // 这是用于实际存储检查点数据的存储后端。它将检查点的状态数据和操作符状态保存在分布式文件系统或其他存储介质中。
+                        ioExecutor, // 这是一个执行 I/O 操作的线程池，用于执行与检查点操作相关的 I/O 操作，如数据的持久化和恢复。
+                        checkpointsCleaner, // 这是一个用于清理过期检查点的对象。它负责删除不再需要的旧检查点，以释放存储空间。
+                        // 这是一个定时器对象，用于触发定期的检查点操作。这个定时器会按照配置的时间间隔触发检查点。
                         new ScheduledExecutorServiceAdapter(checkpointCoordinatorTimer),
-                        failureManager,
-                        createCheckpointPlanCalculator(
-                                chkConfig.isEnableCheckpointsAfterTasksFinish()),
+                        failureManager, // 这是故障管理器（FailureManager）对象，用于处理可能发生的故障情况，例如任务失败或节点故障。
+                        // 这是一个检查点计划计算器（CheckpointPlanCalculator）对象，用于确定在何时触发检查点。
+                        // 参数 chkConfig.isEnableCheckpointsAfterTasksFinish() 用于指示是否在任务完成后触发检查点。
+                        createCheckpointPlanCalculator(chkConfig.isEnableCheckpointsAfterTasksFinish()),
+                        // 这个对象提供了执行尝试（Execution Attempt）到执行图顶点的映射，用于在恢复时将检查点数据映射回正确的执行图位置。
                         new ExecutionAttemptMappingProvider(getAllExecutionVertices()),
-                        checkpointStatsTracker);
+                        checkpointStatsTracker
+                );
 
         // register the master hooks on the checkpoint coordinator
         for (MasterTriggerRestoreHook<?> hook : masterHooks) {
             if (!checkpointCoordinator.addMasterHook(hook)) {
-                LOG.warn(
-                        "Trying to register multiple checkpoint hooks with the name: {}",
-                        hook.getIdentifier());
+                LOG.warn("Trying to register multiple checkpoint hooks with the name: {}", hook.getIdentifier());
             }
         }
 
@@ -527,10 +538,7 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
         }
 
         this.stateBackendName = checkpointStateBackend.getName();
-        this.stateChangelogEnabled =
-                TernaryBoolean.fromBoolean(
-                        StateBackendLoader.isChangelogStateBackend(checkpointStateBackend));
-
+        this.stateChangelogEnabled = TernaryBoolean.fromBoolean(StateBackendLoader.isChangelogStateBackend(checkpointStateBackend));
         this.checkpointStorageName = checkpointStorage.getClass().getSimpleName();
         this.changelogStorageName = changelogStorageName;
     }
@@ -573,8 +581,7 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
         }
     }
 
-    private Collection<OperatorCoordinatorCheckpointContext>
-            buildOpCoordinatorCheckpointContexts() {
+    private Collection<OperatorCoordinatorCheckpointContext> buildOpCoordinatorCheckpointContexts() {
         final ArrayList<OperatorCoordinatorCheckpointContext> contexts = new ArrayList<>();
         for (final ExecutionJobVertex vertex : verticesInCreationOrder) {
             contexts.addAll(vertex.getOperatorCoordinators());
@@ -834,8 +841,8 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
     /**
      * jobgraph -> executiongraph
      *
-     * @param verticesToAttach
-     * @param verticesToInitialize
+     * @param verticesToAttach 排过序的 JobVertex
+     * @param verticesToInitialize 空的JobVertex 或者是拍过序的 JobVertex
      * @throws JobException
      */
     private void attachJobGraph(List<JobVertex> verticesToAttach, List<JobVertex> verticesToInitialize) throws JobException {
@@ -849,33 +856,46 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
                 tasks.size(),
                 intermediateResults.size());
 
+
+
 //        jobgraph -> executiongraph
 //        将一个jobvertex转换为一个executionjobvertex
+//        返回后 将一个jobvertex都创建了对应的 executionjobvertex
         attachJobVertices(verticesToAttach);
+
 //        将executionjobvertex按照并行度转换成多个executionvertex
         initializeJobVertices(verticesToInitialize);
 
+
         // the topology assigning should happen before notifying new vertices to failoverStrategy
-        executionTopology = DefaultExecutionTopology.fromExecutionGraph(this);
+        // 创建执行拓扑
+        //执行拓扑包含所有ExecutionVertex，ResultPartition以及PipelinedRegion
+        executionTopology = DefaultExecutionTopology.fromExecutionGraph(this); // this表示初始化后的ExecutionGraph对象
 
         partitionGroupReleaseStrategy = partitionGroupReleaseStrategyFactory.createInstance(getSchedulingTopology());
     }
 
-    /** Attach job vertices without initializing them. */
+    /**
+     * Attach job vertices without initializing them.
+     *
+     * 将一个jobvertex转换为一个executionjobvertex
+     */
     private void attachJobVertices(List<JobVertex> topologicallySorted) throws JobException {
+
         for (JobVertex jobVertex : topologicallySorted) {
 
             if (jobVertex.isInputVertex() && !jobVertex.isStoppable()) {
                 this.isStoppable = false;
             }
 
+//            获取并行度
             VertexParallelismInformation parallelismInfo = parallelismStore.getParallelismInfo(jobVertex.getID());
 
             // create the execution job vertex and attach it to the graph
             // 1 为每一个jobvertex创建一个ExecutionJobVertex，并设置并行度
             ExecutionJobVertex ejv = executionJobVertexFactory.createExecutionJobVertex(this, jobVertex, parallelismInfo);
-
             ExecutionJobVertex previousTask = this.tasks.putIfAbsent(jobVertex.getID(), ejv);
+
             if (previousTask != null) {
                 throw new JobException(
                         String.format(
@@ -891,19 +911,31 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
     private void initializeJobVertices(List<JobVertex> topologicallySorted) throws JobException {
         final long createTimestamp = System.currentTimeMillis();
 
+//        遍历执行每个ExecutionJobVertex
         for (JobVertex jobVertex : topologicallySorted) {
             final ExecutionJobVertex ejv = tasks.get(jobVertex.getID());
+
+//            分别处理每一个ExecutionJobVertex
             initializeJobVertex(ejv, createTimestamp);
         }
     }
 
+
+    /**
+     * 将一个 ExecutionJobVertex 按照并行度转换为多个 ExecutionVertex
+     *
+     * @param ejv The execution job vertex that needs to be initialized.
+     * @param createTimestamp The timestamp for creating execution vertices, used to initialize the
+     *     first Execution with.
+     * @throws JobException
+     */
     @Override
     public void initializeJobVertex(ExecutionJobVertex ejv, long createTimestamp) throws JobException {
 
         checkNotNull(ejv);
 
         /**
-         * 将每一个ExecutionJobVertex 解析成多个 ExecutionVertex
+         * 将每一个ExecutionJobVertex 解析成多个 ExecutionVertex，并设置和输出中间结果集的关系
          *
          */
         ejv.initialize(
@@ -911,10 +943,13 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
                 rpcTimeout,
                 createTimestamp,
                 this.initialAttemptCounts.getAttemptCounts(ejv.getJobVertexId()),
-                coordinatorStore);
+                coordinatorStore
+        );
 
-//        连接到前任数据集
+//        将当前ejv连接到上游数据集，根据all-to-all和pointwise分区模式执行不同分支
+//        Map<IntermediateDataSetID, IntermediateResult> intermediateResults;
         ejv.connectToPredecessors(this.intermediateResults);
+
 
         for (IntermediateResult res : ejv.getProducedDataSets()) {
             IntermediateResult previousDataSet = this.intermediateResults.putIfAbsent(res.getId(), res);
@@ -926,6 +961,7 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
             }
         }
 
+//        注册执行顶点和结果分区
         registerExecutionVerticesAndResultPartitionsFor(ejv);
 
         // enrich network memory.
@@ -934,6 +970,8 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
             SsgNetworkMemoryCalculationUtils.enrichNetworkMemory(slotSharingGroup, this::getJobVertex, shuffleMaster);
         }
     }
+
+
 
     private boolean areJobVerticesAllInitialized(final SlotSharingGroup group) {
         for (JobVertexID jobVertexId : group.getJobVertexIds()) {
@@ -1527,6 +1565,11 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
         }
     }
 
+    /**
+     * 注册执行顶点和结果分区
+     *
+     * @param executionJobVertex
+     */
     private void registerExecutionVerticesAndResultPartitionsFor(ExecutionJobVertex executionJobVertex) {
         for (ExecutionVertex executionVertex : executionJobVertex.getTaskVertices()) {
             executionVerticesById.put(executionVertex.getID(), executionVertex);
@@ -1612,8 +1655,7 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
     }
 
     private void assertRunningInJobMasterMainThread() {
-        if (!(jobMasterMainThreadExecutor
-                instanceof ComponentMainThreadExecutor.DummyComponentMainThreadExecutor)) {
+        if (!(jobMasterMainThreadExecutor instanceof ComponentMainThreadExecutor.DummyComponentMainThreadExecutor)) {
             jobMasterMainThreadExecutor.assertRunningInMainThread();
         }
     }
@@ -1686,8 +1728,7 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
     }
 
     @Override
-    public List<ShuffleDescriptor> getClusterPartitionShuffleDescriptors(
-            IntermediateDataSetID intermediateDataSetID) {
+    public List<ShuffleDescriptor> getClusterPartitionShuffleDescriptors(IntermediateDataSetID intermediateDataSetID) {
         return partitionTracker.getClusterPartitionShuffleDescriptors(intermediateDataSetID);
     }
 }

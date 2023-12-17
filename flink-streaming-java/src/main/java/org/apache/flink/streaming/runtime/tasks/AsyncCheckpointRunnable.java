@@ -116,6 +116,7 @@ final class AsyncCheckpointRunnable implements Runnable, Closeable {
                 asyncStartDelayMillis);
 
         FileSystemSafetyNet.initializeSafetyNetForThread();
+
         try {
 
             SnapshotsFinalizeResult snapshotsFinalizeResult =
@@ -126,17 +127,16 @@ final class AsyncCheckpointRunnable implements Runnable, Closeable {
             final long asyncEndNanos = System.nanoTime();
             final long asyncDurationMillis = (asyncEndNanos - asyncConstructionNanos) / 1_000_000L;
 
-            checkpointMetrics.setBytesPersistedDuringAlignment(
-                    snapshotsFinalizeResult.bytesPersistedDuringAlignment);
+            checkpointMetrics.setBytesPersistedDuringAlignment(snapshotsFinalizeResult.bytesPersistedDuringAlignment);
             checkpointMetrics.setAsyncDurationMillis(asyncDurationMillis);
 
-            if (asyncCheckpointState.compareAndSet(
-                    AsyncCheckpointState.RUNNING, AsyncCheckpointState.COMPLETED)) {
+            if (asyncCheckpointState.compareAndSet(AsyncCheckpointState.RUNNING, AsyncCheckpointState.COMPLETED)) {
 
                 reportCompletedSnapshotStates(
                         snapshotsFinalizeResult.jobManagerTaskOperatorSubtaskStates,
                         snapshotsFinalizeResult.localTaskOperatorSubtaskStates,
-                        asyncDurationMillis);
+                        asyncDurationMillis
+                );
 
             } else {
                 LOG.debug(
@@ -243,7 +243,8 @@ final class AsyncCheckpointRunnable implements Runnable, Closeable {
                                         acknowledgedTaskStateSnapshot.getStateSize())
                                 .build(),
                         hasAckState ? acknowledgedTaskStateSnapshot : null,
-                        hasLocalState ? localTaskStateSnapshot : null);
+                        hasLocalState ? localTaskStateSnapshot : null
+                );
 
         LOG.debug(
                 "{} - finished asynchronous part of checkpoint {}. Asynchronous duration: {} ms",

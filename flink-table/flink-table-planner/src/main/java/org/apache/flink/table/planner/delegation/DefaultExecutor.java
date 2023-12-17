@@ -58,11 +58,20 @@ public class DefaultExecutor implements Executor {
         return executionEnvironment.getConfiguration();
     }
 
+    /**
+     * 根据SQL生成的transformations来创建StreamGraph
+     *
+     * @param transformations list of transformations
+     * @param tableConfiguration table-specific configuration options
+     * @param defaultJobName default job name if not specified via {@link PipelineOptions#NAME}
+     * @return
+     */
     @Override
     public Pipeline createPipeline(
             List<Transformation<?>> transformations,
             ReadableConfig tableConfiguration,
-            @Nullable String defaultJobName) {
+            @Nullable String defaultJobName
+    ) {
 
         // reconfigure before a stream graph is generated
         executionEnvironment.configure(tableConfiguration);
@@ -85,6 +94,10 @@ public class DefaultExecutor implements Executor {
         return streamGraph;
     }
 
+
+
+
+
     @Override
     public JobExecutionResult execute(Pipeline pipeline) throws Exception {
         return executionEnvironment.execute((StreamGraph) pipeline);
@@ -105,12 +118,8 @@ public class DefaultExecutor implements Executor {
     }
 
     private void setJobName(StreamGraph streamGraph, @Nullable String defaultJobName) {
-        final String adjustedDefaultJobName =
-                StringUtils.isNullOrWhitespaceOnly(defaultJobName)
-                        ? DEFAULT_JOB_NAME
-                        : defaultJobName;
-        final String jobName =
-                getConfiguration().getOptional(PipelineOptions.NAME).orElse(adjustedDefaultJobName);
+        final String adjustedDefaultJobName = StringUtils.isNullOrWhitespaceOnly(defaultJobName) ? DEFAULT_JOB_NAME : defaultJobName;
+        final String jobName = getConfiguration().getOptional(PipelineOptions.NAME).orElse(adjustedDefaultJobName);
         streamGraph.setJobName(jobName);
     }
 }

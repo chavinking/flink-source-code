@@ -184,7 +184,8 @@ public class SingleCheckpointBarrierHandler extends CheckpointBarrierHandler {
                 true,
                 registerTimer,
                 inputs,
-                enableCheckpointAfterTasksFinished);
+                enableCheckpointAfterTasksFinished
+        );
     }
 
     private SingleCheckpointBarrierHandler(
@@ -212,13 +213,17 @@ public class SingleCheckpointBarrierHandler extends CheckpointBarrierHandler {
 
     @Override
     public void processBarrier(
-            CheckpointBarrier barrier, InputChannelInfo channelInfo, boolean isRpcTriggered)
-            throws IOException {
+            CheckpointBarrier barrier,
+            InputChannelInfo channelInfo,
+            boolean isRpcTriggered
+    ) throws IOException {
         long barrierId = barrier.getId();
         LOG.debug("{}: Received barrier from channel {} @ {}.", taskName, channelInfo, barrierId);
 
-        if (currentCheckpointId > barrierId
-                || (currentCheckpointId == barrierId && !isCheckpointPending())) {
+        if (
+                currentCheckpointId > barrierId
+                || (currentCheckpointId == barrierId && !isCheckpointPending())
+        ) {
             if (!barrier.getCheckpointOptions().isUnalignedCheckpoint()) {
                 inputs[channelInfo.getGateIdx()].resumeConsumption(channelInfo);
             }
@@ -231,8 +236,11 @@ public class SingleCheckpointBarrierHandler extends CheckpointBarrierHandler {
         markCheckpointAlignedAndTransformState(
                 channelInfo,
                 barrier,
-                state -> state.barrierReceived(context, channelInfo, barrier, !isRpcTriggered));
+                state -> state.barrierReceived(context, channelInfo, barrier, !isRpcTriggered)
+        );
     }
+
+
 
     protected void markCheckpointAlignedAndTransformState(
             InputChannelInfo alignedChannel,

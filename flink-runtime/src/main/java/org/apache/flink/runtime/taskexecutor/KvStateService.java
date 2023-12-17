@@ -159,8 +159,7 @@ public class KvStateService {
      * @param taskManagerServicesConfiguration task manager configuration
      * @return service for kvState related components
      */
-    public static KvStateService fromConfiguration(
-            TaskManagerServicesConfiguration taskManagerServicesConfiguration) {
+    public static KvStateService fromConfiguration(TaskManagerServicesConfiguration taskManagerServicesConfiguration) {
         KvStateRegistry kvStateRegistry = new KvStateRegistry();
 
         QueryableStateConfiguration qsConfig =

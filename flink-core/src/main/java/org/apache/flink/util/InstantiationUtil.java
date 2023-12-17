@@ -63,8 +63,7 @@ public final class InstantiationUtil {
 
         protected final ClassLoader classLoader;
 
-        public ClassLoaderObjectInputStream(InputStream in, ClassLoader classLoader)
-                throws IOException {
+        public ClassLoaderObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException {
             super(in);
             this.classLoader = classLoader;
         }
@@ -361,9 +360,7 @@ public final class InstantiationUtil {
      * @return Instance of the given class name
      * @throws FlinkException if the class could not be found
      */
-    public static <T> T instantiate(
-            final String className, final Class<T> targetType, final ClassLoader classLoader)
-            throws FlinkException {
+    public static <T> T instantiate(final String className, final Class<T> targetType, final ClassLoader classLoader) throws FlinkException {
         final Class<? extends T> clazz;
         try {
             clazz = Class.forName(className, false, classLoader).asSubclass(targetType);
@@ -533,8 +530,7 @@ public final class InstantiationUtil {
         }
     }
 
-    public static <T> T readObjectFromConfig(Configuration config, String key, ClassLoader cl)
-            throws IOException, ClassNotFoundException {
+    public static <T> T readObjectFromConfig(Configuration config, String key, ClassLoader cl) throws IOException, ClassNotFoundException {
         byte[] bytes = config.getBytes(key, null);
         if (bytes == null) {
             return null;
@@ -584,8 +580,7 @@ public final class InstantiationUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T deserializeObject(byte[] bytes, ClassLoader cl)
-            throws IOException, ClassNotFoundException {
+    public static <T> T deserializeObject(byte[] bytes, ClassLoader cl) throws IOException, ClassNotFoundException {
         return deserializeObject(bytes, cl, false);
     }
 
@@ -596,15 +591,13 @@ public final class InstantiationUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T deserializeObject(byte[] bytes, ClassLoader cl, boolean isFailureTolerant)
-            throws IOException, ClassNotFoundException {
+    public static <T> T deserializeObject(byte[] bytes, ClassLoader cl, boolean isFailureTolerant) throws IOException, ClassNotFoundException {
 
         return deserializeObject(new ByteArrayInputStream(bytes), cl, isFailureTolerant);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T deserializeObject(InputStream in, ClassLoader cl, boolean isFailureTolerant)
-            throws IOException, ClassNotFoundException {
+    public static <T> T deserializeObject(InputStream in, ClassLoader cl, boolean isFailureTolerant) throws IOException, ClassNotFoundException {
 
         final ClassLoader old = Thread.currentThread().getContextClassLoader();
         // not using resource try to avoid AutoClosable's close() on the given stream
@@ -695,8 +688,7 @@ public final class InstantiationUtil {
      * @throws ClassNotFoundException Thrown if any of the classes referenced by the object cannot
      *     be resolved during deserialization.
      */
-    public static <T extends Serializable> T clone(T obj, ClassLoader classLoader)
-            throws IOException, ClassNotFoundException {
+    public static <T extends Serializable> T clone(T obj, ClassLoader classLoader) throws IOException, ClassNotFoundException {
         if (obj == null) {
             return null;
         } else {

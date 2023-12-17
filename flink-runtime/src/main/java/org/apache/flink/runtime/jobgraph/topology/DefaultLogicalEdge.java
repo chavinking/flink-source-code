@@ -30,7 +30,9 @@ public class DefaultLogicalEdge implements LogicalEdge {
     private final JobVertexID producerVertexId;
 
     DefaultLogicalEdge(JobEdge jobEdge) {
+//        得到边的分区方式：all-to-all
         this.distributionPattern = jobEdge.getDistributionPattern();
+//        得到边的上游数据集合，得到上游数据集合对应的上游节点ID
         this.producerVertexId = jobEdge.getSource().getProducer().getID();
     }
 

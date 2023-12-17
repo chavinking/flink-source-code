@@ -90,8 +90,7 @@ public class TaskExecutorStateChangelogStoragesManager {
             @Nonnull JobID jobId,
             Configuration configuration,
             TaskManagerJobMetricGroup metricGroup,
-            LocalRecoveryConfig localRecoveryConfig)
-            throws IOException {
+            LocalRecoveryConfig localRecoveryConfig) throws IOException {
         synchronized (lock) {
             if (closed) {
                 throw new IllegalStateException(
@@ -99,13 +98,11 @@ public class TaskExecutorStateChangelogStoragesManager {
                                 + "register a new StateChangelogStorage.");
             }
 
-            Optional<StateChangelogStorage<?>> stateChangelogStorage =
-                    changelogStoragesByJobId.get(jobId);
+            Optional<StateChangelogStorage<?>> stateChangelogStorage = changelogStoragesByJobId.get(jobId);
 
             if (stateChangelogStorage == null) {
                 StateChangelogStorage<?> loaded =
-                        StateChangelogStorageLoader.load(
-                                jobId, configuration, metricGroup, localRecoveryConfig);
+                        StateChangelogStorageLoader.load(jobId, configuration, metricGroup, localRecoveryConfig);
                 stateChangelogStorage = Optional.ofNullable(loaded);
                 changelogStoragesByJobId.put(jobId, stateChangelogStorage);
 

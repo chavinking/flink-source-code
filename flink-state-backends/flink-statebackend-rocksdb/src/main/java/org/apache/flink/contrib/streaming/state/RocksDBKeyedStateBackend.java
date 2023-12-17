@@ -579,8 +579,8 @@ public class RocksDBKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
             final long checkpointId,
             final long timestamp,
             @Nonnull final CheckpointStreamFactory streamFactory,
-            @Nonnull CheckpointOptions checkpointOptions)
-            throws Exception {
+            @Nonnull CheckpointOptions checkpointOptions
+    ) throws Exception {
 
         // flush everything into db before taking a snapshot
         writeBatchWrapper.flush();
@@ -589,7 +589,8 @@ public class RocksDBKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
                         checkpointSnapshotStrategy.getDescription(),
                         checkpointSnapshotStrategy,
                         cancelStreamRegistry,
-                        ASYNCHRONOUS)
+                        ASYNCHRONOUS
+        )
                 .snapshot(checkpointId, timestamp, streamFactory, checkpointOptions);
     }
 

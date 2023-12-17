@@ -124,8 +124,7 @@ public interface ShuffleEnvironment<P extends ResultPartitionWriter, G extends I
      * @return context of the shuffle input/output owner used to create partitions or gates
      *     belonging to the owner
      */
-    ShuffleIOOwnerContext createShuffleIOOwnerContext(
-            String ownerName, ExecutionAttemptID executionAttemptID, MetricGroup parentGroup);
+    ShuffleIOOwnerContext createShuffleIOOwnerContext(String ownerName, ExecutionAttemptID executionAttemptID, MetricGroup parentGroup);
 
     /**
      * Factory method for the {@link ResultPartitionWriter ResultPartitionWriters} to produce result

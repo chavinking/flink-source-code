@@ -311,10 +311,10 @@ public class SourceCoordinatorContext<SplitT extends SourceSplit>
         // thrown by the runnable
         coordinatorExecutor.execute(
                 new ThrowableCatchingRunnable(
-                        throwable ->
-                                coordinatorThreadFactory.uncaughtException(
-                                        Thread.currentThread(), throwable),
-                        runnable));
+                        throwable -> coordinatorThreadFactory.uncaughtException(Thread.currentThread(), throwable),
+                        runnable
+                )
+        );
     }
 
     @Override

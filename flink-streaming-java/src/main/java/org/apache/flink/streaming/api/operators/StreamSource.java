@@ -70,13 +70,16 @@ public class StreamSource<OUT, SRC extends SourceFunction<OUT>>
     public void run(
             final Object lockingObject,
             final Output<StreamRecord<OUT>> collector,
-            final OperatorChain<?, ?> operatorChain)
-            throws Exception {
+            final OperatorChain<?, ?> operatorChain
+    ) throws Exception {
 
+//        获取时间语义
         final TimeCharacteristic timeCharacteristic = getOperatorConfig().getTimeCharacteristic();
 
-        final Configuration configuration =
-                this.getContainingTask().getEnvironment().getTaskManagerInfo().getConfiguration();
+//        拿到任务配置
+        final Configuration configuration = this.getContainingTask().getEnvironment().getTaskManagerInfo().getConfiguration();
+
+//        获取延迟间隔
         final long latencyTrackingInterval =
                 getExecutionConfig().isLatencyTrackingConfigured()
                         ? getExecutionConfig().getLatencyTrackingInterval()
@@ -84,29 +87,31 @@ public class StreamSource<OUT, SRC extends SourceFunction<OUT>>
 
         LatencyMarkerEmitter<OUT> latencyEmitter = null;
         if (latencyTrackingInterval > 0) {
+//            注册时间
             latencyEmitter =
                     new LatencyMarkerEmitter<>(
                             getProcessingTimeService(),
                             collector::emitLatencyMarker,
                             latencyTrackingInterval,
                             this.getOperatorID(),
-                            getRuntimeContext().getIndexOfThisSubtask());
+                            getRuntimeContext().getIndexOfThisSubtask()
+                    );
         }
 
-        final long watermarkInterval =
-                getRuntimeContext().getExecutionConfig().getAutoWatermarkInterval();
+        final long watermarkInterval = getRuntimeContext().getExecutionConfig().getAutoWatermarkInterval();
 
-        this.ctx =
-                StreamSourceContexts.getSourceContext(
-                        timeCharacteristic,
-                        getProcessingTimeService(),
-                        lockingObject,
-                        collector,
-                        watermarkInterval,
+        this.ctx = StreamSourceContexts.getSourceContext(
+                        timeCharacteristic,// 时间语义
+                        getProcessingTimeService(),// 时间服务
+                        lockingObject,// 锁对象
+                        collector, // 输出对象
+                        watermarkInterval, // 水位线间隔
                         -1,
-                        emitProgressiveWatermarks);
+                        emitProgressiveWatermarks
+                );
 
         try {
+//            跳转执行用户自定义代码
             userFunction.run(ctx);
         } finally {
             if (latencyEmitter != null) {
@@ -114,6 +119,8 @@ public class StreamSource<OUT, SRC extends SourceFunction<OUT>>
             }
         }
     }
+
+
 
     @Override
     public void close() throws Exception {

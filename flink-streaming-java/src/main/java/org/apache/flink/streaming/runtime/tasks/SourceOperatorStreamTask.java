@@ -84,28 +84,40 @@ public class SourceOperatorStreamTask<T> extends StreamTask<T, SourceOperator<T,
         super(env);
     }
 
+    /**
+     * SourceOperatorStreamTask 初始化
+     *
+     * @throws Exception
+     */
     @Override
     public void init() throws Exception {
+
+//        获取sourceOperator
         final SourceOperator<T, ?> sourceOperator = this.mainOperator;
+
         // reader initialization, which cannot happen in the constructor due to the
         // lazy metric group initialization. We do this here now, rather than
         // later (in open()) so that we can access the reader when setting up the
         // input processors
+//        初始化读对象
         sourceOperator.initReader();
 
+//        拿到读对象
         final SourceReader<T, ?> sourceReader = sourceOperator.getSourceReader();
+
+//        声明源算子输入对象
         final StreamTaskInput<T> input;
 
         // TODO: should the input be constructed inside the `OperatorChain` class?
         if (operatorChain.isTaskDeployedAsFinished()) {
             input = new StreamTaskFinishedOnRestoreSourceInput<>(sourceOperator, 0, 0);
         } else if (sourceReader instanceof ExternallyInducedSourceReader) {
-            externallyInducedSourceInput =
-                    new StreamTaskExternallyInducedSourceInput<>(
+            externallyInducedSourceInput = new StreamTaskExternallyInducedSourceInput<>(
                             sourceOperator,
-                            this::triggerCheckpointForExternallyInducedSource,
+                            this::triggerCheckpointForExternallyInducedSource, // 根据条件判断是否出发checkpoint
                             0,
-                            0);
+                            0
+            );
 
             input = externallyInducedSourceInput;
         } else {
@@ -114,25 +126,30 @@ public class SourceOperatorStreamTask<T> extends StreamTask<T, SourceOperator<T,
 
         // The SourceOperatorStreamTask doesn't have any inputs, so there is no need for
         // a WatermarkGauge on the input.
-        output =
-                new AsyncDataOutputToOutput<T>(
-                        operatorChain.getMainOperatorOutput(),
+//        声明源算子输出对象
+        output = new AsyncDataOutputToOutput<T>(
+                        operatorChain.getMainOperatorOutput(), // 算子链的输出对象
                         sourceOperator.getSourceMetricGroup(),
-                        null);
+                        null
+                );
 
+//        初始化输入程序
         inputProcessor = new StreamOneInputProcessor<>(input, output, operatorChain);
 
         getEnvironment()
                 .getMetricGroup()
                 .getIOMetricGroup()
-                .gauge(
-                        MetricNames.CHECKPOINT_START_DELAY_TIME,
-                        this::getAsyncCheckpointStartDelayNanos);
+                .gauge(MetricNames.CHECKPOINT_START_DELAY_TIME, this::getAsyncCheckpointStartDelayNanos);
     }
+
+
+
+
 
     @Override
     public CompletableFuture<Boolean> triggerCheckpointAsync(
-            CheckpointMetaData checkpointMetaData, CheckpointOptions checkpointOptions) {
+            CheckpointMetaData checkpointMetaData, CheckpointOptions checkpointOptions
+    ) {
         if (!isExternallyInducedSource()) {
             return triggerCheckpointNowAsync(checkpointMetaData, checkpointOptions);
         }
@@ -174,8 +191,7 @@ public class SourceOperatorStreamTask<T> extends StreamTask<T, SourceOperator<T,
         }
     }
 
-    private CompletableFuture<Boolean> triggerCheckpointNowAsync(
-            CheckpointMetaData checkpointMetaData, CheckpointOptions checkpointOptions) {
+    private CompletableFuture<Boolean> triggerCheckpointNowAsync(CheckpointMetaData checkpointMetaData, CheckpointOptions checkpointOptions) {
         if (isSynchronous(checkpointOptions.getCheckpointType())) {
             return triggerStopWithSavepointAsync(checkpointMetaData, checkpointOptions);
         } else {
@@ -187,8 +203,7 @@ public class SourceOperatorStreamTask<T> extends StreamTask<T, SourceOperator<T,
         return checkpointType.isSavepoint() && ((SavepointType) checkpointType).isSynchronous();
     }
 
-    private CompletableFuture<Boolean> triggerStopWithSavepointAsync(
-            CheckpointMetaData checkpointMetaData, CheckpointOptions checkpointOptions) {
+    private CompletableFuture<Boolean> triggerStopWithSavepointAsync(CheckpointMetaData checkpointMetaData, CheckpointOptions checkpointOptions) {
 
         CompletableFuture<Void> operatorFinished = new CompletableFuture<>();
         mainMailboxExecutor.execute(
@@ -204,8 +219,7 @@ public class SourceOperatorStreamTask<T> extends StreamTask<T, SourceOperator<T,
                 },
                 "stop Flip-27 source for stop-with-savepoint");
 
-        return operatorFinished.thenCompose(
-                (ignore) -> super.triggerCheckpointAsync(checkpointMetaData, checkpointOptions));
+        return operatorFinished.thenCompose((ignore) -> super.triggerCheckpointAsync(checkpointMetaData, checkpointOptions));
     }
 
     @Override
@@ -237,12 +251,15 @@ public class SourceOperatorStreamTask<T> extends StreamTask<T, SourceOperator<T,
     // --------------------------
 
     private void triggerCheckpointForExternallyInducedSource(long checkpointId) {
+
         UntriggeredCheckpoint untriggeredCheckpoint = untriggeredCheckpoints.remove(checkpointId);
+
         if (untriggeredCheckpoint != null) {
             // common case: RPC before external sources induces it
             triggerCheckpointNowAsync(
                     untriggeredCheckpoint.getMetadata(),
-                    untriggeredCheckpoint.getCheckpointOptions());
+                    untriggeredCheckpoint.getCheckpointOptions()
+            );
             cleanupOldCheckpoints(checkpointId);
         } else {
             // rare case: external source induced first
@@ -253,6 +270,8 @@ public class SourceOperatorStreamTask<T> extends StreamTask<T, SourceOperator<T,
             }
         }
     }
+
+
 
     /**
      * Cleanup any orphaned checkpoint before the given currently triggered checkpoint. These

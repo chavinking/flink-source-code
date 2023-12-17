@@ -64,13 +64,12 @@ public class JobCheckpointingSettings implements Serializable {
             @Nullable SerializedValue<StateBackend> defaultStateBackend,
             @Nullable TernaryBoolean changelogStateBackendEnabled,
             @Nullable SerializedValue<CheckpointStorage> defaultCheckpointStorage,
-            @Nullable SerializedValue<MasterTriggerRestoreHook.Factory[]> masterHooks) {
+            @Nullable SerializedValue<MasterTriggerRestoreHook.Factory[]> masterHooks
+    ) {
 
-        this.checkpointCoordinatorConfiguration =
-                Preconditions.checkNotNull(checkpointCoordinatorConfiguration);
+        this.checkpointCoordinatorConfiguration = Preconditions.checkNotNull(checkpointCoordinatorConfiguration);
         this.defaultStateBackend = defaultStateBackend;
-        this.changelogStateBackendEnabled =
-                changelogStateBackendEnabled == null
+        this.changelogStateBackendEnabled = changelogStateBackendEnabled == null
                         ? TernaryBoolean.UNDEFINED
                         : changelogStateBackendEnabled;
         this.defaultCheckpointStorage = defaultCheckpointStorage;

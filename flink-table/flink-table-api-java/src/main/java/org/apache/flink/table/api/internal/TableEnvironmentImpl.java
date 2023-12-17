@@ -233,8 +233,7 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
         this.functionCatalog = functionCatalog;
         this.planner = planner;
         this.isStreamingMode = isStreamingMode;
-        this.operationTreeBuilder =
-                OperationTreeBuilder.create(
+        this.operationTreeBuilder = OperationTreeBuilder.create(
                         tableConfig,
                         resourceManager.getUserClassLoader(),
                         functionCatalog.asLookup(getParser()::parseIdentifier),
@@ -259,24 +258,30 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
                             }
                         },
                         getParser()::parseSqlExpression,
-                        isStreamingMode);
+                        isStreamingMode
+        );
 
-        catalogManager.initSchemaResolver(
-                isStreamingMode, operationTreeBuilder.getResolverBuilder());
+        catalogManager.initSchemaResolver(isStreamingMode, operationTreeBuilder.getResolverBuilder());
     }
 
     public static TableEnvironmentImpl create(Configuration configuration) {
         return create(EnvironmentSettings.newInstance().withConfiguration(configuration).build());
     }
 
-    public static TableEnvironmentImpl create(EnvironmentSettings settings) {
-        final MutableURLClassLoader userClassLoader =
-                FlinkUserCodeClassLoaders.create(
-                        new URL[0], settings.getUserClassLoader(), settings.getConfiguration());
 
-        final ExecutorFactory executorFactory =
-                FactoryUtil.discoverFactory(
-                        userClassLoader, ExecutorFactory.class, ExecutorFactory.DEFAULT_IDENTIFIER);
+
+
+
+    /**
+     * 创建table执行环境
+     *
+     * @param settings
+     * @return
+     */
+    public static TableEnvironmentImpl create(EnvironmentSettings settings) {
+
+        final MutableURLClassLoader userClassLoader = FlinkUserCodeClassLoaders.create(new URL[0], settings.getUserClassLoader(), settings.getConfiguration());
+        final ExecutorFactory executorFactory = FactoryUtil.discoverFactory(userClassLoader, ExecutorFactory.class, ExecutorFactory.DEFAULT_IDENTIFIER);
         final Executor executor = executorFactory.create(settings.getConfiguration());
 
         // use configuration to init table config
@@ -284,23 +289,24 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
         tableConfig.setRootConfiguration(executor.getConfiguration());
         tableConfig.addConfiguration(settings.getConfiguration());
 
-        final ResourceManager resourceManager =
-                new ResourceManager(settings.getConfiguration(), userClassLoader);
+
+        final ResourceManager resourceManager = new ResourceManager(settings.getConfiguration(), userClassLoader);
         final ModuleManager moduleManager = new ModuleManager();
-        final CatalogManager catalogManager =
-                CatalogManager.newBuilder()
+        final CatalogManager catalogManager = CatalogManager.newBuilder()
                         .classLoader(userClassLoader)
                         .config(tableConfig)
                         .defaultCatalog(
                                 settings.getBuiltInCatalogName(),
                                 new GenericInMemoryCatalog(
                                         settings.getBuiltInCatalogName(),
-                                        settings.getBuiltInDatabaseName()))
+                                        settings.getBuiltInDatabaseName()
+                                )
+                        )
                         .build();
 
-        final FunctionCatalog functionCatalog =
-                new FunctionCatalog(tableConfig, resourceManager, catalogManager, moduleManager);
+        final FunctionCatalog functionCatalog = new FunctionCatalog(tableConfig, resourceManager, catalogManager, moduleManager);
 
+//        创建SQL解析器对象
         final Planner planner =
                 PlannerFactoryUtil.createPlanner(
                         executor,
@@ -308,7 +314,8 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
                         userClassLoader,
                         moduleManager,
                         catalogManager,
-                        functionCatalog);
+                        functionCatalog
+                );
 
         return new TableEnvironmentImpl(
                 catalogManager,
@@ -318,8 +325,12 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
                 executor,
                 functionCatalog,
                 planner,
-                settings.isStreamingMode());
+                settings.isStreamingMode()
+        );
     }
+
+
+
 
     @Override
     public Table fromValues(Object... values) {
@@ -363,6 +374,7 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
 
     @VisibleForTesting
     public Planner getPlanner() {
+        // planner对象在创建table执行环境时创建
         return planner;
     }
 
@@ -703,8 +715,7 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
         List<Operation> operations = getParser().parse(query);
 
         if (operations.size() != 1) {
-            throw new ValidationException(
-                    "Unsupported SQL query! sqlQuery() only accepts a single SQL query.");
+            throw new ValidationException("Unsupported SQL query! sqlQuery() only accepts a single SQL query.");
         }
 
         Operation operation = operations.get(0);
@@ -712,14 +723,18 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
         if (operation instanceof QueryOperation && !(operation instanceof ModifyOperation)) {
             return createTable((QueryOperation) operation);
         } else {
-            throw new ValidationException(
-                    "Unsupported SQL query! sqlQuery() only accepts a single SQL query of type "
-                            + "SELECT, UNION, INTERSECT, EXCEPT, VALUES, and ORDER_BY.");
+            throw new ValidationException("Unsupported SQL query! sqlQuery() only accepts a single SQL query of type " + "SELECT, UNION, INTERSECT, EXCEPT, VALUES, and ORDER_BY.");
         }
     }
 
+
+
+
+
     @Override
     public TableResult executeSql(String statement) {
+        // 解析 -> 校验
+        // 解析SQL成Operation，Operation封装了算术语法树和schema信息
         List<Operation> operations = getParser().parse(statement);
 
         if (operations.size() != 1) {
@@ -727,8 +742,15 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
         }
 
         Operation operation = operations.get(0);
+
+        // 优化 -> 执行
+        // 执行转换后的Operation
         return executeInternal(operation);
     }
+
+
+
+
 
     @Override
     public StatementSet createStatementSet() {
@@ -868,22 +890,51 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
         }
     }
 
-    private TableResultInternal executeQueryOperation(QueryOperation operation) {
-        CollectModifyOperation sinkOperation = new CollectModifyOperation(operation);
-        List<Transformation<?>> transformations =
-                translate(Collections.singletonList(sinkOperation));
-        final String defaultJobName = "collect";
 
+
+
+
+    /** ********************************************************************************************
+     *  ********************************************************************************************
+     *  ********************************************************************************************
+     * 执行查询语句入口
+     *
+     * @param operation
+     * @return
+     */
+    private TableResultInternal executeQueryOperation(QueryOperation operation) {
+
+        // 创建一个本地收集ModifyOperation结果的Operation
+        CollectModifyOperation sinkOperation = new CollectModifyOperation(operation);
+
+        // 将上一步的sinkOperation翻译为Flink的Transformation
+        // 重要的方法，中间记录了如何将Operation翻译为transformation
+        // StreamExecutionEnvironment中的属性定义：protected final List<Transformation<?>> transformations = new ArrayList<>();
+        List<Transformation<?>> transformations = translate(Collections.singletonList(sinkOperation));
+
+        // 设置作业名称
+        final String defaultJobName = "collect";
         resourceManager.addJarConfiguration(tableConfig);
 
         // We pass only the configuration to avoid reconfiguration with the rootConfiguration
-        Pipeline pipeline =
-                execEnv.createPipeline(
-                        transformations, tableConfig.getConfiguration(), defaultJobName);
+        // 根据transformation，生成StreamGraph
+        Pipeline pipeline = execEnv.createPipeline(
+                transformations,
+                tableConfig.getConfiguration(),
+                defaultJobName
+        );
+
         try {
+
+            // 代表作业执行过程，最后会跳转到提交StreamGraph入口
             JobClient jobClient = execEnv.executeAsync(pipeline);
+
+            // 用于帮助jobClient获取执行结果
             ResultProvider resultProvider = sinkOperation.getSelectResultProvider();
             resultProvider.setJobClient(jobClient);
+
+
+            // 构建TableResultImpl对象
             return TableResultImpl.builder()
                     .jobClient(jobClient)
                     .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
@@ -892,27 +943,47 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
                     .setPrintStyle(
                             PrintStyle.tableauWithTypeInferredColumnWidths(
                                     // sinkOperation.getConsumedDataType() handles legacy types
-                                    DataTypeUtils.expandCompositeTypeToSchema(
-                                            sinkOperation.getConsumedDataType()),
+                                    DataTypeUtils.expandCompositeTypeToSchema(sinkOperation.getConsumedDataType()),
                                     resultProvider.getRowDataStringConverter(),
                                     PrintStyle.DEFAULT_MAX_COLUMN_WIDTH,
                                     false,
-                                    isStreamingMode))
+                                    isStreamingMode
+                            )
+                    )
                     .build();
+
+
         } catch (Exception e) {
             throw new TableException("Failed to execute sql", e);
         }
     }
 
+
+
+
+
+    /**
+     * 执行SQL转换为Operation入口，判断operation的类型，不同的operation类型执行不同的操作
+     *
+     * Operation中保存了 解析后的 算术语法树 + sql输出数据结构 信息
+     *
+     * @param operation The operation to be executed.
+     * @return
+     */
     @Override
     public TableResultInternal executeInternal(Operation operation) {
+
+        // 执行自定义扩展SQL入口
         // try to use extended operation executor to execute the operation
-        Optional<TableResultInternal> tableResult =
-                getExtendedOperationExecutor().executeOperation(operation);
+        Optional<TableResultInternal> tableResult = getExtendedOperationExecutor().executeOperation(operation);
+
         // if the extended operation executor return non-empty result, return it
         if (tableResult.isPresent()) {
             return tableResult.get();
         }
+
+
+        // 执行标准Calcite SQL入口
         // otherwise, fall back to internal implementation
         if (operation instanceof ModifyOperation) {
             return executeInternal(Collections.singletonList((ModifyOperation) operation));
@@ -1378,6 +1449,7 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
                                 "Tables or views with the identifier '%s' doesn't exist",
                                 describeTableOperation.getSqlIdentifier().asSummaryString()));
             }
+// 执行查询语句入口 *************************************************************************************************
         } else if (operation instanceof QueryOperation) {
             return executeQueryOperation((QueryOperation) operation);
         } else if (operation instanceof ExecutePlanOperation) {
@@ -1414,7 +1486,14 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
         } else {
             throw new TableException(UNSUPPORTED_QUERY_IN_EXECUTE_SQL_MSG);
         }
+
     }
+
+
+
+
+
+
 
     private TableResultInternal createCatalog(CreateCatalogOperation operation) {
         String exMsg = getDDLOpExecuteErrorMsg(operation.asSummaryString());
@@ -1729,6 +1808,12 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
         TableSourceValidation.validateTableSource(tableSource, tableSource.getTableSchema());
     }
 
+    /**
+     * 重要方法，执行SQL到Stream算子的转换
+     *
+     * @param modifyOperations
+     * @return
+     */
     protected List<Transformation<?>> translate(List<ModifyOperation> modifyOperations) {
         return planner.translate(modifyOperations);
     }
@@ -1937,7 +2022,8 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
                 this,
                 tableOperation,
                 operationTreeBuilder,
-                functionCatalog.asLookup(getParser()::parseIdentifier));
+                functionCatalog.asLookup(getParser()::parseIdentifier)
+        );
     }
 
     @Override

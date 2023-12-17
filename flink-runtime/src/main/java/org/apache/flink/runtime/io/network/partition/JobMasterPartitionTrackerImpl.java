@@ -141,16 +141,12 @@ public class JobMasterPartitionTrackerImpl
     }
 
     @Override
-    public List<ShuffleDescriptor> getClusterPartitionShuffleDescriptors(
-            IntermediateDataSetID intermediateDataSetID) {
-        return clusterPartitionShuffleDescriptors.computeIfAbsent(
-                intermediateDataSetID, this::requestShuffleDescriptorsFromResourceManager);
+    public List<ShuffleDescriptor> getClusterPartitionShuffleDescriptors(IntermediateDataSetID intermediateDataSetID) {
+        return clusterPartitionShuffleDescriptors.computeIfAbsent(intermediateDataSetID, this::requestShuffleDescriptorsFromResourceManager);
     }
 
-    private List<ShuffleDescriptor> requestShuffleDescriptorsFromResourceManager(
-            IntermediateDataSetID intermediateDataSetID) {
-        Preconditions.checkNotNull(
-                resourceManagerGateway, "JobMaster is not connected to ResourceManager");
+    private List<ShuffleDescriptor> requestShuffleDescriptorsFromResourceManager(IntermediateDataSetID intermediateDataSetID) {
+        Preconditions.checkNotNull(resourceManagerGateway, "JobMaster is not connected to ResourceManager");
         try {
             return this.resourceManagerGateway
                     .getClusterPartitionsShuffleDescriptors(intermediateDataSetID)

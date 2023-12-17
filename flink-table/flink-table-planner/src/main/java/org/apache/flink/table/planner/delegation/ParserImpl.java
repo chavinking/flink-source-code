@@ -84,14 +84,22 @@ public class ParserImpl implements Parser {
      * ExtendedParser} fails to parse statement, it uses the {@link CalciteParser} to parse
      * statements.
      *
+     * 解析SQL
+     *
      * @param statement input statement.
      * @return parsed operations.
      */
     @Override
     public List<Operation> parse(String statement) {
+
+//        获取Calcite的解析器
         CalciteParser parser = calciteParserSupplier.get();
+//        1-解析 使用FlinkPlannerImpl作为validator
         FlinkPlannerImpl planner = validatorSupplier.get();
 
+//        扩展解析器，用来解析calcite解析器无法解析的扩展SQL语句
+//         对于一些特殊的写法，例如SET key=value。CalciteParser是不支持这种写法的
+//         为了避免在Calcite引入过多的关键字，这里定义了一组extended parser，专门用于在CalciteParser之前，解析这些特殊的语句
         Optional<Operation> command = EXTENDED_PARSER.parse(statement);
         if (command.isPresent()) {
             return Collections.singletonList(command.get());
@@ -99,13 +107,25 @@ public class ParserImpl implements Parser {
 
         // parse the sql query
         // use parseSqlList here because we need to support statement end with ';' in sql client.
+//        解析SQL为语法树
         SqlNodeList sqlNodeList = parser.parseSqlList(statement);
         List<SqlNode> parsed = sqlNodeList.getList();
+
         Preconditions.checkArgument(parsed.size() == 1, "only single statement supported");
+
         return Collections.singletonList(
-                SqlToOperationConverter.convert(planner, catalogManager, parsed.get(0))
+//                2-校验 将解析过的语法树转换为operator
+                SqlToOperationConverter.convert(
+                                planner,
+                                catalogManager,
+                                parsed.get(0)
+                        )
                         .orElseThrow(() -> new TableException("Unsupported query: " + statement)));
     }
+
+
+
+
 
     @Override
     public UnresolvedIdentifier parseIdentifier(String identifier) {

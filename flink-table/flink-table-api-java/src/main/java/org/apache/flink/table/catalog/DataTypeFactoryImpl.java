@@ -57,10 +57,10 @@ final class DataTypeFactoryImpl implements DataTypeFactory {
     DataTypeFactoryImpl(
             ClassLoader classLoader,
             ReadableConfig config,
-            @Nullable ExecutionConfig executionConfig) {
+            @Nullable ExecutionConfig executionConfig
+    ) {
         this.classLoader = classLoader;
-        this.executionConfig =
-                createSerializerExecutionConfig(classLoader, config, executionConfig);
+        this.executionConfig = createSerializerExecutionConfig(classLoader, config, executionConfig);
     }
 
     @Override
@@ -127,8 +127,7 @@ final class DataTypeFactoryImpl implements DataTypeFactory {
      * information from existing {@link ExecutionConfig} (if available) enriched with table {@link
      * ReadableConfig}.
      */
-    private static Supplier<ExecutionConfig> createSerializerExecutionConfig(
-            ClassLoader classLoader, ReadableConfig config, ExecutionConfig executionConfig) {
+    private static Supplier<ExecutionConfig> createSerializerExecutionConfig(ClassLoader classLoader, ReadableConfig config, ExecutionConfig executionConfig) {
         return () -> {
             final ExecutionConfig newExecutionConfig = new ExecutionConfig();
 

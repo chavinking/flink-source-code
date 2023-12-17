@@ -47,8 +47,7 @@ public final class StreamOneInputProcessor<IN> implements StreamInputProcessor {
 
     private final BoundedMultiInput endOfInputAware;
 
-    public StreamOneInputProcessor(
-            StreamTaskInput<IN> input, DataOutput<IN> output, BoundedMultiInput endOfInputAware) {
+    public StreamOneInputProcessor(StreamTaskInput<IN> input, DataOutput<IN> output, BoundedMultiInput endOfInputAware) {
 
         this.input = checkNotNull(input);
         this.output = checkNotNull(output);
@@ -62,6 +61,8 @@ public final class StreamOneInputProcessor<IN> implements StreamInputProcessor {
 
     @Override
     public DataInputStatus processInput() throws Exception {
+
+
         DataInputStatus status = input.emitNext(output);
 
         if (status == DataInputStatus.END_OF_DATA) {

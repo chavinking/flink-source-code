@@ -62,7 +62,8 @@ public class CheckpointOptions implements Serializable {
     private final long alignedCheckpointTimeout;
 
     public static CheckpointOptions notExactlyOnce(
-            SnapshotType type, CheckpointStorageLocationReference location) {
+            SnapshotType type, CheckpointStorageLocationReference location
+    ) {
         return new CheckpointOptions(
                 type, location, AlignmentType.AT_LEAST_ONCE, NO_ALIGNED_CHECKPOINT_TIME_OUT);
     }
@@ -103,7 +104,8 @@ public class CheckpointOptions implements Serializable {
             CheckpointStorageLocationReference locationReference,
             boolean isExactlyOnceMode,
             boolean isUnalignedEnabled,
-            long alignedCheckpointTimeout) {
+            long alignedCheckpointTimeout
+    ) {
         if (!isExactlyOnceMode) {
             return notExactlyOnce(checkpointType, locationReference);
         } else if (checkpointType.isSavepoint()) {

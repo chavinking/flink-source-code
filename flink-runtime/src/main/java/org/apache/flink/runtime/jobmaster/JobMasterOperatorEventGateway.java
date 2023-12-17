@@ -48,8 +48,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface JobMasterOperatorEventGateway {
 
-    CompletableFuture<Acknowledge> sendOperatorEventToCoordinator(
-            ExecutionAttemptID task, OperatorID operatorID, SerializedValue<OperatorEvent> event);
+    CompletableFuture<Acknowledge> sendOperatorEventToCoordinator(ExecutionAttemptID task, OperatorID operatorID, SerializedValue<OperatorEvent> event);
 
     CompletableFuture<CoordinationResponse> sendRequestToCoordinator(
             OperatorID operatorID, SerializedValue<CoordinationRequest> request);

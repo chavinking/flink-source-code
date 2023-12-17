@@ -83,14 +83,13 @@ public final class ContextResolvedTable {
                 true);
     }
 
-    public static ContextResolvedTable anonymous(
-            String hint, ResolvedCatalogBaseTable<?> resolvedTable) {
+    public static ContextResolvedTable anonymous(String hint, ResolvedCatalogBaseTable<?> resolvedTable) {
         return new ContextResolvedTable(
-                ObjectIdentifier.ofAnonymous(
-                        generateAnonymousStringIdentifier(hint, resolvedTable)),
+                ObjectIdentifier.ofAnonymous(generateAnonymousStringIdentifier(hint, resolvedTable)),
                 null,
                 resolvedTable,
-                true);
+                true
+        );
     }
 
     private ContextResolvedTable(
@@ -162,8 +161,7 @@ public final class ContextResolvedTable {
      * helpful toString for anonymous tables. It's only to help users to debug, and its return value
      * should not be relied on.
      */
-    private static String generateAnonymousStringIdentifier(
-            @Nullable String hint, ResolvedCatalogBaseTable<?> resolvedTable) {
+    private static String generateAnonymousStringIdentifier(@Nullable String hint, ResolvedCatalogBaseTable<?> resolvedTable) {
         // Planner can do some fancy optimizations' logic squashing two sources together in the same
         // operator. Because this logic is string based, anonymous tables still need some kind of
         // unique string based identifier that can be used later by the planner.

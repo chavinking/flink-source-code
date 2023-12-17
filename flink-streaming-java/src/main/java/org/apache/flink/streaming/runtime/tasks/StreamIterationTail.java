@@ -60,7 +60,8 @@ public class StreamIterationTail<IN> extends OneInputStreamTask<IN, IN> {
                 StreamIterationHead.createBrokerIdString(
                         getEnvironment().getJobID(),
                         iterationId,
-                        getEnvironment().getTaskInfo().getIndexOfThisSubtask());
+                        getEnvironment().getTaskInfo().getIndexOfThisSubtask()
+                );
 
         final long iterationWaitTime = getConfiguration().getIterationWaitTime();
 
@@ -68,8 +69,7 @@ public class StreamIterationTail<IN> extends OneInputStreamTask<IN, IN> {
                 "Iteration tail {} trying to acquire feedback queue under {}", getName(), brokerID);
 
         @SuppressWarnings("unchecked")
-        BlockingQueue<StreamRecord<IN>> dataChannel =
-                (BlockingQueue<StreamRecord<IN>>) BlockingQueueBroker.INSTANCE.get(brokerID);
+        BlockingQueue<StreamRecord<IN>> dataChannel = (BlockingQueue<StreamRecord<IN>>) BlockingQueueBroker.INSTANCE.get(brokerID);
 
         LOG.info("Iteration tail {} acquired feedback queue {}", getName(), brokerID);
 
@@ -77,12 +77,17 @@ public class StreamIterationTail<IN> extends OneInputStreamTask<IN, IN> {
         headOperator.setup(
                 this,
                 getConfiguration(),
-                new IterationTailOutput<>(dataChannel, iterationWaitTime));
+                new IterationTailOutput<>(dataChannel, iterationWaitTime)
+        );
         this.mainOperator = headOperator;
 
         // call super.init() last because that needs this.headOperator to be set up
         super.init();
     }
+
+
+
+
 
     private static class RecordPusher<IN> extends AbstractStreamOperator<IN>
             implements OneInputStreamOperator<IN, IN> {

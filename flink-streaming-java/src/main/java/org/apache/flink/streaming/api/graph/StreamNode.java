@@ -380,12 +380,9 @@ public class StreamNode {
         return inputRequirements;
     }
 
-    public Optional<OperatorCoordinator.Provider> getCoordinatorProvider(
-            String operatorName, OperatorID operatorID) {
+    public Optional<OperatorCoordinator.Provider> getCoordinatorProvider(String operatorName, OperatorID operatorID) {
         if (operatorFactory instanceof CoordinatedOperatorFactory) {
-            return Optional.of(
-                    ((CoordinatedOperatorFactory) operatorFactory)
-                            .getCoordinatorProvider(operatorName, operatorID));
+            return Optional.of(((CoordinatedOperatorFactory) operatorFactory).getCoordinatorProvider(operatorName, operatorID));
         } else {
             return Optional.empty();
         }

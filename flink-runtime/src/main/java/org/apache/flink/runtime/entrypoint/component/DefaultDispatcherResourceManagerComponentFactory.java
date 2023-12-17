@@ -183,6 +183,7 @@ public class DefaultDispatcherResourceManagerComponentFactory implements Dispatc
                                     dispatcherGatewayRetriever,
                                     executor);
 
+
 //          1 启动jobmanager的 WebMonitorEndpoint服务
             webMonitorEndpoint =
                     restEndpointFactory.createRestEndpoint( // 创建过程没有什么可观测内容
@@ -231,9 +232,7 @@ public class DefaultDispatcherResourceManagerComponentFactory implements Dispatc
                             resourceManagerGatewayRetriever,
                             blobServer,
                             heartbeatServices,
-                            () ->
-                                    JobManagerMetricGroup.createJobManagerMetricGroup(
-                                            metricRegistry, hostname),
+                            () -> JobManagerMetricGroup.createJobManagerMetricGroup(metricRegistry, hostname),
                             executionGraphInfoStore,
                             fatalErrorHandler,
                             historyServerArchivist,
@@ -256,6 +255,7 @@ public class DefaultDispatcherResourceManagerComponentFactory implements Dispatc
 //            启动resourcemanager服务，这里封装了rm功能
             resourceManagerService.start();
 
+//            启动网关服务
             resourceManagerRetrievalService.start(resourceManagerGatewayRetriever);
             dispatcherLeaderRetrievalService.start(dispatcherGatewayRetriever);
 

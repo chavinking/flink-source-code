@@ -122,8 +122,7 @@ public interface SchedulerNG extends GlobalFailureHandler, AutoCloseableAsync {
 
     // ------------------------------------------------------------------------
 
-    CompletableFuture<String> triggerSavepoint(
-            @Nullable String targetDirectory, boolean cancelJob, SavepointFormatType formatType);
+    CompletableFuture<String> triggerSavepoint(@Nullable String targetDirectory, boolean cancelJob, SavepointFormatType formatType);
 
     CompletableFuture<String> triggerCheckpoint();
 

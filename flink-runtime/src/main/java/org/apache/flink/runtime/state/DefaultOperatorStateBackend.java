@@ -225,10 +225,9 @@ public class DefaultOperatorStateBackend implements OperatorStateBackend {
             long checkpointId,
             long timestamp,
             @Nonnull CheckpointStreamFactory streamFactory,
-            @Nonnull CheckpointOptions checkpointOptions)
-            throws Exception {
-        return snapshotStrategyRunner.snapshot(
-                checkpointId, timestamp, streamFactory, checkpointOptions);
+            @Nonnull CheckpointOptions checkpointOptions
+    ) throws Exception {
+        return snapshotStrategyRunner.snapshot(checkpointId, timestamp, streamFactory, checkpointOptions);
     }
 
     private <S> ListState<S> getListState(

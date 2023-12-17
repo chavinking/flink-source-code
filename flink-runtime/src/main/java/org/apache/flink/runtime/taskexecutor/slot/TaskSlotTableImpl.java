@@ -537,8 +537,7 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
         if (taskSlot != null) {
             if (taskSlot.isActive(task.getJobID(), task.getAllocationId())) {
                 if (taskSlot.add(task)) {
-                    taskSlotMappings.put(
-                            task.getExecutionId(), new TaskSlotMapping<>(task, taskSlot));
+                    taskSlotMappings.put(task.getExecutionId(), new TaskSlotMapping<>(task, taskSlot));
 
                     return true;
                 } else {
@@ -600,8 +599,7 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
     }
 
     @Override
-    public MemoryManager getTaskMemoryManager(AllocationID allocationID)
-            throws SlotNotFoundException {
+    public MemoryManager getTaskMemoryManager(AllocationID allocationID) throws SlotNotFoundException {
         TaskSlot<T> taskSlot = getTaskSlot(allocationID);
         if (taskSlot != null) {
             return taskSlot.getMemoryManager();

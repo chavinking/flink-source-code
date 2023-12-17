@@ -32,6 +32,5 @@ public interface SchedulingTopologyListener {
      * @param schedulingTopology the scheduling topology which is just updated
      * @param newExecutionVertices the newly added execution vertices.
      */
-    void notifySchedulingTopologyUpdated(
-            SchedulingTopology schedulingTopology, List<ExecutionVertexID> newExecutionVertices);
+    void notifySchedulingTopologyUpdated(SchedulingTopology schedulingTopology, List<ExecutionVertexID> newExecutionVertices);
 }

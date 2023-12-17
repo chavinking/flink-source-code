@@ -267,17 +267,19 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
      */
     private void startResourceManagerServices() throws Exception {
         try {
+
+//            实际给变量赋值
             jobLeaderIdService.start(new JobLeaderIdActionsImpl());
 
             registerMetrics();
 
             /**
-             * 启动心跳服务
+             * 1 启动心跳服务
              */
             startHeartbeatServices();
 
             /**
-             * 启动曹管理器
+             * 2 启动曹管理器
              */
             slotManager.start(
                     getFencingToken(),
@@ -873,8 +875,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
     public CompletableFuture<List<ShuffleDescriptor>> getClusterPartitionsShuffleDescriptors(
             IntermediateDataSetID intermediateDataSetID) {
         return CompletableFuture.completedFuture(
-                clusterPartitionTracker.getClusterPartitionShuffleDescriptors(
-                        intermediateDataSetID));
+                clusterPartitionTracker.getClusterPartitionShuffleDescriptors(intermediateDataSetID));
     }
 
     @Override
@@ -1096,13 +1097,11 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
      *     corresponding job should be handled
      * @param cause The exception which cause the JobManager failed.
      */
-    protected void closeJobManagerConnection(
-            JobID jobId, ResourceRequirementHandling resourceRequirementHandling, Exception cause) {
+    protected void closeJobManagerConnection(JobID jobId, ResourceRequirementHandling resourceRequirementHandling, Exception cause) {
         JobManagerRegistration jobManagerRegistration = jobManagerRegistrations.remove(jobId);
 
         if (jobManagerRegistration != null) {
-            final ResourceID jobManagerResourceId =
-                    jobManagerRegistration.getJobManagerResourceID();
+            final ResourceID jobManagerResourceId = jobManagerRegistration.getJobManagerResourceID();
             final JobMasterGateway jobMasterGateway = jobManagerRegistration.getJobManagerGateway();
             final JobMasterId jobMasterId = jobManagerRegistration.getJobMasterId();
 
@@ -1534,8 +1533,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
         private void handleJobManagerConnectionLoss(ResourceID resourceID, Exception cause) {
             validateRunsInMainThread();
             if (jmResourceIdRegistrations.containsKey(resourceID)) {
-                JobManagerRegistration jobManagerRegistration =
-                        jmResourceIdRegistrations.get(resourceID);
+                JobManagerRegistration jobManagerRegistration = jmResourceIdRegistrations.get(resourceID);
 
                 if (jobManagerRegistration != null) {
                     closeJobManagerConnection(

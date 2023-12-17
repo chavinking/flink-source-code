@@ -109,20 +109,28 @@ class FlinkPlannerImpl(
   }
 
   def validate(sqlNode: SqlNode): SqlNode = {
+    // 创建校验器
     val validator = getOrCreateSqlValidator()
+
+    // 校验SQL语法树
     validate(sqlNode, validator)
   }
 
   private def validate(sqlNode: SqlNode, validator: FlinkCalciteSqlValidator): SqlNode = {
     try {
+
+      // 校验rich SQL insert语句
+      // rich SQL insert是一种带分区或overwrite的insert语句
       sqlNode.accept(new PreValidateReWriter(validator, typeFactory))
+
       // do extended validation.
+      // 校验create table和create table like 语句
       sqlNode match {
-        case node: ExtendedSqlNode =>
-          node.validate()
+        case node: ExtendedSqlNode => node.validate()
         case _ =>
       }
       // no need to validate row type for DDL and insert nodes.
+      // DDL和这些类型的语句无需校验
       if (
         sqlNode.getKind.belongsTo(SqlKind.DDL)
         || sqlNode.getKind == SqlKind.CREATE_FUNCTION
@@ -151,7 +159,9 @@ class FlinkPlannerImpl(
       ) {
         return sqlNode
       }
+
       sqlNode match {
+        // 校验SQL explain insert语句
         case richExplain: SqlRichExplain =>
           val validatedStatement = richExplain.getStatement match {
             // only validate source here
@@ -179,6 +189,7 @@ class FlinkPlannerImpl(
           compileAndExecute.setOperand(0, validate(compileAndExecute.getOperandList.get(0)))
           compileAndExecute
         case _ =>
+          // 其他情况，走通用validate逻辑
           validator.validate(sqlNode)
       }
     } catch {
@@ -191,12 +202,20 @@ class FlinkPlannerImpl(
     rel(validatedSqlNode, getOrCreateSqlValidator())
   }
 
+
+
+  /**
+   * SqlNode转换为Relation tree的过程由Calcite的SqlToRelConverter完成。
+   */
   private def rel(validatedSqlNode: SqlNode, sqlValidator: FlinkCalciteSqlValidator) = {
     try {
+
       assert(validatedSqlNode != null)
       // check whether this SqlNode tree contains join hints
       val checkContainJoinHintShuttle = new CheckContainJoinHintShuttle
       validatedSqlNode.accept(checkContainJoinHintShuttle)
+
+      // 创建出Rel转换器
       val sqlToRelConverter: SqlToRelConverter = if (checkContainJoinHintShuttle.containsJoinHint) {
         val converter = createSqlToRelConverter(
           sqlValidator,
@@ -212,6 +231,7 @@ class FlinkPlannerImpl(
         createSqlToRelConverter(sqlValidator, sqlToRelConverterConfig)
       }
 
+      // 由Calcite转换为Relation tree
       sqlToRelConverter.convertQuery(validatedSqlNode, false, true)
       // we disable automatic flattening in order to let composite types pass without modification
       // we might enable it again once Calcite has better support for structured types
@@ -225,6 +245,10 @@ class FlinkPlannerImpl(
       case e: RelConversionException => throw new TableException(e.getMessage)
     }
   }
+
+
+
+
 
   class CheckContainJoinHintShuttle extends SqlShuttle {
     var containsJoinHint: Boolean = false
@@ -327,7 +351,8 @@ class FlinkPlannerImpl(
       sqlValidator.getCatalogReader.unwrap(classOf[CalciteCatalogReader]),
       cluster,
       convertletTable,
-      config)
+      config
+    )
   }
 
   /** Creates a new instance of [[RelOptTable.ToRelContext]] for [[RelOptTable]]. */

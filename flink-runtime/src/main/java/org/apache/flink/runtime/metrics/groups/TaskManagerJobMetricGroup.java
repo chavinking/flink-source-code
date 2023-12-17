@@ -69,8 +69,7 @@ public class TaskManagerJobMetricGroup extends JobMetricGroup<TaskManagerMetricG
     //  adding / removing tasks
     // ------------------------------------------------------------------------
 
-    public TaskMetricGroup addTask(
-            final ExecutionAttemptID executionAttemptID, final String taskName) {
+    public TaskMetricGroup addTask(final ExecutionAttemptID executionAttemptID, final String taskName) {
         checkNotNull(executionAttemptID);
         checkNotNull(taskName);
 

@@ -42,28 +42,24 @@ class ConsumerRegionGroupExecutionViewMaintainer {
     private final Map<SchedulingPipelinedRegion, Set<ConsumerRegionGroupExecutionView>>
             executionViewByRegion = new HashMap<>();
 
-    void notifyNewRegionGroupExecutionViews(
-            Iterable<ConsumerRegionGroupExecutionView> executionViews) {
+    void notifyNewRegionGroupExecutionViews(Iterable<ConsumerRegionGroupExecutionView> executionViews) {
         for (ConsumerRegionGroupExecutionView executionView : executionViews) {
             for (SchedulingPipelinedRegion region : executionView) {
                 executionViewByRegion
-                        .computeIfAbsent(
-                                region, r -> Collections.newSetFromMap(new IdentityHashMap<>()))
+                        .computeIfAbsent(region, r -> Collections.newSetFromMap(new IdentityHashMap<>()))
                         .add(executionView);
             }
         }
     }
 
     void regionFinished(SchedulingPipelinedRegion region) {
-        for (ConsumerRegionGroupExecutionView executionView :
-                executionViewByRegion.getOrDefault(region, Collections.emptySet())) {
+        for (ConsumerRegionGroupExecutionView executionView : executionViewByRegion.getOrDefault(region, Collections.emptySet())) {
             executionView.regionFinished(region);
         }
     }
 
     void regionUnfinished(SchedulingPipelinedRegion region) {
-        for (ConsumerRegionGroupExecutionView executionView :
-                executionViewByRegion.getOrDefault(region, Collections.emptySet())) {
+        for (ConsumerRegionGroupExecutionView executionView : executionViewByRegion.getOrDefault(region, Collections.emptySet())) {
             executionView.regionUnfinished(region);
         }
     }

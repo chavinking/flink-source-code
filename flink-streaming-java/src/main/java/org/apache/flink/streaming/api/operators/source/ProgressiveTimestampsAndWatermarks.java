@@ -231,8 +231,7 @@ public class ProgressiveTimestampsAndWatermarks<T> implements TimestampsAndWater
             final WatermarkOutput onEventOutput = watermarkMultiplexer.getImmediateOutput(splitId);
             final WatermarkOutput periodicOutput = watermarkMultiplexer.getDeferredOutput(splitId);
 
-            final WatermarkGenerator<T> watermarks =
-                    watermarksFactory.createWatermarkGenerator(watermarkContext);
+            final WatermarkGenerator<T> watermarks = watermarksFactory.createWatermarkGenerator(watermarkContext);
 
             final SourceOutputWithWatermarks<T> localOutput =
                     SourceOutputWithWatermarks.createWithSeparateOutputs(
@@ -240,7 +239,8 @@ public class ProgressiveTimestampsAndWatermarks<T> implements TimestampsAndWater
                             onEventOutput,
                             periodicOutput,
                             timestampAssigner,
-                            watermarks);
+                            watermarks
+                    );
 
             localOutputs.put(splitId, localOutput);
             return localOutput;

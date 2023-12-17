@@ -135,19 +135,18 @@ public class DefaultExecutionGraphBuilder {
                         jobGraph.getSerializedExecutionConfig(),
                         jobGraph.getJobConfiguration(),
                         jobGraph.getUserJarBlobKeys(),
-                        jobGraph.getClasspaths());
+                        jobGraph.getClasspaths()
+                );
 
-        final int executionHistorySizeLimit =
-                jobManagerConfig.getInteger(JobManagerOptions.MAX_ATTEMPTS_HISTORY_SIZE);
+        final int executionHistorySizeLimit = jobManagerConfig.getInteger(JobManagerOptions.MAX_ATTEMPTS_HISTORY_SIZE);
 
-        final PartitionGroupReleaseStrategy.Factory partitionGroupReleaseStrategyFactory =
-                PartitionGroupReleaseStrategyFactoryLoader.loadPartitionGroupReleaseStrategyFactory(jobManagerConfig);
+        final PartitionGroupReleaseStrategy.Factory partitionGroupReleaseStrategyFactory = PartitionGroupReleaseStrategyFactoryLoader.loadPartitionGroupReleaseStrategyFactory(jobManagerConfig);
+
 
         // create a new execution graph, if none exists so far
         final DefaultExecutionGraph executionGraph; // 创建executiongraph
         try {
-            executionGraph =
-                    new DefaultExecutionGraph(
+            executionGraph = new DefaultExecutionGraph(
                             jobInformation,
                             futureExecutor,
                             ioExecutor,
@@ -166,15 +165,15 @@ public class DefaultExecutionGraphBuilder {
                             vertexParallelismStore,
                             isDynamicGraph,
                             executionJobVertexFactory,
-                            jobGraph.getJobStatusHooks());
+                            jobGraph.getJobStatusHooks()
+                    );
         } catch (IOException e) {
             throw new JobException("Could not create the ExecutionGraph.", e);
         }
 
         // set the basic properties
-
         try {
-            // 将jobgrap转换成json格式
+            // ********* 将jobgrap转换成json格式
             executionGraph.setJsonPlan(JsonPlanGenerator.generatePlan(jobGraph));
         } catch (Throwable t) {
             log.warn("Cannot create JSON plan for job", t);
@@ -187,6 +186,7 @@ public class DefaultExecutionGraphBuilder {
 
         final long initMasterStart = System.nanoTime();
         log.info("Running initialization on master for job {} ({}).", jobName, jobId);
+
 
         /**
          * 检查 设置一些配置信息
@@ -209,7 +209,9 @@ public class DefaultExecutionGraphBuilder {
                                 classLoader,
                                 vertexParallelismStore
                                         .getParallelismInfo(vertex.getID())
-                                        .getParallelism()));
+                                        .getParallelism()
+                        )
+                );
             } catch (Throwable t) {
                 throw new JobExecutionException(
                         jobId,
@@ -218,105 +220,115 @@ public class DefaultExecutionGraphBuilder {
             }
         }
 
-        log.info(
-                "Successfully ran initialization on master in {} ms.",
-                (System.nanoTime() - initMasterStart) / 1_000_000);
+        log.info("Successfully ran initialization on master in {} ms.", (System.nanoTime() - initMasterStart) / 1_000_000);
+
 
         // topologically sort the job vertices and attach the graph to the existing one
-        // 对作业顶点进行拓扑排序，并将图附加到现有的图上
+        // 对作业顶点进行拓扑排序，并将图附加到现有的图上【拍过序的结果】
         List<JobVertex> sortedTopology = jobGraph.getVerticesSortedTopologicallyFromSources();
         if (log.isDebugEnabled()) {
             log.debug(
                     "Adding {} vertices from job graph {} ({}).",
                     sortedTopology.size(),
                     jobName,
-                    jobId);
+                    jobId
+            );
         }
+
 
 //        执行准换 ***
+//        sortedTopology：排过序的jobvertex列表，即 source -> map -> sink 顺序
         executionGraph.attachJobGraph(sortedTopology);
 
+
+
         if (log.isDebugEnabled()) {
-            log.debug(
-                    "Successfully created execution graph from job graph {} ({}).", jobName, jobId);
+            log.debug("Successfully created execution graph from job graph {} ({}).", jobName, jobId);
         }
 
+
+
+        /**
+         * JOB任务状态检查点源码
+         */
         // configure the state checkpointing
         if (isDynamicGraph) {
             // dynamic graph does not support checkpointing so we skip it
             log.warn("Skip setting up checkpointing for a job with dynamic graph.");
-        } else if (isCheckpointingEnabled(jobGraph)) {
+        } else if (isCheckpointingEnabled(jobGraph)) { // 启用检查点，进行检查点检查
+
+            /**
+             * 状态后端管理代码，分析执行图可以忽略
+             */
             JobCheckpointingSettings snapshotSettings = jobGraph.getCheckpointingSettings();
 
+            /**
+             * 1. 从配置信息加载状态后端
+             */
             // load the state backend from the application settings
             final StateBackend applicationConfiguredBackend;
-            final SerializedValue<StateBackend> serializedAppConfigured =
-                    snapshotSettings.getDefaultStateBackend();
+            final SerializedValue<StateBackend> serializedAppConfigured = snapshotSettings.getDefaultStateBackend();
 
             if (serializedAppConfigured == null) {
                 applicationConfiguredBackend = null;
             } else {
-                try {
-                    applicationConfiguredBackend =
-                            serializedAppConfigured.deserializeValue(classLoader);
+                try { // 初始化状态后端
+                    applicationConfiguredBackend = serializedAppConfigured.deserializeValue(classLoader);
                 } catch (IOException | ClassNotFoundException e) {
-                    throw new JobExecutionException(
-                            jobId, "Could not deserialize application-defined state backend.", e);
+                    throw new JobExecutionException(jobId, "Could not deserialize application-defined state backend.", e);
                 }
             }
 
             final StateBackend rootBackend;
             try {
-                rootBackend =
-                        StateBackendLoader.fromApplicationOrConfigOrDefault(
+                rootBackend = StateBackendLoader.fromApplicationOrConfigOrDefault(
                                 applicationConfiguredBackend,
                                 snapshotSettings.isChangelogStateBackendEnabled(),
                                 jobManagerConfig,
                                 classLoader,
-                                log);
+                                log
+                        );
             } catch (IllegalConfigurationException | IOException | DynamicCodeLoadingException e) {
-                throw new JobExecutionException(
-                        jobId, "Could not instantiate configured state backend", e);
+                throw new JobExecutionException(jobId, "Could not instantiate configured state backend", e);
             }
 
+            /**
+             * 2. 从应用配置加载检查点策略
+             */
             // load the checkpoint storage from the application settings
             final CheckpointStorage applicationConfiguredStorage;
-            final SerializedValue<CheckpointStorage> serializedAppConfiguredStorage =
-                    snapshotSettings.getDefaultCheckpointStorage();
+            final SerializedValue<CheckpointStorage> serializedAppConfiguredStorage = snapshotSettings.getDefaultCheckpointStorage();
 
             if (serializedAppConfiguredStorage == null) {
                 applicationConfiguredStorage = null;
             } else {
                 try {
-                    applicationConfiguredStorage =
-                            serializedAppConfiguredStorage.deserializeValue(classLoader);
+                    applicationConfiguredStorage = serializedAppConfiguredStorage.deserializeValue(classLoader);
                 } catch (IOException | ClassNotFoundException e) {
-                    throw new JobExecutionException(
-                            jobId,
-                            "Could not deserialize application-defined checkpoint storage.",
-                            e);
+                    throw new JobExecutionException(jobId, "Could not deserialize application-defined checkpoint storage.", e);
                 }
             }
 
             final CheckpointStorage rootStorage;
             try {
-                rootStorage =
-                        CheckpointStorageLoader.load(
+                rootStorage = CheckpointStorageLoader.load(
                                 applicationConfiguredStorage,
                                 null,
                                 rootBackend,
                                 jobManagerConfig,
                                 classLoader,
-                                log);
+                                log
+                );
             } catch (IllegalConfigurationException | DynamicCodeLoadingException e) {
-                throw new JobExecutionException(
-                        jobId, "Could not instantiate configured checkpoint storage", e);
+                throw new JobExecutionException(jobId, "Could not instantiate configured checkpoint storage", e);
             }
 
-            // instantiate the user-defined checkpoint hooks
 
-            final SerializedValue<MasterTriggerRestoreHook.Factory[]> serializedHooks =
-                    snapshotSettings.getMasterHooks();
+            /**
+             * 3. 列举用户定义的检查点hooks
+             */
+            // instantiate the user-defined checkpoint hooks
+            final SerializedValue<MasterTriggerRestoreHook.Factory[]> serializedHooks = snapshotSettings.getMasterHooks();
             final List<MasterTriggerRestoreHook<?>> hooks;
 
             if (serializedHooks == null) {
@@ -326,8 +338,7 @@ public class DefaultExecutionGraphBuilder {
                 try {
                     hookFactories = serializedHooks.deserializeValue(classLoader);
                 } catch (IOException | ClassNotFoundException e) {
-                    throw new JobExecutionException(
-                            jobId, "Could not instantiate user-defined checkpoint hooks", e);
+                    throw new JobExecutionException(jobId, "Could not instantiate user-defined checkpoint hooks", e);
                 }
 
                 final Thread thread = Thread.currentThread();
@@ -344,24 +355,34 @@ public class DefaultExecutionGraphBuilder {
                 }
             }
 
-            final CheckpointCoordinatorConfiguration chkConfig =
-                    snapshotSettings.getCheckpointCoordinatorConfiguration();
+            final CheckpointCoordinatorConfiguration chkConfig = snapshotSettings.getCheckpointCoordinatorConfiguration();
             String changelogStorage = jobManagerConfig.getString(STATE_CHANGE_LOG_STORAGE);
 
+
+            /**
+             * 4. 启动检查点协调器
+             *
+             *
+             */
             executionGraph.enableCheckpointing(
-                    chkConfig,
-                    hooks,
-                    checkpointIdCounter,
-                    completedCheckpointStore,
+                    chkConfig, // 这是用于配置检查点的配置对象，其中包含了与检查点相关的各种配置选项，例如检查点的间隔时间、最大并发检查点数量等。
+                    hooks, // 这是一组用于定制化检查点行为的钩子（hook）对象。通过这些钩子，你可以在不同的检查点生命周期事件中插入自定义逻辑，例如在检查点完成之后执行一些特定操作。
+                    checkpointIdCounter, // 这是一个计数器，用于生成唯一的检查点 ID。每次执行检查点时，都会生成一个新的检查点 ID。
+                    completedCheckpointStore, // 这是一个存储已完成检查点的存储后端。在检查点成功完成后，相关的状态信息会被存储在这个存储后端中，以便在需要时进行恢复。
+                    // rootBackend 和 rootStorage: 这两个参数提供了检查点状态的根后端和根存储。这些用于指定检查点数据在分布式文件系统中的存储位置。
                     rootBackend,
                     rootStorage,
-                    checkpointStatsTrackerFactory.get(),
-                    checkpointsCleaner,
-                    jobManagerConfig.getString(STATE_CHANGE_LOG_STORAGE));
+                    checkpointStatsTrackerFactory.get(), // 这是一个用于创建检查点统计跟踪器的工厂方法。这个统计跟踪器可以帮助你监视和记录检查点操作的性能指标和统计信息。
+                    checkpointsCleaner, // 这是一个用于清理过期检查点的对象。在保留一定数量的检查点之后，你可能需要删除旧的检查点，以释放存储空间。
+                    jobManagerConfig.getString(STATE_CHANGE_LOG_STORAGE) // 这个参数指定了状态变更日志的存储位置。状态变更日志用于记录应用程序状态的变更，以便在故障发生时进行精确的状态恢复。
+            );
+
         }
 
         return executionGraph;
     }
+
+
 
     public static boolean isCheckpointingEnabled(JobGraph jobGraph) {
         return jobGraph.getCheckpointingSettings() != null;

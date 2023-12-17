@@ -440,6 +440,15 @@ public class ZooKeeperUtils {
         return new ZooKeeperLeaderElectionDriverFactory(client, path);
     }
 
+    /**
+     * 将leader选举信息写入zk
+     *
+     * @param leaderInformation
+     * @param curatorFramework
+     * @param hasLeadershipCheck
+     * @param connectionInformationPath
+     * @throws Exception
+     */
     public static void writeLeaderInformationToZooKeeper(
             LeaderInformation leaderInformation,
             CuratorFramework curatorFramework,

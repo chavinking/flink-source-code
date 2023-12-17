@@ -139,10 +139,12 @@ public class PendingCheckpoint implements Checkpoint {
             CheckpointProperties props,
             CompletableFuture<CompletedCheckpoint> onCompletionPromise,
             @Nullable PendingCheckpointStats pendingCheckpointStats,
-            CompletableFuture<Void> masterTriggerCompletionPromise) {
+            CompletableFuture<Void> masterTriggerCompletionPromise
+    ) {
         checkArgument(
                 checkpointPlan.getTasksToWaitFor().size() > 0,
-                "Checkpoint needs at least one vertex that commits the checkpoint");
+                "Checkpoint needs at least one vertex that commits the checkpoint"
+        );
 
         this.jobId = checkNotNull(jobId);
         this.checkpointId = checkpointId;
@@ -155,15 +157,12 @@ public class PendingCheckpoint implements Checkpoint {
         }
 
         this.props = checkNotNull(props);
-
         this.operatorStates = new HashMap<>();
         this.masterStates = new ArrayList<>(masterStateIdentifiers.size());
-        this.notYetAcknowledgedMasterStates =
-                masterStateIdentifiers.isEmpty()
+        this.notYetAcknowledgedMasterStates = masterStateIdentifiers.isEmpty()
                         ? Collections.emptySet()
                         : new HashSet<>(masterStateIdentifiers);
-        this.notYetAcknowledgedOperatorCoordinators =
-                operatorCoordinatorsToConfirm.isEmpty()
+        this.notYetAcknowledgedOperatorCoordinators = operatorCoordinatorsToConfirm.isEmpty()
                         ? Collections.emptySet()
                         : new HashSet<>(operatorCoordinatorsToConfirm);
         this.acknowledgedTasks = new HashSet<>(checkpointPlan.getTasksToWaitFor().size());
@@ -483,7 +482,9 @@ public class PendingCheckpoint implements Checkpoint {
     }
 
     public TaskAcknowledgeResult acknowledgeCoordinatorState(
-            OperatorInfo coordinatorInfo, @Nullable ByteStreamStateHandle stateHandle) {
+            OperatorInfo coordinatorInfo,
+            @Nullable ByteStreamStateHandle stateHandle
+    ) {
 
         synchronized (lock) {
             if (disposed) {
@@ -501,13 +502,14 @@ public class PendingCheckpoint implements Checkpoint {
             }
 
             if (operatorState == null) {
-                operatorState =
-                        new OperatorState(
+                operatorState = new OperatorState(
                                 operatorId,
                                 coordinatorInfo.currentParallelism(),
-                                coordinatorInfo.maxParallelism());
+                                coordinatorInfo.maxParallelism()
+                );
                 operatorStates.put(operatorId, operatorState);
             }
+
             if (stateHandle != null) {
                 operatorState.setCoordinatorState(stateHandle);
             }

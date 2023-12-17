@@ -200,72 +200,90 @@ public class NettyShuffleEnvironment
     // --------------------------------------------------------------------------------------------
 
     @Override
-    public ShuffleIOOwnerContext createShuffleIOOwnerContext(
-            String ownerName, ExecutionAttemptID executionAttemptID, MetricGroup parentGroup) {
+    public ShuffleIOOwnerContext createShuffleIOOwnerContext(String ownerName, ExecutionAttemptID executionAttemptID, MetricGroup parentGroup) {
         MetricGroup nettyGroup = createShuffleIOOwnerMetricGroup(checkNotNull(parentGroup));
         return new ShuffleIOOwnerContext(
                 checkNotNull(ownerName),
                 checkNotNull(executionAttemptID),
                 parentGroup,
                 nettyGroup.addGroup(METRIC_GROUP_OUTPUT),
-                nettyGroup.addGroup(METRIC_GROUP_INPUT));
+                nettyGroup.addGroup(METRIC_GROUP_INPUT)
+        );
     }
 
+    /**
+     * 创建task输出结果集
+     *
+     * @param ownerContext the owner context relevant for partition creation
+     * @param resultPartitionDeploymentDescriptors descriptors of the partition, produced by the
+     *     owner
+     * @return
+     */
     @Override
     public List<ResultPartition> createResultPartitionWriters(
             ShuffleIOOwnerContext ownerContext,
-            List<ResultPartitionDeploymentDescriptor> resultPartitionDeploymentDescriptors) {
+            List<ResultPartitionDeploymentDescriptor> resultPartitionDeploymentDescriptors
+    ) {
         synchronized (lock) {
-            Preconditions.checkState(
-                    !isClosed, "The NettyShuffleEnvironment has already been shut down.");
+            Preconditions.checkState(!isClosed, "The NettyShuffleEnvironment has already been shut down.");
 
-            ResultPartition[] resultPartitions =
-                    new ResultPartition[resultPartitionDeploymentDescriptors.size()];
-            for (int partitionIndex = 0;
-                    partitionIndex < resultPartitions.length;
-                    partitionIndex++) {
+
+            ResultPartition[] resultPartitions = new ResultPartition[resultPartitionDeploymentDescriptors.size()];
+            for (int partitionIndex = 0; partitionIndex < resultPartitions.length; partitionIndex++) {
                 resultPartitions[partitionIndex] =
+//                        创建 ResultPartition 对象
                         resultPartitionFactory.create(
                                 ownerContext.getOwnerName(),
                                 partitionIndex,
-                                resultPartitionDeploymentDescriptors.get(partitionIndex));
+                                resultPartitionDeploymentDescriptors.get(partitionIndex) // 拿到该分区描述器信息，根据描述器信息创建对象
+                        );
             }
 
             registerOutputMetrics(
                     config.isNetworkDetailedMetrics(),
                     ownerContext.getOutputGroup(),
-                    resultPartitions);
+                    resultPartitions
+            );
             return Arrays.asList(resultPartitions);
         }
     }
 
+//    创建输入对象
     @Override
     public List<SingleInputGate> createInputGates(
             ShuffleIOOwnerContext ownerContext,
             PartitionProducerStateProvider partitionProducerStateProvider,
-            List<InputGateDeploymentDescriptor> inputGateDeploymentDescriptors) {
+            List<InputGateDeploymentDescriptor> inputGateDeploymentDescriptors
+    ) {
+
         synchronized (lock) {
-            Preconditions.checkState(
-                    !isClosed, "The NettyShuffleEnvironment has already been shut down.");
+            Preconditions.checkState(!isClosed, "The NettyShuffleEnvironment has already been shut down.");
 
             MetricGroup networkInputGroup = ownerContext.getInputGroup();
 
-            SingleInputGate[] inputGates =
-                    new SingleInputGate[inputGateDeploymentDescriptors.size()];
+
+            SingleInputGate[] inputGates = new SingleInputGate[inputGateDeploymentDescriptors.size()];
+
             for (int gateIndex = 0; gateIndex < inputGates.length; gateIndex++) {
-                final InputGateDeploymentDescriptor igdd =
-                        inputGateDeploymentDescriptors.get(gateIndex);
+
+//                获取inputgate描述器
+                final InputGateDeploymentDescriptor igdd = inputGateDeploymentDescriptors.get(gateIndex);
+
+
+//                ***** 创建inputgate并且初始化inputchannel
                 SingleInputGate inputGate =
-                        singleInputGateFactory.create(
-                                ownerContext, gateIndex, igdd, partitionProducerStateProvider);
+                        singleInputGateFactory.create(ownerContext, gateIndex, igdd, partitionProducerStateProvider);
+
+
                 InputGateID id =
-                        new InputGateID(
-                                igdd.getConsumedResultId(), ownerContext.getExecutionAttemptID());
+                        new InputGateID(igdd.getConsumedResultId(), ownerContext.getExecutionAttemptID());
+
                 Set<SingleInputGate> inputGateSet =
-                        inputGatesById.computeIfAbsent(
-                                id, ignored -> ConcurrentHashMap.newKeySet());
+                        inputGatesById.computeIfAbsent(id, ignored -> ConcurrentHashMap.newKeySet());
+
                 inputGateSet.add(inputGate);
                 inputGatesById.put(id, inputGateSet);
+
                 inputGate
                         .getCloseFuture()
                         .thenRun(
@@ -279,17 +297,24 @@ public class NettyShuffleEnvironment
                                                     }
                                                     return value;
                                                 }));
+
                 inputGates[gateIndex] = inputGate;
+
             }
 
             if (config.getDebloatConfiguration().isEnabled()) {
                 registerDebloatingTaskMetrics(inputGates, ownerContext.getParentGroup());
             }
 
+//            注册输入指标
             registerInputMetrics(config.isNetworkDetailedMetrics(), networkInputGroup, inputGates);
             return Arrays.asList(inputGates);
         }
+
     }
+
+
+
 
     /**
      * Registers legacy network metric groups before shuffle service refactoring.
@@ -304,8 +329,7 @@ public class NettyShuffleEnvironment
             MetricGroup metricGroup,
             ResultPartitionWriter[] producedPartitions,
             InputGate[] inputGates) {
-        NettyShuffleMetricFactory.registerLegacyNetworkMetrics(
-                config.isNetworkDetailedMetrics(), metricGroup, producedPartitions, inputGates);
+        NettyShuffleMetricFactory.registerLegacyNetworkMetrics(config.isNetworkDetailedMetrics(), metricGroup, producedPartitions, inputGates);
     }
 
     @Override

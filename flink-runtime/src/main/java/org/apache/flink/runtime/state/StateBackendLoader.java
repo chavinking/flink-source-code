@@ -222,8 +222,8 @@ public class StateBackendLoader {
             @Nullable StateBackend fromApplication,
             Configuration config,
             ClassLoader classLoader,
-            @Nullable Logger logger)
-            throws IllegalConfigurationException, DynamicCodeLoadingException, IOException {
+            @Nullable Logger logger
+    ) throws IllegalConfigurationException, DynamicCodeLoadingException, IOException {
 
         checkNotNull(config, "config");
         checkNotNull(classLoader, "classLoader");
@@ -241,8 +241,7 @@ public class StateBackendLoader {
                             fromApplication);
                 }
 
-                backend =
-                        ((ConfigurableStateBackend) fromApplication).configure(config, classLoader);
+                backend = ((ConfigurableStateBackend) fromApplication).configure(config, classLoader);
             } else {
                 // keep as is!
                 backend = fromApplication;
@@ -260,9 +259,7 @@ public class StateBackendLoader {
                 // (3) use the default
                 backend = new HashMapStateBackendFactory().createFromConfig(config, classLoader);
                 if (logger != null) {
-                    logger.info(
-                            "No state backend has been configured, using default (HashMap) {}",
-                            backend);
+                    logger.info("No state backend has been configured, using default (HashMap) {}", backend);
                 }
             }
         }
@@ -295,19 +292,15 @@ public class StateBackendLoader {
             TernaryBoolean isChangelogStateBackendEnableFromApplication,
             Configuration config,
             ClassLoader classLoader,
-            @Nullable Logger logger)
-            throws IllegalConfigurationException, DynamicCodeLoadingException, IOException {
+            @Nullable Logger logger
+    ) throws IllegalConfigurationException, DynamicCodeLoadingException, IOException {
 
-        StateBackend rootBackend =
-                loadFromApplicationOrConfigOrDefaultInternal(
-                        fromApplication, config, classLoader, logger);
+        StateBackend rootBackend = loadFromApplicationOrConfigOrDefaultInternal(fromApplication, config, classLoader, logger);
 
         // Configuration from application will override the one from env.
         boolean enableChangeLog =
                 TernaryBoolean.TRUE.equals(isChangelogStateBackendEnableFromApplication)
-                        || (TernaryBoolean.UNDEFINED.equals(
-                                        isChangelogStateBackendEnableFromApplication)
-                                && config.get(StateChangelogOptions.ENABLE_STATE_CHANGE_LOG));
+                        || (TernaryBoolean.UNDEFINED.equals(isChangelogStateBackendEnableFromApplication) && config.get(StateChangelogOptions.ENABLE_STATE_CHANGE_LOG));
 
         StateBackend backend;
         if (enableChangeLog) {
@@ -315,12 +308,14 @@ public class StateBackendLoader {
             LOG.info(
                     "State backend loader loads {} to delegate {}",
                     backend.getClass().getSimpleName(),
-                    rootBackend.getClass().getSimpleName());
+                    rootBackend.getClass().getSimpleName()
+            );
         } else {
             backend = rootBackend;
             LOG.info(
                     "State backend loader loads the state backend as {}",
-                    backend.getClass().getSimpleName());
+                    backend.getClass().getSimpleName()
+            );
         }
         return backend;
     }

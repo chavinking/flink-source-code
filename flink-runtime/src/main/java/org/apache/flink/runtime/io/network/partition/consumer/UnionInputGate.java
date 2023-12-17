@@ -91,6 +91,9 @@ public class UnionInputGate extends InputGate {
      */
     private final int[] inputGateChannelIndexOffsets;
 
+
+
+
     public UnionInputGate(IndexedInputGate... inputGates) {
         inputGatesByGateIndex =
                 Arrays.stream(inputGates)
@@ -110,8 +113,7 @@ public class UnionInputGate extends InputGate {
         this.inputGatesWithRemainingData = Sets.newHashSetWithExpectedSize(inputGates.length);
         this.inputGatesWithRemainingUserData = Sets.newHashSetWithExpectedSize(inputGates.length);
 
-        final int maxGateIndex =
-                Arrays.stream(inputGates).mapToInt(IndexedInputGate::getGateIndex).max().orElse(0);
+        final int maxGateIndex = Arrays.stream(inputGates).mapToInt(IndexedInputGate::getGateIndex).max().orElse(0);
         int totalNumberOfInputChannels =
                 Arrays.stream(inputGates)
                         .mapToInt(IndexedInputGate::getNumberOfInputChannels)
@@ -156,6 +158,10 @@ public class UnionInputGate extends InputGate {
             }
         }
     }
+
+
+
+
 
     private void handlePriorityEventAvailable(IndexedInputGate inputGate) {
         queueInputGate(inputGate, true);

@@ -222,14 +222,15 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
             FlinkSecurityManager.setFromConfiguration(configuration);
 
 //            创建插件管理器
-            PluginManager pluginManager =
-                    PluginUtils.createPluginManagerFromRootFolder(configuration);
+            PluginManager pluginManager = PluginUtils.createPluginManagerFromRootFolder(configuration);
+
 //            配置文件系统
             configureFileSystems(configuration, pluginManager);
 
             SecurityContext securityContext = installSecurityContext(configuration);
 
             ClusterEntrypointUtils.configureUncaughtExceptionHandler(configuration);
+
             securityContext.runSecured(
                     (Callable<Void>)
                             () -> {
@@ -285,7 +286,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
     private void runCluster(Configuration configuration, PluginManager pluginManager) throws Exception {
         synchronized (lock) {
 
-//            各种服务初始化 最少7种服务
+//            启动jobmanager过程中首先会进行各种服务初始化9种服务，为后续运行提供服务支撑
             initializeServices(configuration, pluginManager);
 
             // write host information into configuration
@@ -294,8 +295,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 
 //            创建工厂类的工厂，三大组件
             final DispatcherResourceManagerComponentFactory
-                    dispatcherResourceManagerComponentFactory =
-                            createDispatcherResourceManagerComponentFactory(configuration);
+                    dispatcherResourceManagerComponentFactory = createDispatcherResourceManagerComponentFactory(configuration);
 
             clusterComponent =
                     dispatcherResourceManagerComponentFactory.create(
@@ -309,9 +309,8 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                             delegationTokenManager,
                             metricRegistry,
                             executionGraphInfoStore,
-                            new RpcMetricQueryServiceRetriever(
-                                    metricRegistry.getMetricQueryServiceRpcService()),
-                            this);
+                            new RpcMetricQueryServiceRetriever(metricRegistry.getMetricQueryServiceRpcService()), this
+                    );
 
             clusterComponent
                     .getShutDownFuture()
@@ -350,6 +349,8 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
         LOG.info("Initializing cluster services.");
 
         synchronized (lock) {
+
+//            获取resourceID（resourceId指的是ResourceManager对应的唯一资源ID）
             resourceId =
                     configuration
                             .getOptional(JobManagerOptions.JOB_MANAGER_RESOURCE_ID)
@@ -367,13 +368,17 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                     getClass().getSimpleName(),
                     resourceId);
 
+//            创建工作目录
             workingDirectory =
                     ClusterEntrypointUtils.createJobManagerWorkingDirectory(configuration, resourceId);
 
             LOG.info("Using working directory: {}.", workingDirectory);
 
+//            加载rpc系统（这里指的是akka rpc服务）
             rpcSystem = RpcSystem.load(configuration);
 
+
+//            -----------------------------------------------------
 //            1 初始化rpc服务
             commonRpcService =
                     RpcUtils.createRemoteRpcService(
@@ -382,24 +387,26 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                             configuration.getString(JobManagerOptions.ADDRESS),
                             getRPCPortRange(configuration),
                             configuration.getString(JobManagerOptions.BIND_HOST),
-                            configuration.getOptional(JobManagerOptions.RPC_BIND_PORT));
+                            configuration.getOptional(JobManagerOptions.RPC_BIND_PORT)
+                    );
 
+//            2 启动JMX服务，JMX服务是JDK官方提供的Java程序性能监控程序
             JMXService.startInstance(configuration.getString(JMXServerOptions.JMX_SERVER_PORT));
 
             // update the configuration used to create the high availability services
             configuration.setString(JobManagerOptions.ADDRESS, commonRpcService.getAddress());
             configuration.setInteger(JobManagerOptions.PORT, commonRpcService.getPort());
 
-//            2 初始化IO线程池
+//            3 初始化IO线程池
             ioExecutor =
                     Executors.newFixedThreadPool(
                             ClusterEntrypointUtils.getPoolSize(configuration),
                             new ExecutorThreadFactory("cluster-io"));
 
-//             3 初始化HA服务
+//             4 初始化HA服务
             haServices = createHaServices(configuration, ioExecutor, rpcSystem);
 
-//            4 初始化大文件传输服务
+//            5 初始化大文件传输服务
             blobServer =
                     BlobUtils.createBlobServer(
                             configuration,
@@ -408,9 +415,11 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
             blobServer.start();
             configuration.setString(BlobServerOptions.PORT, String.valueOf(blobServer.getPort()));
 
-//            5 初始化心跳服务
+//            6 初始化心跳服务
             heartbeatServices = createHeartbeatServices(configuration);
 
+//            7 Flink 集群中委托令牌的管理器。
+//            启用委托令牌续订后，此管理器将确保长时间运行的应用程序可以在访问安全服务时不间断地运行。它必须联系所有已配置的安全服务，以获取要分发给应用程序其余部分的委托令牌。
             delegationTokenManager =
                     KerberosDelegationTokenManagerFactory.create(
                             getClass().getClassLoader(),
@@ -418,7 +427,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                             commonRpcService.getScheduledExecutor(),
                             ioExecutor);
 
-//            6 指标服务
+//            8 指标服务
             metricRegistry = createMetricRegistry(configuration, pluginManager, rpcSystem);
 
             final RpcService metricQueryServiceRpcService =
@@ -438,7 +447,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                             ConfigurationUtils.getSystemResourceMetricsProbingInterval(
                                     configuration));
 
-//             7 存储execution graph服务，默认实现 FileExecutionGraphInfoStore
+//             9 存储execution graph服务，默认实现 FileExecutionGraphInfoStore
             executionGraphInfoStore =
                     createSerializableExecutionGraphStore(configuration, commonRpcService.getScheduledExecutor());
         }

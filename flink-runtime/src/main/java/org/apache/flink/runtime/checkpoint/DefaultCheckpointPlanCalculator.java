@@ -169,7 +169,8 @@ public class DefaultCheckpointPlanCalculator implements CheckpointPlanCalculator
                 Collections.unmodifiableList(allTasks),
                 Collections.emptyList(),
                 Collections.emptyList(),
-                allowCheckpointsAfterTasksFinished);
+                allowCheckpointsAfterTasksFinished
+        );
     }
 
     /**

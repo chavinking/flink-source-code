@@ -75,6 +75,7 @@ public class ThroughputCalculator {
         return throughput;
     }
 
+
     public long calculateThroughput(long dataSize, long time) {
         checkArgument(dataSize >= 0, "Size of data should be non negative");
         checkArgument(time >= 0, "Time should be non negative");

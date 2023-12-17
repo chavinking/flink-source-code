@@ -143,7 +143,8 @@ public abstract class CommonExecSink extends ExecNodeBase<Object>
             DynamicTableSink tableSink,
             int rowtimeFieldIndex,
             boolean upsertMaterialize,
-            int[] inputUpsertKey) {
+            int[] inputUpsertKey
+    ) {
         final ResolvedSchema schema = tableSinkSpec.getContextResolvedTable().getResolvedSchema();
         final SinkRuntimeProvider runtimeProvider =
                 tableSink.getSinkRuntimeProvider(new SinkRuntimeProviderContext(isBounded));

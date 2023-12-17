@@ -88,8 +88,8 @@ public final class StreamingFunctionUtils {
     }
 
     public static void snapshotFunctionState(
-            StateSnapshotContext context, OperatorStateBackend backend, Function userFunction)
-            throws Exception {
+            StateSnapshotContext context, OperatorStateBackend backend, Function userFunction
+    ) throws Exception {
 
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(backend);
@@ -111,21 +111,18 @@ public final class StreamingFunctionUtils {
     }
 
     private static boolean trySnapshotFunctionState(
-            StateSnapshotContext context, OperatorStateBackend backend, Function userFunction)
-            throws Exception {
+            StateSnapshotContext context, OperatorStateBackend backend, Function userFunction
+    ) throws Exception {
 
         if (userFunction instanceof CheckpointedFunction) {
             ((CheckpointedFunction) userFunction).snapshotState(context);
-
             return true;
         }
 
         if (userFunction instanceof ListCheckpointed) {
             @SuppressWarnings("unchecked")
-            List<Serializable> partitionableState =
-                    ((ListCheckpointed<Serializable>) userFunction)
-                            .snapshotState(
-                                    context.getCheckpointId(), context.getCheckpointTimestamp());
+            List<Serializable> partitionableState = ((ListCheckpointed<Serializable>) userFunction)
+                            .snapshotState(context.getCheckpointId(), context.getCheckpointTimestamp());
 
             // We are using JavaSerializer from the flink-runtime module here. This is very naughty
             // and
@@ -136,7 +133,8 @@ public final class StreamingFunctionUtils {
             ListStateDescriptor<Serializable> listStateDescriptor =
                     new ListStateDescriptor<>(
                             DefaultOperatorStateBackend.DEFAULT_OPERATOR_STATE_NAME,
-                            new JavaSerializer<>());
+                            new JavaSerializer<>()
+                    );
             ListState<Serializable> listState = backend.getListState(listStateDescriptor);
 
             listState.clear();
@@ -148,7 +146,6 @@ public final class StreamingFunctionUtils {
                     }
                 } catch (Exception e) {
                     listState.clear();
-
                     throw new Exception(
                             "Could not write partitionable state to operator " + "state backend.",
                             e);
@@ -160,6 +157,9 @@ public final class StreamingFunctionUtils {
 
         return false;
     }
+
+
+
 
     public static void restoreFunctionState(
             StateInitializationContext context, Function userFunction) throws Exception {

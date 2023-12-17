@@ -701,9 +701,11 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     public SqlNode validate(SqlNode topNode) {
         SqlValidatorScope scope = new EmptyScope(this);
         scope = new CatalogScope(scope, ImmutableList.of("CATALOG"));
+
         final SqlNode topNode2 = validateScopedExpression(topNode, scope);
         final RelDataType type = getValidatedNodeType(topNode2);
         Util.discard(type);
+
         return topNode2;
     }
 
@@ -958,6 +960,8 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
         TRACER.trace("After validation: {}", outermostNode);
         return outermostNode;
     }
+
+
 
     public void validateQuery(SqlNode node, SqlValidatorScope scope, RelDataType targetRowType) {
         final SqlValidatorNamespace ns = getNamespace(node, scope);
@@ -1647,6 +1651,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
             return type;
         }
     }
+
 
     public RelDataType getValidatedNodeTypeIfKnown(SqlNode node) {
         final RelDataType type = nodeToTypeMap.get(node);

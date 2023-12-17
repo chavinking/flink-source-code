@@ -65,32 +65,47 @@ abstract class CommonSubGraphBasedOptimizer extends Optimizer {
     s"IntermediateRelTable_$id"
   }
 
+
+
+
+
+
   /**
+   * 这段代码承担了Flink SQL执行计划优化的功能
+   *
    * Generates the optimized [[RelNode]] DAG from the original relational nodes. NOTES: the reused
    * node in result DAG will be converted to the same RelNode, and the result doesn't contain
    * [[IntermediateRelTable]].
    *
    * @param roots
    *   the original relational nodes.
+   *   传入的是原始的逻辑执行计划
    * @return
    *   a list of RelNode represents an optimized RelNode DAG.
+   *   返回优化后的执行计划
    */
   override def optimize(roots: Seq[RelNode]): Seq[RelNode] = {
+
     // resolve hints before optimizing
+    // 在优化前解决hints问题
     val joinHintResolver = new JoinHintResolver()
+    // toJava(roots) ： 用于将scala Seq类型转换为Java List类型 ，roots一般只有一个元素
     val resolvedHintRoots = joinHintResolver.resolve(toJava(roots))
 
     // clear query block alias bef optimizing
     val clearQueryBlockAliasResolver = new ClearQueryBlockAliasResolver
     val resolvedAliasRoots = clearQueryBlockAliasResolver.resolve(resolvedHintRoots)
 
+//    优化逻辑-内部会调用calcite优化器模块进行树的转换
     val sinkBlocks = doOptimize(resolvedAliasRoots)
+
     val optimizedPlan = sinkBlocks.map {
       block =>
         val plan = block.getOptimizedPlan
         require(plan != null)
         plan
     }
+
     val expanded = expandIntermediateTableScan(optimizedPlan)
 
     val postOptimizedPlan = postOptimize(expanded)
@@ -103,6 +118,10 @@ abstract class CommonSubGraphBasedOptimizer extends Optimizer {
     // reuse subplan
     SubplanReuser.reuseDuplicatedSubplan(relsWithoutSameObj, unwrapTableConfig(roots.head))
   }
+
+
+
+
 
   /**
    * Post process for the physical [[RelNode]] dag, e.g., can be overloaded for validation or

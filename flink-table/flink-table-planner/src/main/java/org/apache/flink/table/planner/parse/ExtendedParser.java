@@ -36,11 +36,12 @@ public class ExtendedParser {
 
     private static final List<ExtendedParseStrategy> PARSE_STRATEGIES =
             Arrays.asList(
-                    ClearOperationParseStrategy.INSTANCE,
-                    HelpOperationParseStrategy.INSTANCE,
-                    QuitOperationParseStrategy.INSTANCE,
-                    ResetOperationParseStrategy.INSTANCE,
-                    SetOperationParseStrategy.INSTANCE);
+                    ClearOperationParseStrategy.INSTANCE,//CLEAR语句，清空输出
+                    HelpOperationParseStrategy.INSTANCE,//HELP语句，打印帮助信息
+                    QuitOperationParseStrategy.INSTANCE,//EXIT或QUIT语句，退出执行环境
+                    ResetOperationParseStrategy.INSTANCE,//RESET语句，重设一个变量的值
+                    SetOperationParseStrategy.INSTANCE//SET语句，设置一个变量的值
+            );
 
     /**
      * Parse the input statement to the {@link Operation}.

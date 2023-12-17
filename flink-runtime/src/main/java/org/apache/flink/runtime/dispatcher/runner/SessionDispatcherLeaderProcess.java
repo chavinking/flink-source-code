@@ -101,13 +101,17 @@ public class SessionDispatcherLeaderProcess extends AbstractDispatcherLeaderProc
         }
     }
 
-    private void createDispatcherIfRunning(
-            Collection<JobGraph> jobGraphs, Collection<JobResult> recoveredDirtyJobResults) {
+    private void createDispatcherIfRunning(Collection<JobGraph> jobGraphs, Collection<JobResult> recoveredDirtyJobResults) {
         runIfStateIs(State.RUNNING, () -> createDispatcher(jobGraphs, recoveredDirtyJobResults));
     }
 
-    private void createDispatcher(
-            Collection<JobGraph> jobGraphs, Collection<JobResult> recoveredDirtyJobResults) {
+    /**
+     * 创建 Dispatcher
+     *
+     * @param jobGraphs
+     * @param recoveredDirtyJobResults
+     */
+    private void createDispatcher(Collection<JobGraph> jobGraphs, Collection<JobResult> recoveredDirtyJobResults) {
 
         final DispatcherGatewayService dispatcherService =
                 dispatcherGatewayServiceFactory.create(
@@ -117,11 +121,15 @@ public class SessionDispatcherLeaderProcess extends AbstractDispatcherLeaderProc
                         jobGraphStore,
                         jobResultStore);
 
+//        完成Dispatcher设置
         completeDispatcherSetup(dispatcherService);
     }
 
-    private CompletableFuture<Void>
-            createDispatcherBasedOnRecoveredJobGraphsAndRecoveredDirtyJobResults() {
+    /**
+     * 启动dispatcher
+     * @return
+     */
+    private CompletableFuture<Void> createDispatcherBasedOnRecoveredJobGraphsAndRecoveredDirtyJobResults() {
         final CompletableFuture<Collection<JobResult>> dirtyJobsFuture =
                 CompletableFuture.supplyAsync(this::getDirtyJobResultsIfRunning, ioExecutor);
 
@@ -149,6 +157,7 @@ public class SessionDispatcherLeaderProcess extends AbstractDispatcherLeaderProc
 
         for (JobID jobId : jobIds) {
             if (!recoveredDirtyJobResults.contains(jobId)) {
+//                尝试恢复job
                 tryRecoverJob(jobId).ifPresent(recoveredJobGraphs::add);
             } else {
                 log.info(

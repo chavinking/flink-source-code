@@ -61,7 +61,8 @@ public class JsonPlanGenerator {
                 jg.getName(),
                 jg.getJobType(),
                 jg.getVertices(),
-                EMPTY_VERTEX_PARALLELISM);
+                EMPTY_VERTEX_PARALLELISM
+        );
     }
 
     public static String generatePlan(
@@ -72,16 +73,15 @@ public class JsonPlanGenerator {
             VertexParallelism vertexParallelism) {
         try {
             final StringWriter writer = new StringWriter(1024);
-
             final JsonFactory factory = new JsonFactory();
             final JsonGenerator gen = factory.createGenerator(writer);
 
             // start of everything
-            gen.writeStartObject();
-            gen.writeStringField("jid", jobID.toString());
-            gen.writeStringField("name", jobName);
-            gen.writeStringField("type", jobType.name());
-            gen.writeArrayFieldStart("nodes");
+            gen.writeStartObject(); // {
+            gen.writeStringField("jid", jobID.toString()); // {"jid":jobId
+            gen.writeStringField("name", jobName); // {"jid":jobId,"name":jobName
+            gen.writeStringField("type", jobType.name()); // {"jid":jobId,"name":jobName,"type":jobType
+            gen.writeArrayFieldStart("nodes"); // {"jid":jobId,"name":jobName,"type":jobType,"nodes":[
 
             // info per vertex
             for (JobVertex vertex : vertices) {
@@ -112,20 +112,34 @@ public class JsonPlanGenerator {
                 operatorDescr = StringEscapeUtils.escapeHtml4(operatorDescr);
                 operatorDescr = operatorDescr.replace("\n", "<br/>");
 
-                gen.writeStartObject();
+                gen.writeStartObject(); // {"jid":jobId,"name":jobName,"type":jobType,"nodes":[{
 
                 // write the core properties
                 JobVertexID vertexID = vertex.getID();
                 int storeParallelism = vertexParallelism.getParallelism(vertexID);
-                gen.writeStringField("id", vertexID.toString());
+                gen.writeStringField("id", vertexID.toString()); // {"jid":jobId,"name":jobName,"type":jobType,"nodes":[{"id":vertexID
                 gen.writeNumberField(
                         "parallelism",
                         storeParallelism != -1 ? storeParallelism : vertex.getParallelism());
+
+                /**
+                 * {"jid":jobId,"name":jobName,"type":jobType,"nodes":[
+                 * {"id":vertexID,"parallelism":parallelism,"operator":operator,"operator_strategy":operatorDescr,"description":description
+                 */
                 gen.writeStringField("operator", operator);
                 gen.writeStringField("operator_strategy", operatorDescr);
                 gen.writeStringField("description", description);
 
+
+                // 这里遍历的是边
                 if (!vertex.isInputVertex()) {
+
+                    /**
+                     * {"jid":jobId,"name":jobName,"type":jobType,"nodes":[
+                     * {"id":vertexID,"parallelism":parallelism,"operator":operator,"operator_strategy":operatorDescr,"description":description,
+                     * "inputs":[
+                     */
+
                     // write the input edge properties
                     gen.writeArrayFieldStart("inputs");
 
@@ -137,11 +151,16 @@ public class JsonPlanGenerator {
                         }
 
                         JobVertex predecessor = edge.getSource().getProducer();
-
                         String shipStrategy = edge.getShipStrategyName();
                         String preProcessingOperation = edge.getPreProcessingOperationName();
                         String operatorLevelCaching = edge.getOperatorLevelCachingDescription();
 
+
+                        /**
+                         * {"jid":jobId,"name":jobName,"type":jobType,"nodes":[
+                         * {"id":vertexID,"parallelism":parallelism,"operator":operator,"operator_strategy":operatorDescr,"description":description,
+                         * "inputs":[{"num":inputNum,"id":id,"ship_strategy":ship_strategy,"local_strategy":local_strategy,"caching":caching,"exchange":exchange}]
+                         */
                         gen.writeStartObject();
                         gen.writeNumberField("num", inputNum);
                         gen.writeStringField("id", predecessor.getID().toString());
@@ -172,6 +191,12 @@ public class JsonPlanGenerator {
                 gen.writeEndObject();
             }
 
+            /**
+             * {"jid":jobId,"name":jobName,"type":jobType,"nodes":[
+             * {"id":vertexID,"parallelism":parallelism,"operator":operator,"operator_strategy":operatorDescr,"description":description,
+             * "inputs":[{"num":inputNum,"id":id,"ship_strategy":ship_strategy,"local_strategy":local_strategy,"caching":caching,"exchange":exchange}],
+             * "optimizer_properties",optimizer_properties}]}
+             */
             // end of everything
             gen.writeEndArray();
             gen.writeEndObject();

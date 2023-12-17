@@ -41,8 +41,7 @@ public final class RowDataToStringConverterImpl implements RowDataToStringConver
 
     private Function<RowData, String>[] columnConverters;
 
-    public RowDataToStringConverterImpl(
-            DataType dataType, ZoneId zoneId, ClassLoader classLoader, boolean legacyBehaviour) {
+    public RowDataToStringConverterImpl(DataType dataType, ZoneId zoneId, ClassLoader classLoader, boolean legacyBehaviour) {
         this.dataType = dataType;
         this.castRuleContext = CastRule.Context.create(true, legacyBehaviour, zoneId, classLoader);
     }

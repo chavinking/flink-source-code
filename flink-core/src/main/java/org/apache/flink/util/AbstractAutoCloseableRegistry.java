@@ -86,8 +86,7 @@ public abstract class AbstractAutoCloseableRegistry<
         }
 
         IOUtils.closeQuietly(closeable);
-        throw new IOException(
-                "Cannot register Closeable, registry is already closed. Closing argument.");
+        throw new IOException("Cannot register Closeable, registry is already closed. Closing argument.");
     }
 
     /**

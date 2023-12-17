@@ -51,6 +51,12 @@ public class DefaultJobMasterServiceProcessFactory implements JobMasterServicePr
         this.jobMasterServiceFactory = jobMasterServiceFactory;
     }
 
+    /**
+     * 创建执行图
+     *
+     * @param leaderSessionId leaderSessionId for which to create a {@link JobMasterServiceProcess}
+     * @return
+     */
     @Override
     public JobMasterServiceProcess create(UUID leaderSessionId) {
         return new DefaultJobMasterServiceProcess(

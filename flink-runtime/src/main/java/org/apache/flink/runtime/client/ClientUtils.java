@@ -76,8 +76,8 @@ public enum ClientUtils {
             JobGraph jobGraph,
             Collection<Path> userJars,
             Collection<Tuple2<String, org.apache.flink.core.fs.Path>> userArtifacts,
-            SupplierWithException<BlobClient, IOException> clientSupplier)
-            throws FlinkException {
+            SupplierWithException<BlobClient, IOException> clientSupplier
+    ) throws FlinkException {
         if (!userJars.isEmpty() || !userArtifacts.isEmpty()) {
             try (BlobClient client = clientSupplier.get()) {
                 uploadAndSetUserJars(jobGraph, userJars, client);

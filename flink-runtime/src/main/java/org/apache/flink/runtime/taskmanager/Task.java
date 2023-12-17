@@ -299,8 +299,10 @@ public class Task
             TaskInformation taskInformation,
             ExecutionAttemptID executionAttemptID,
             AllocationID slotAllocationId,
-            List<ResultPartitionDeploymentDescriptor> resultPartitionDeploymentDescriptors,
-            List<InputGateDeploymentDescriptor> inputGateDeploymentDescriptors,
+
+            List<ResultPartitionDeploymentDescriptor> resultPartitionDeploymentDescriptors, // 输出分区描述器
+            List<InputGateDeploymentDescriptor> inputGateDeploymentDescriptors, // 输入门户描述器
+
             MemoryManager memManager,
             IOManager ioManager,
             ShuffleEnvironment<?, ?> shuffleEnvironment,
@@ -319,7 +321,8 @@ public class Task
             TaskManagerRuntimeInfo taskManagerConfig,
             @Nonnull TaskMetricGroup metricGroup,
             PartitionProducerStateChecker partitionProducerStateChecker,
-            Executor executor) {
+            Executor executor
+    ) {
 
         Preconditions.checkNotNull(jobInformation);
         Preconditions.checkNotNull(taskInformation);
@@ -331,26 +334,26 @@ public class Task
                         executionAttemptID.getSubtaskIndex(),
                         taskInformation.getNumberOfSubtasks(),
                         executionAttemptID.getAttemptNumber(),
-                        String.valueOf(slotAllocationId));
+                        String.valueOf(slotAllocationId)
+                );
 
         this.jobId = jobInformation.getJobId();
         this.vertexId = taskInformation.getJobVertexId();
         this.executionId = Preconditions.checkNotNull(executionAttemptID);
         this.allocationId = Preconditions.checkNotNull(slotAllocationId);
         this.taskNameWithSubtask = taskInfo.getTaskNameWithSubtasks();
+
         this.jobConfiguration = jobInformation.getJobConfiguration();
         this.taskConfiguration = taskInformation.getTaskConfiguration();
+
         this.requiredJarFiles = jobInformation.getRequiredJarFileBlobKeys();
         this.requiredClasspaths = jobInformation.getRequiredClasspathURLs();
         this.nameOfInvokableClass = taskInformation.getInvokableClassName();
+
         this.serializedExecutionConfig = jobInformation.getSerializedExecutionConfig();
-
         Configuration tmConfig = taskManagerConfig.getConfiguration();
-        this.taskCancellationInterval =
-                tmConfig.getLong(TaskManagerOptions.TASK_CANCELLATION_INTERVAL);
-        this.taskCancellationTimeout =
-                tmConfig.getLong(TaskManagerOptions.TASK_CANCELLATION_TIMEOUT);
-
+        this.taskCancellationInterval = tmConfig.getLong(TaskManagerOptions.TASK_CANCELLATION_INTERVAL);
+        this.taskCancellationTimeout = tmConfig.getLong(TaskManagerOptions.TASK_CANCELLATION_TIMEOUT);
         this.memoryManager = Preconditions.checkNotNull(memManager);
         this.ioManager = Preconditions.checkNotNull(ioManager);
         this.broadcastVariableManager = Preconditions.checkNotNull(bcVarManager);
@@ -360,31 +363,24 @@ public class Task
 
         this.inputSplitProvider = Preconditions.checkNotNull(inputSplitProvider);
         this.checkpointResponder = Preconditions.checkNotNull(checkpointResponder);
-        this.operatorCoordinatorEventGateway =
-                Preconditions.checkNotNull(operatorCoordinatorEventGateway);
+        this.operatorCoordinatorEventGateway = Preconditions.checkNotNull(operatorCoordinatorEventGateway);
         this.aggregateManager = Preconditions.checkNotNull(aggregateManager);
         this.taskManagerActions = checkNotNull(taskManagerActions);
         this.externalResourceInfoProvider = checkNotNull(externalResourceInfoProvider);
-
         this.classLoaderHandle = Preconditions.checkNotNull(classLoaderHandle);
         this.fileCache = Preconditions.checkNotNull(fileCache);
         this.kvStateService = Preconditions.checkNotNull(kvStateService);
         this.taskManagerConfig = Preconditions.checkNotNull(taskManagerConfig);
-
         this.metrics = metricGroup;
-
-        this.partitionProducerStateChecker =
-                Preconditions.checkNotNull(partitionProducerStateChecker);
+        this.partitionProducerStateChecker = Preconditions.checkNotNull(partitionProducerStateChecker);
         this.executor = Preconditions.checkNotNull(executor);
 
         // create the reader and writer structures
-
         final String taskNameWithSubtaskAndId = taskNameWithSubtask + " (" + executionId + ')';
+        final ShuffleIOOwnerContext taskShuffleContext = shuffleEnvironment.createShuffleIOOwnerContext(taskNameWithSubtaskAndId, executionId, metrics.getIOMetricGroup());
 
-        final ShuffleIOOwnerContext taskShuffleContext =
-                shuffleEnvironment.createShuffleIOOwnerContext(
-                        taskNameWithSubtaskAndId, executionId, metrics.getIOMetricGroup());
 
+// *************************************************************************************************
         /**
          * produced intermediate result partitions
          * 数据输出：初始化ResultPartition和SubResultPartition对象
@@ -392,7 +388,9 @@ public class Task
         final ResultPartitionWriter[] resultPartitionWriters =
                 shuffleEnvironment
                         .createResultPartitionWriters(
-                                taskShuffleContext, resultPartitionDeploymentDescriptors)
+                                taskShuffleContext,
+                                resultPartitionDeploymentDescriptors
+                        )
                         .toArray(new ResultPartitionWriter[] {});
 
         this.partitionWriters = resultPartitionWriters;
@@ -403,28 +401,33 @@ public class Task
          */
         final IndexedInputGate[] gates =
                 shuffleEnvironment
-                        .createInputGates(taskShuffleContext, this, inputGateDeploymentDescriptors)
+                        .createInputGates(
+                                taskShuffleContext,
+                                this,
+                                inputGateDeploymentDescriptors
+                        )
                         .toArray(new IndexedInputGate[0]);
+// *************************************************************************************************
+
 
         this.inputGates = new IndexedInputGate[gates.length];
         int counter = 0;
         for (IndexedInputGate gate : gates) {
-            inputGates[counter++] =
-                    new InputGateWithMetrics(
-                            gate, metrics.getIOMetricGroup().getNumBytesInCounter());
+            inputGates[counter++] = new InputGateWithMetrics(gate, metrics.getIOMetricGroup().getNumBytesInCounter());
         }
 
         if (shuffleEnvironment instanceof NettyShuffleEnvironment) {
             //noinspection deprecation
             ((NettyShuffleEnvironment) shuffleEnvironment)
-                    .registerLegacyNetworkMetrics(
-                            metrics.getIOMetricGroup(), resultPartitionWriters, gates);
+                    .registerLegacyNetworkMetrics(metrics.getIOMetricGroup(), resultPartitionWriters, gates);
         }
+
 
         invokableHasBeenCanceled = new AtomicBoolean(false);
 
         // finally, create the executing thread, but do not start it
         executingThread = new Thread(TASK_THREADS_GROUP, this, taskNameWithSubtask);
+
     }
 
     // ------------------------------------------------------------------------
@@ -559,10 +562,19 @@ public class Task
         }
     }
 
+
+
+
+
+    /**
+     * 开始执行flink代码
+     */
     private void doRun() {
+
         // ----------------------------
         //  Initial State transition
         // ----------------------------
+        // 变更状态 ExecutionState.CREATED -> ExecutionState.DEPLOYING
         while (true) {
             ExecutionState current = this.executionState;
             if (current == ExecutionState.CREATED) {
@@ -591,8 +603,7 @@ public class Task
                 if (metrics != null) {
                     metrics.close();
                 }
-                throw new IllegalStateException(
-                        "Invalid state for beginning of operation of task " + this + '.');
+                throw new IllegalStateException("Invalid state for beginning of operation of task " + this + '.');
             }
         }
 
@@ -616,8 +627,7 @@ public class Task
             LOG.info("Loading JAR files for task {}.", this);
 
             userCodeClassLoader = createUserCodeClassloader();
-            final ExecutionConfig executionConfig =
-                    serializedExecutionConfig.deserializeValue(userCodeClassLoader.asClassLoader());
+            final ExecutionConfig executionConfig = serializedExecutionConfig.deserializeValue(userCodeClassLoader.asClassLoader());
 
             if (executionConfig.getTaskCancellationInterval() >= 0) {
                 // override task cancellation interval from Flink config if set in ExecutionConfig
@@ -642,10 +652,14 @@ public class Task
 
             LOG.debug("Registering task at network: {}.", this);
 
+
+
             /**
              * 启动partition和gate ，主要设置buffer
              */
             setupPartitionsAndGates(partitionWriters, inputGates);
+
+
 
             for (ResultPartitionWriter partitionWriter : partitionWriters) {
                 taskEventDispatcher.registerPartition(partitionWriter.getPartitionId());
@@ -653,12 +667,9 @@ public class Task
 
             // next, kick off the background copying of files for the distributed cache
             try {
-                for (Map.Entry<String, DistributedCache.DistributedCacheEntry> entry :
-                        DistributedCache.readFileInfoFromConfig(jobConfiguration)) {
+                for (Map.Entry<String, DistributedCache.DistributedCacheEntry> entry : DistributedCache.readFileInfoFromConfig(jobConfiguration)) {
                     LOG.info("Obtaining local cache file for '{}'.", entry.getKey());
-                    Future<Path> cp =
-                            fileCache.createTmpFile(
-                                    entry.getKey(), entry.getValue(), jobId, executionId);
+                    Future<Path> cp = fileCache.createTmpFile(entry.getKey(), entry.getValue(), jobId, executionId);
                     distributedCacheEntries.put(entry.getKey(), cp);
                 }
             } catch (Exception e) {
@@ -677,37 +688,39 @@ public class Task
             //  call the user code initialization methods
             // ----------------------------------------------------------------
 
-            TaskKvStateRegistry kvStateRegistry =
-                    kvStateService.createKvStateTaskRegistry(jobId, getJobVertexId());
+            TaskKvStateRegistry kvStateRegistry = kvStateService.createKvStateTaskRegistry(jobId, getJobVertexId());
 
             Environment env =
                     new RuntimeEnvironment(
-                            jobId,
-                            vertexId,
-                            executionId,
-                            executionConfig,
-                            taskInfo,
-                            jobConfiguration,
-                            taskConfiguration,
-                            userCodeClassLoader,
-                            memoryManager,
-                            ioManager,
-                            broadcastVariableManager,
-                            taskStateManager,
-                            aggregateManager,
-                            accumulatorRegistry,
-                            kvStateRegistry,
-                            inputSplitProvider,
-                            distributedCacheEntries,
-                            partitionWriters,
-                            inputGates,
-                            taskEventDispatcher,
-                            checkpointResponder,
-                            operatorCoordinatorEventGateway,
-                            taskManagerConfig,
-                            metrics,
-                            this,
-                            externalResourceInfoProvider);
+                            jobId,//作业的唯一标识符。
+                            vertexId,//任务所属的顶点的标识符。
+                            executionId,//任务的执行标识符。
+                            executionConfig,//任务的执行配置，包括并行度、重启策略等。
+                            taskInfo,//任务的信息，包括任务名称、任务索引等。
+                            jobConfiguration,//作业配置，包含了作业的相关配置项。
+                            taskConfiguration,//任务配置，包含了任务的相关配置项。
+                            userCodeClassLoader,//用户代码的类加载器，用于加载用户定义的函数和类。
+                            memoryManager,//内存管理器，用于分配和管理任务所需的内存资源。
+                            ioManager,//IO 管理器，用于管理任务的输入和输出操作。
+                            broadcastVariableManager,//广播变量管理器，用于在任务之间共享变量。
+                            taskStateManager,//任务状态管理器，用于管理和恢复任务的状态。
+                            aggregateManager,//聚合管理器，用于管理任务中的聚合操作。
+                            accumulatorRegistry,//累加器注册表，用于管理任务中的累加器。
+                            kvStateRegistry,//键值状态注册表，用于管理任务中的键值状态。
+                            inputSplitProvider,//输入分片提供器，用于获取任务的输入分片。
+                            distributedCacheEntries,//分布式缓存项，用于访问分布式缓存。
+
+                            partitionWriters,//分区写入器，用于将结果写入任务的输出分区。
+                            inputGates,//输入网关，用于接收来自上游任务的数据。
+
+                            taskEventDispatcher,//任务事件分发器，用于分发任务事件。
+                            checkpointResponder,//检查点响应器，用于处理检查点相关的操作。
+                            operatorCoordinatorEventGateway,//运算符协调器事件网关，用于与运算符协调器交互。
+                            taskManagerConfig,//任务管理器的配置。
+                            metrics,//任务的度量指标，用于收集任务的性能指标和统计信息。
+                            this,//当前对象的引用，可能是用于传递上下文或自引用。
+                            externalResourceInfoProvider//外部资源信息提供器，用于获取外部资源的信息。
+                    );
 
             // Make sure the user code classloader is accessible thread-locally.
             // We are setting the correct context class loader before instantiating the invokable
@@ -721,7 +734,7 @@ public class Task
                 /**
                  * now load and instantiate the task's invokable code
                  * 这里是最重要的代码入口 ，用来启动算子对应的任务
-                 * 这个代码的对应调用两个类 ： SourceStreamTask 和 OneInputStreamTask
+                 * 这个代码的对应调用两个类 ： SourceStreamTask 和 OneInputStreamTask，这里通过反射初始化上边两个类
                  *
                  */
                 invokable = loadAndInstantiateInvokable(userCodeClassLoader.asClassLoader(), nameOfInvokableClass, env);
@@ -737,7 +750,10 @@ public class Task
             // by the time we switched to running.
             this.invokable = invokable;
 
+
+            // 1 开启执行任务,invokable使用env初始化的，因此其内部包含了这个任务对应得执行图信息
             restoreAndInvoke(invokable);
+
 
             // make sure, we enter the catch block if the task leaves the invoke() method due
             // to the fact that it has been canceled
@@ -780,8 +796,7 @@ public class Task
                     if (current == ExecutionState.RUNNING
                             || current == ExecutionState.INITIALIZING
                             || current == ExecutionState.DEPLOYING) {
-                        if (ExceptionUtils.findThrowable(t, CancelTaskException.class)
-                                .isPresent()) {
+                        if (ExceptionUtils.findThrowable(t, CancelTaskException.class).isPresent()) {
                             if (transitionState(current, ExecutionState.CANCELED, t)) {
                                 cancelInvokable(invokable);
                                 break;
@@ -869,6 +884,13 @@ public class Task
         }
     }
 
+
+
+
+
+
+
+
     /** Unwrap, enrich and handle fatal errors. */
     private Throwable preProcessException(Throwable t) {
         // unwrap wrapped exceptions to make stack traces more compact
@@ -899,6 +921,13 @@ public class Task
         return t;
     }
 
+
+    /**
+     * 启动任务
+     *
+     * @param finalInvokable
+     * @throws Exception
+     */
     private void restoreAndInvoke(TaskInvokable finalInvokable) throws Exception {
         try {
             // switch to the INITIALIZING state, if that fails, we have been canceled/failed in the
@@ -912,6 +941,8 @@ public class Task
             // make sure the user code classloader is accessible thread-locally
             executingThread.setContextClassLoader(userCodeClassLoader.asClassLoader());
 
+
+//            1 入口1：恢复
             runWithSystemExitMonitoring(finalInvokable::restore);
 
             if (!transitionState(ExecutionState.INITIALIZING, ExecutionState.RUNNING)) {
@@ -921,7 +952,9 @@ public class Task
             // notify everyone that we switched to running
             taskManagerActions.updateTaskExecutionState(new TaskExecutionState(executionId, ExecutionState.RUNNING));
 
+//            2 入口2：启动
             runWithSystemExitMonitoring(finalInvokable::invoke);
+
         } catch (Throwable throwable) {
             try {
                 runWithSystemExitMonitoring(() -> finalInvokable.cleanUp(throwable));
@@ -932,6 +965,12 @@ public class Task
         }
         runWithSystemExitMonitoring(() -> finalInvokable.cleanUp(null));
     }
+
+
+
+
+
+
 
     /**
      * Monitor user codes from exiting JVM covering user function invocation. This can be done in a
@@ -948,9 +987,11 @@ public class Task
         }
     }
 
+
+
+
     @VisibleForTesting
-    public static void setupPartitionsAndGates(
-            ResultPartitionWriter[] producedPartitions, InputGate[] inputGates) throws IOException {
+    public static void setupPartitionsAndGates(ResultPartitionWriter[] producedPartitions, InputGate[] inputGates) throws IOException {
 
         for (ResultPartitionWriter partition : producedPartitions) {
             partition.setup();
@@ -962,6 +1003,12 @@ public class Task
             gate.setup();
         }
     }
+
+
+
+
+
+
 
     /**
      * Releases resources before task exits. We should also fail the partition to release if the
@@ -1030,8 +1077,7 @@ public class Task
         long startDownloadTime = System.currentTimeMillis();
 
         // triggers the download of all missing jar files from the job manager
-        final UserCodeClassLoader userCodeClassLoader =
-                classLoaderHandle.getOrResolveClassLoader(requiredJarFiles, requiredClasspaths);
+        final UserCodeClassLoader userCodeClassLoader = classLoaderHandle.getOrResolveClassLoader(requiredJarFiles, requiredClasspaths);
 
         LOG.debug(
                 "Getting user code class loader for task {} at library cache manager took {} milliseconds",
@@ -1070,8 +1116,7 @@ public class Task
      * @param cause of the transition change or null
      * @return true if the transition was successful, otherwise false
      */
-    private boolean transitionState(
-            ExecutionState currentState, ExecutionState newState, Throwable cause) {
+    private boolean transitionState(ExecutionState currentState, ExecutionState newState, Throwable cause) {
         if (STATE_UPDATER.compareAndSet(this, currentState, newState)) {
             if (cause == null) {
                 LOG.info(
@@ -1310,16 +1355,17 @@ public class Task
     public void triggerCheckpointBarrier(
             final long checkpointID,
             final long checkpointTimestamp,
-            final CheckpointOptions checkpointOptions) {
+            final CheckpointOptions checkpointOptions
+    ) {
 
         final TaskInvokable invokable = this.invokable;
-        final CheckpointMetaData checkpointMetaData =
-                new CheckpointMetaData(
-                        checkpointID, checkpointTimestamp, System.currentTimeMillis());
+        final CheckpointMetaData checkpointMetaData = new CheckpointMetaData(checkpointID, checkpointTimestamp, System.currentTimeMillis());
 
         if (executionState == ExecutionState.RUNNING) {
             checkState(invokable instanceof CheckpointableTask, "invokable is not checkpointable");
+
             try {
+
                 ((CheckpointableTask) invokable)
                         .triggerCheckpointAsync(checkpointMetaData, checkpointOptions)
                         .handle(
@@ -1328,11 +1374,14 @@ public class Task
                                         declineCheckpoint(
                                                 checkpointID,
                                                 CheckpointFailureReason.TASK_FAILURE,
-                                                exception);
+                                                exception
+                                        );
                                         return false;
                                     }
                                     return true;
-                                });
+                                }
+                        );
+
             } catch (RejectedExecutionException ex) {
                 // This may happen if the mailbox is closed. It means that the task is shutting
                 // down, so we just ignore it.
@@ -1340,9 +1389,9 @@ public class Task
                         "Triggering checkpoint {} for {} ({}) was rejected by the mailbox",
                         checkpointID,
                         taskNameWithSubtask,
-                        executionId);
-                declineCheckpoint(
-                        checkpointID, CheckpointFailureReason.CHECKPOINT_DECLINED_TASK_CLOSING);
+                        executionId
+                );
+                declineCheckpoint(checkpointID, CheckpointFailureReason.CHECKPOINT_DECLINED_TASK_CLOSING);
             } catch (Throwable t) {
                 if (getExecutionState() == ExecutionState.RUNNING) {
                     failExternally(
@@ -1362,17 +1411,22 @@ public class Task
                             t);
                 }
             }
+
         } else {
             LOG.debug(
                     "Declining checkpoint request for non-running task {} ({}).",
                     taskNameWithSubtask,
-                    executionId);
+                    executionId
+            );
 
             // send back a message that we did not do the checkpoint
-            declineCheckpoint(
-                    checkpointID, CheckpointFailureReason.CHECKPOINT_DECLINED_TASK_NOT_READY);
+            declineCheckpoint(checkpointID, CheckpointFailureReason.CHECKPOINT_DECLINED_TASK_NOT_READY);
         }
     }
+
+
+
+
 
     private void declineCheckpoint(long checkpointID, CheckpointFailureReason failureReason) {
         declineCheckpoint(checkpointID, failureReason, null);
@@ -1381,7 +1435,8 @@ public class Task
     private void declineCheckpoint(
             long checkpointID,
             CheckpointFailureReason failureReason,
-            @Nullable Throwable failureCause) {
+            @Nullable Throwable failureCause
+    ) {
         checkpointResponder.declineCheckpoint(
                 jobId,
                 executionId,
@@ -1389,7 +1444,8 @@ public class Task
                 new CheckpointException(
                         "Task name with subtask : " + taskNameWithSubtask,
                         failureReason,
-                        failureCause));
+                        failureCause)
+        );
     }
 
     public void notifyCheckpointComplete(final long checkpointID) {
@@ -1595,6 +1651,7 @@ public class Task
         try {
             //noinspection ConstantConditions  --> cannot happen
             // 这里将跳转到具体的应用类构造方法进行实例化算子
+            // 这里会进行SourceStreamTask 和 OneInputStreamTask类的初始化操作
             return statelessCtor.newInstance(environment);
         } catch (InvocationTargetException e) {
             // directly forward exceptions from the eager initialization
@@ -1603,6 +1660,11 @@ public class Task
             throw new FlinkException("Could not instantiate the task's invokable class.", e);
         }
     }
+
+
+
+
+
 
     // ------------------------------------------------------------------------
     //  Task cancellation
