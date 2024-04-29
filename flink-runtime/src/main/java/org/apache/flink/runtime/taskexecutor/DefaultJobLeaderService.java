@@ -92,10 +92,10 @@ public class DefaultJobLeaderService implements JobLeaderService {
 
     public DefaultJobLeaderService(
             UnresolvedTaskManagerLocation location,
-            RetryingRegistrationConfiguration retryingRegistrationConfiguration) {
+            RetryingRegistrationConfiguration retryingRegistrationConfiguration
+    ) {
         this.ownLocation = Preconditions.checkNotNull(location);
-        this.retryingRegistrationConfiguration =
-                Preconditions.checkNotNull(retryingRegistrationConfiguration);
+        this.retryingRegistrationConfiguration = Preconditions.checkNotNull(retryingRegistrationConfiguration);
         this.taskManagerSession = UUID.randomUUID();
 
         // Has to be a concurrent hash map because tests might access this service

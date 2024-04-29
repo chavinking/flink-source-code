@@ -81,8 +81,7 @@ public class TaskExecutorStateChangelogStoragesManager {
         this.closed = false;
 
         // register a shutdown hook
-        this.shutdownHook =
-                ShutdownHookUtil.addShutdownHook(this::shutdown, getClass().getSimpleName(), LOG);
+        this.shutdownHook = ShutdownHookUtil.addShutdownHook(this::shutdown, getClass().getSimpleName(), LOG);
     }
 
     @Nullable

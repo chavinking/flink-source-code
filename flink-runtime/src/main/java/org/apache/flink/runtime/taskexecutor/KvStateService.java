@@ -162,8 +162,7 @@ public class KvStateService {
     public static KvStateService fromConfiguration(TaskManagerServicesConfiguration taskManagerServicesConfiguration) {
         KvStateRegistry kvStateRegistry = new KvStateRegistry();
 
-        QueryableStateConfiguration qsConfig =
-                taskManagerServicesConfiguration.getQueryableStateConfig();
+        QueryableStateConfiguration qsConfig = taskManagerServicesConfiguration.getQueryableStateConfig();
 
         KvStateClientProxy kvClientProxy = null;
         KvStateServer kvStateServer = null;

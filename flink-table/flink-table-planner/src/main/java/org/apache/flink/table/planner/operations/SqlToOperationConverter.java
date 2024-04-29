@@ -375,9 +375,7 @@ public class SqlToOperationConverter {
             return Optional.of(converter.convertCompileAndExecutePlan((SqlCompileAndExecutePlan) validated));
         } else if (validated.getKind().belongsTo(SqlKind.QUERY)) {
             // 查询语句转换入口
-            return Optional.of(
-                    converter.convertSqlQuery(validated)
-            );
+            return Optional.of(converter.convertSqlQuery(validated));
         } else if (validated instanceof SqlAnalyzeTable) {
             return Optional.of(converter.convertAnalyzeTable((SqlAnalyzeTable) validated));
         } else {
@@ -1509,6 +1507,7 @@ public class SqlToOperationConverter {
         // 转换为relational tree
         RelRoot relational = planner.rel(validated);
 
+        // 保存语法树以及对应的由SQL生成查询对应Schema信息
         return new PlannerQueryOperation(relational.project());
     }
 }

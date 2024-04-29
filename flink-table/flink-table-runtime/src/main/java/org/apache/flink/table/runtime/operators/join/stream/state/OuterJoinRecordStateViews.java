@@ -53,8 +53,7 @@ public final class OuterJoinRecordStateViews {
         StateTtlConfig ttlConfig = createTtlConfig(retentionTime);
         if (inputSideSpec.hasUniqueKey()) {
             if (inputSideSpec.joinKeyContainsUniqueKey()) {
-                return new OuterJoinRecordStateViews.JoinKeyContainsUniqueKey(
-                        ctx, stateName, recordType, ttlConfig);
+                return new OuterJoinRecordStateViews.JoinKeyContainsUniqueKey(ctx, stateName, recordType, ttlConfig);
             } else {
                 return new OuterJoinRecordStateViews.InputSideHasUniqueKey(
                         ctx,
@@ -85,8 +84,7 @@ public final class OuterJoinRecordStateViews {
                 StateTtlConfig ttlConfig) {
             TupleTypeInfo<Tuple2<RowData, Integer>> valueTypeInfo =
                     new TupleTypeInfo<>(recordType, Types.INT);
-            ValueStateDescriptor<Tuple2<RowData, Integer>> recordStateDesc =
-                    new ValueStateDescriptor<>(stateName, valueTypeInfo);
+            ValueStateDescriptor<Tuple2<RowData, Integer>> recordStateDesc = new ValueStateDescriptor<>(stateName, valueTypeInfo);
             if (ttlConfig.isEnabled()) {
                 recordStateDesc.enableTimeToLive(ttlConfig);
             }
@@ -152,13 +150,12 @@ public final class OuterJoinRecordStateViews {
                 InternalTypeInfo<RowData> recordType,
                 InternalTypeInfo<RowData> uniqueKeyType,
                 KeySelector<RowData, RowData> uniqueKeySelector,
-                StateTtlConfig ttlConfig) {
+                StateTtlConfig ttlConfig
+        ) {
             checkNotNull(uniqueKeyType);
             checkNotNull(uniqueKeySelector);
-            TupleTypeInfo<Tuple2<RowData, Integer>> valueTypeInfo =
-                    new TupleTypeInfo<>(recordType, Types.INT);
-            MapStateDescriptor<RowData, Tuple2<RowData, Integer>> recordStateDesc =
-                    new MapStateDescriptor<>(stateName, uniqueKeyType, valueTypeInfo);
+            TupleTypeInfo<Tuple2<RowData, Integer>> valueTypeInfo = new TupleTypeInfo<>(recordType, Types.INT);
+            MapStateDescriptor<RowData, Tuple2<RowData, Integer>> recordStateDesc = new MapStateDescriptor<>(stateName, uniqueKeyType, valueTypeInfo);
             if (ttlConfig.isEnabled()) {
                 recordStateDesc.enableTimeToLive(ttlConfig);
             }

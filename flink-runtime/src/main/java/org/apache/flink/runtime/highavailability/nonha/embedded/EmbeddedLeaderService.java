@@ -323,11 +323,13 @@ public class EmbeddedLeaderService {
             LeaderRetrievalListener listener) {
         return CompletableFuture.runAsync(
                 new NotifyOfLeaderCall(address, leaderSessionId, listener, LOG),
-                notificationExecutor);
+                notificationExecutor
+        );
     }
 
     private void addListener(
-            EmbeddedLeaderRetrievalService service, LeaderRetrievalListener listener) {
+            EmbeddedLeaderRetrievalService service, LeaderRetrievalListener listener
+    ) {
         synchronized (lock) {
             checkState(!shutdown, "leader election service is shut down");
             checkState(!service.running, "leader retrieval service is already started");

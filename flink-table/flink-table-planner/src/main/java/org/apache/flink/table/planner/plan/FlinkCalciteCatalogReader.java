@@ -67,17 +67,18 @@ public class FlinkCalciteCatalogReader extends CalciteCatalogReader {
             CalciteSchema rootSchema,
             List<List<String>> defaultSchemas,
             RelDataTypeFactory typeFactory,
-            CalciteConnectionConfig config) {
-
+            CalciteConnectionConfig config
+    ) {
         super(
                 rootSchema,
                 new FlinkSqlNameMatcher(
                         SqlNameMatchers.withCaseSensitive(config != null && config.caseSensitive()),
-                        typeFactory),
-                Stream.concat(defaultSchemas.stream(), Stream.of(Collections.<String>emptyList()))
-                        .collect(Collectors.toList()),
+                        typeFactory
+                ),
+                Stream.concat(defaultSchemas.stream(), Stream.of(Collections.<String>emptyList())).collect(Collectors.toList()),
                 typeFactory,
-                config);
+                config
+        );
     }
 
     @Override

@@ -404,6 +404,7 @@ public class ResourceManagerServiceImpl implements ResourceManagerService, Leade
                         webInterfaceUrl,
                         metricRegistry,
                         hostname,
-                        ioExecutor));
+                        ioExecutor)
+        );
     }
 }

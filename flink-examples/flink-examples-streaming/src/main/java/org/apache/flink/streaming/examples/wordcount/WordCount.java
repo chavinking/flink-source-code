@@ -72,56 +72,22 @@ public class WordCount {
     public static void main(String[] args) throws Exception {
         final CLI params = CLI.fromArgs(args);
 
-        // Create the execution environment. This is the main entrypoint
-        // to building a Flink application.
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // Apache Flink’s unified approach to stream and batch processing means that a DataStream
-        // application executed over bounded input will produce the same final results regardless
-        // of the configured execution mode. It is important to note what final means here: a job
-        // executing in STREAMING mode might produce incremental updates (think upserts in
-        // a database) while in BATCH mode, it would only produce one final result at the end. The
-        // final result will be the same if interpreted correctly, but getting there can be
-        // different.
-        //
-        // The “classic” execution behavior of the DataStream API is called STREAMING execution
-        // mode. Applications should use streaming execution for unbounded jobs that require
-        // continuous incremental processing and are expected to stay online indefinitely.
-        //
-        // By enabling BATCH execution, we allow Flink to apply additional optimizations that we
-        // can only do when we know that our input is bounded. For example, different
-        // join/aggregation strategies can be used, in addition to a different shuffle
-        // implementation that allows more efficient task scheduling and failure recovery behavior.
-        //
-        // By setting the runtime mode to AUTOMATIC, Flink will choose BATCH if all sources
-        // are bounded and otherwise STREAMING.
         env.setRuntimeMode(params.getExecutionMode());
-
-        // This optional step makes the input parameters
-        // available in the Flink UI.
         env.getConfig().setGlobalJobParameters(params);
 
         DataStream<String> text;
         if (params.getInputs().isPresent()) {
-            // Create a new file source that will read files from a given set of directories.
-            // Each file will be processed as plain text and split based on newlines.
-            FileSource.FileSourceBuilder<String> builder =
-                    FileSource.forRecordStreamFormat(
-                            new TextLineInputFormat(), params.getInputs().get());
-
-            // If a discovery interval is provided, the source will
-            // continuously watch the given directories for new files.
+            FileSource.FileSourceBuilder<String> builder = FileSource.forRecordStreamFormat(new TextLineInputFormat(), params.getInputs().get());
             params.getDiscoveryInterval().ifPresent(builder::monitorContinuously);
-
             text = env.fromSource(builder.build(), WatermarkStrategy.noWatermarks(), "file-input");
         } else {
             text = env.fromElements(WordCountData.WORDS).name("in-memory-input");
         }
 
+
         DataStream<Tuple2<String, Integer>> counts =
-                // The text lines read from the source are split into words
-                // using a user-defined function. The tokenizer, implemented below,
-                // will output each word as a (2-tuple) containing (word, 1)
                 text.flatMap(new Tokenizer())
                         .name("tokenizer")
                         // keyBy groups tuples based on the "0" field, the word.
@@ -156,6 +122,7 @@ public class WordCount {
 
         // Apache Flink applications are composed lazily. Calling execute
         // submits the Job and begins processing.
+        env.execute();
         env.execute("WordCount");
     }
 

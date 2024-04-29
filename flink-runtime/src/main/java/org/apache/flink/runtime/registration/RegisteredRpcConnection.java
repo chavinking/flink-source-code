@@ -92,16 +92,14 @@ public abstract class RegisteredRpcConnection<
         this.executor = checkNotNull(executor);
     }
 
+
     // ------------------------------------------------------------------------
     //  Life cycle
     // ------------------------------------------------------------------------
-
-    // 开启tm到rm的连接服务
+    // 开启jm到rm的连接服务
     public void start() {
         checkState(!closed, "The RPC connection is already closed");
-        checkState(
-                !isConnected() && pendingRegistration == null,
-                "The RPC connection is already started");
+        checkState(!isConnected() && pendingRegistration == null, "The RPC connection is already started");
 
 //        1 创建新的rpc连接
         final RetryingRegistration<F, G, S, R> newRegistration = createNewRegistration();
@@ -114,6 +112,9 @@ public abstract class RegisteredRpcConnection<
             newRegistration.cancel();
         }
     }
+
+
+
 
     /**
      * Tries to reconnect to the {@link #targetAddress} by cancelling the pending registration and
@@ -248,7 +249,9 @@ public abstract class RegisteredRpcConnection<
      * @return
      */
     private RetryingRegistration<F, G, S, R> createNewRegistration() {
+
         RetryingRegistration<F, G, S, R> newRegistration = checkNotNull(generateRegistration());
+
 
         CompletableFuture<RetryingRegistration.RetryingRegistrationResult<G, S, R>> future = newRegistration.getFuture();
 
@@ -271,13 +274,12 @@ public abstract class RegisteredRpcConnection<
                     } else {
                         if (result.isSuccess()) {
                             targetGateway = result.getGateway();
+                            // 注册成功后走的流程
                             onRegistrationSuccess(result.getSuccess());
                         } else if (result.isRejection()) {
                             onRegistrationRejection(result.getRejection());
                         } else {
-                            throw new IllegalArgumentException(
-                                    String.format(
-                                            "Unknown retrying registration response: %s.", result));
+                            throw new IllegalArgumentException(String.format("Unknown retrying registration response: %s.", result));
                         }
                     }
                 },

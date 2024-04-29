@@ -38,8 +38,7 @@ public abstract class FlinkUserCodeClassLoader extends MutableURLClassLoader {
         this(urls, parent, NOOP_EXCEPTION_HANDLER);
     }
 
-    protected FlinkUserCodeClassLoader(
-            URL[] urls, ClassLoader parent, Consumer<Throwable> classLoadingExceptionHandler) {
+    protected FlinkUserCodeClassLoader(URL[] urls, ClassLoader parent, Consumer<Throwable> classLoadingExceptionHandler) {
         super(urls, parent);
         this.classLoadingExceptionHandler = classLoadingExceptionHandler;
     }

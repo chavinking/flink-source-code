@@ -172,7 +172,8 @@ public class ActiveResourceManager<WorkerType extends ResourceIDRetrievable>
                     this,
                     new GatewayMainThreadExecutor(),
                     ioExecutor,
-                    blocklistHandler::getAllBlockedNodeIds);
+                    blocklistHandler::getAllBlockedNodeIds
+            );
         } catch (Exception e) {
             throw new ResourceManagerException("Cannot initialize resource provider.", e);
         }
@@ -300,9 +301,7 @@ public class ActiveResourceManager<WorkerType extends ResourceIDRetrievable>
     // ------------------------------------------------------------------------
 
     private void requestNewWorker(WorkerResourceSpec workerResourceSpec) {
-        final TaskExecutorProcessSpec taskExecutorProcessSpec =
-                TaskExecutorProcessUtils.processSpecFromWorkerResourceSpec(
-                        flinkConfig, workerResourceSpec);
+        final TaskExecutorProcessSpec taskExecutorProcessSpec = TaskExecutorProcessUtils.processSpecFromWorkerResourceSpec(flinkConfig, workerResourceSpec);
         final int pendingCount = pendingWorkerCounter.increaseAndGet(workerResourceSpec);
 
         log.info(
@@ -314,15 +313,14 @@ public class ActiveResourceManager<WorkerType extends ResourceIDRetrievable>
         // trying to start new workers.
         // Otherwise, ActiveResourceManager will always re-requesting the worker,
         // which keeps the main thread busy.
-        final CompletableFuture<WorkerType> requestResourceFuture =
-                startWorkerCoolDown.thenCompose(
-                        (ignore) -> resourceManagerDriver.requestResource(taskExecutorProcessSpec));
+        final CompletableFuture<WorkerType> requestResourceFuture = startWorkerCoolDown.thenCompose(
+                (ignore) -> resourceManagerDriver.requestResource(taskExecutorProcessSpec)
+        );
         FutureUtils.assertNoException(
                 requestResourceFuture.handle(
                         (worker, exception) -> {
                             if (exception != null) {
-                                final int count =
-                                        pendingWorkerCounter.decreaseAndGet(workerResourceSpec);
+                                final int count = pendingWorkerCounter.decreaseAndGet(workerResourceSpec);
                                 log.warn(
                                         "Failed requesting worker with resource spec {}, current pending count: {}",
                                         workerResourceSpec,
@@ -333,8 +331,7 @@ public class ActiveResourceManager<WorkerType extends ResourceIDRetrievable>
                             } else {
                                 final ResourceID resourceId = worker.getResourceID();
                                 workerNodeMap.put(resourceId, worker);
-                                currentAttemptUnregisteredWorkers.put(
-                                        resourceId, workerResourceSpec);
+                                currentAttemptUnregisteredWorkers.put(resourceId, workerResourceSpec);
                                 scheduleWorkerRegistrationTimeoutCheck(resourceId);
                                 log.info(
                                         "Requested worker {} with resource spec {}.",
@@ -386,8 +383,7 @@ public class ActiveResourceManager<WorkerType extends ResourceIDRetrievable>
             return false;
         }
 
-        WorkerResourceSpec workerResourceSpec =
-                currentAttemptUnregisteredWorkers.remove(resourceId);
+        WorkerResourceSpec workerResourceSpec = currentAttemptUnregisteredWorkers.remove(resourceId);
         tryRemovePreviousPendingRecoveryTaskManager(resourceId);
         if (workerResourceSpec != null) {
             final int count = pendingWorkerCounter.decreaseAndGet(workerResourceSpec);

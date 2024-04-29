@@ -63,8 +63,7 @@ class CheckpointRequestDecider {
     private final long minPauseBetweenCheckpoints;
     private final IntSupplier pendingCheckpointsSizeSupplier;
     private final IntSupplier numberOfCleaningCheckpointsSupplier;
-    private final NavigableSet<CheckpointTriggerRequest> queuedRequests =
-            new TreeSet<>(checkpointTriggerRequestsComparator());
+    private final NavigableSet<CheckpointTriggerRequest> queuedRequests = new TreeSet<>(checkpointTriggerRequestsComparator());
     private final int maxQueuedRequests;
 
     CheckpointRequestDecider(
@@ -172,8 +171,7 @@ class CheckpointRequestDecider {
             if (nextTriggerDelayMillis > 0) {
                 queuedRequests
                         .pollFirst()
-                        .completeExceptionally(
-                                new CheckpointException(MINIMUM_TIME_BETWEEN_CHECKPOINTS));
+                        .completeExceptionally(new CheckpointException(MINIMUM_TIME_BETWEEN_CHECKPOINTS));
                 rescheduleTrigger.accept(nextTriggerDelayMillis);
                 return Optional.empty();
             }

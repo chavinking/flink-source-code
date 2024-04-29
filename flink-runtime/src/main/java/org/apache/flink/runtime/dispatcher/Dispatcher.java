@@ -256,8 +256,7 @@ public abstract class Dispatcher extends FencedRpcEndpoint<DispatcherId>
                 dispatcherServices.getIoExecutor()
         );
 
-        this.dispatcherCachedOperationsHandler =
-                new DispatcherCachedOperationsHandler(
+        this.dispatcherCachedOperationsHandler = new DispatcherCachedOperationsHandler(
                         dispatcherServices.getOperationCaches(),
                         this::triggerSavepointAndGetLocation,
                         this::stopWithSavepointAndGetLocation
@@ -926,8 +925,7 @@ public abstract class Dispatcher extends FencedRpcEndpoint<DispatcherId>
 
     @Override
     public CompletableFuture<String> triggerCheckpoint(JobID jobID, Time timeout) {
-        return performOperationOnJobMasterGateway(
-                jobID, gateway -> gateway.triggerCheckpoint(timeout));
+        return performOperationOnJobMasterGateway(jobID, gateway -> gateway.triggerCheckpoint(timeout));
     }
 
     @Override
@@ -950,8 +948,7 @@ public abstract class Dispatcher extends FencedRpcEndpoint<DispatcherId>
             Time timeout) {
         return performOperationOnJobMasterGateway(
                 jobId,
-                gateway ->
-                        gateway.triggerSavepoint(
+                gateway -> gateway.triggerSavepoint(
                                 targetDirectory,
                                 savepointMode.isTerminalMode(),
                                 formatType,

@@ -1190,7 +1190,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
                     try {
                         boolean noUnfinishedInputGates = Arrays.stream(getEnvironment().getAllInputGates()).allMatch(InputGate::isFinished);
 
-                        if (noUnfinishedInputGates) { // 无未完成输入
+                        if (noUnfinishedInputGates) { // 无未完成输入，执行CK
                             result.complete(
                                     // 分支1
                                     triggerCheckpointAsyncInMailbox(checkpointMetaData, checkpointOptions)
@@ -1244,6 +1244,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
             boolean success = performCheckpoint(checkpointMetaData, checkpointOptions, checkpointMetrics);
 
 
+
             if (!success) {
                 declineCheckpoint(checkpointMetaData.getCheckpointId());
             }
@@ -1287,8 +1288,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
                 "CheckpointBarrier should exist for tasks with network inputs."
         );
 
-        CheckpointBarrier barrier =
-                new CheckpointBarrier(
+        CheckpointBarrier barrier = new CheckpointBarrier(
                         checkpointMetaData.getCheckpointId(),
                         checkpointMetaData.getTimestamp(),
                         checkpointOptions
@@ -1415,8 +1415,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
                         // we cannot broadcast the cancellation markers on the 'operator chain',
                         // because it may not
                         // yet be created
-                        final CancelCheckpointMarker message =
-                                new CancelCheckpointMarker(checkpointMetaData.getCheckpointId());
+                        final CancelCheckpointMarker message = new CancelCheckpointMarker(checkpointMetaData.getCheckpointId());
                         recordWriter.broadcastEvent(message);
                     });
 

@@ -47,8 +47,8 @@ public class DefaultDialectFactory implements DialectFactory {
     public Parser create(Context context) {
         return new ParserImpl(
                 context.getCatalogManager(),
-                context.getPlannerContext()::createFlinkPlanner,
-                context.getPlannerContext()::createCalciteParser,
+                context.getPlannerContext()::createFlinkPlanner, // 计划器
+                context.getPlannerContext()::createCalciteParser, // calcite解析器
                 context.getPlannerContext().getRexFactory()
         );
     }

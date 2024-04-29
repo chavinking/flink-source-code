@@ -61,8 +61,7 @@ public interface DialectFactory extends Factory {
         private final PlannerContext plannerContext;
         private final Executor executor;
 
-        public DefaultParserContext(
-                CatalogManager catalogManager, PlannerContext plannerContext, Executor executor) {
+        public DefaultParserContext(CatalogManager catalogManager, PlannerContext plannerContext, Executor executor) {
             this.catalogManager = catalogManager;
             this.plannerContext = plannerContext;
             this.executor = executor;

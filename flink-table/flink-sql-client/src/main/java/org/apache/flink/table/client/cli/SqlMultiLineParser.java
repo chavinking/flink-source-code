@@ -104,6 +104,7 @@ class SqlMultiLineParser extends DefaultParser {
                 parsedLine.rawWordLength());
     }
 
+
     /**
      * Gets operation parsed from current command read by LineReader. If the command read is
      * invalid, throw the exception from parser so that we can print details of the exception in

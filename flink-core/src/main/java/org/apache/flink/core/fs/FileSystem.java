@@ -316,8 +316,7 @@ public abstract class FileSystem {
      * @param pluginManager optional plugin manager that is used to initialized filesystems provided
      *     as plugins.
      */
-    public static void initialize(Configuration config, @Nullable PluginManager pluginManager)
-            throws IllegalConfigurationException {
+    public static void initialize(Configuration config, @Nullable PluginManager pluginManager) throws IllegalConfigurationException {
 
         LOCK.lock();
         try {
@@ -330,22 +329,19 @@ public abstract class FileSystem {
 
             if (pluginManager != null) {
                 factorySuppliers.add(
-                        () ->
-                                Iterators.transform(
+                        () -> Iterators.transform(
                                         pluginManager.load(FileSystemFactory.class),
                                         PluginFileSystemFactory::of));
             }
 
-            final List<FileSystemFactory> fileSystemFactories =
-                    loadFileSystemFactories(factorySuppliers);
+            final List<FileSystemFactory> fileSystemFactories = loadFileSystemFactories(factorySuppliers);
 
             // configure all file system factories
             for (FileSystemFactory factory : fileSystemFactories) {
                 factory.configure(config);
                 String scheme = factory.getScheme();
 
-                FileSystemFactory fsf =
-                        ConnectionLimitingFactory.decorateIfLimited(factory, scheme, config);
+                FileSystemFactory fsf = ConnectionLimitingFactory.decorateIfLimited(factory, scheme, config);
                 FS_FACTORIES.put(scheme, fsf);
             }
 
@@ -353,8 +349,7 @@ public abstract class FileSystem {
             FALLBACK_FACTORY.configure(config);
 
             // also read the default file system scheme
-            final String stringifiedUri =
-                    config.getString(CoreOptions.DEFAULT_FILESYSTEM_SCHEME, null);
+            final String stringifiedUri = config.getString(CoreOptions.DEFAULT_FILESYSTEM_SCHEME, null);
             if (stringifiedUri == null) {
                 defaultScheme = null;
             } else {
@@ -381,6 +376,8 @@ public abstract class FileSystem {
             LOCK.unlock();
         }
     }
+
+
 
     // ------------------------------------------------------------------------
     //  Obtaining File System Instances
@@ -1056,8 +1053,7 @@ public abstract class FileSystem {
      *
      * @return A map from the file system scheme to corresponding file system factory.
      */
-    private static List<FileSystemFactory> loadFileSystemFactories(
-            Collection<Supplier<Iterator<FileSystemFactory>>> factoryIteratorsSuppliers) {
+    private static List<FileSystemFactory> loadFileSystemFactories(Collection<Supplier<Iterator<FileSystemFactory>>> factoryIteratorsSuppliers) {
 
         final ArrayList<FileSystemFactory> list = new ArrayList<>();
 
@@ -1066,8 +1062,7 @@ public abstract class FileSystem {
 
         LOG.debug("Loading extension file systems via services");
 
-        for (Supplier<Iterator<FileSystemFactory>> factoryIteratorsSupplier :
-                factoryIteratorsSuppliers) {
+        for (Supplier<Iterator<FileSystemFactory>> factoryIteratorsSupplier : factoryIteratorsSuppliers) {
             try {
                 addAllFactoriesToList(factoryIteratorsSupplier.get(), list);
             } catch (Throwable t) {

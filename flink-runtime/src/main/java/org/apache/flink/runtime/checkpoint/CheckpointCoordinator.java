@@ -324,6 +324,8 @@ public class CheckpointCoordinator {
         this.timer = timer;
         this.checkpointProperties = CheckpointProperties.forCheckpoint(chkConfig.getCheckpointRetentionPolicy());
 
+
+
         try {
             this.checkpointStorageView = checkpointStorage.createCheckpointStorage(job);
             if (isPeriodicCheckpointingConfigured()) {
@@ -343,14 +345,19 @@ public class CheckpointCoordinator {
         }
 
 
+
+
         this.requestDecider = new CheckpointRequestDecider(
                         chkConfig.getMaxConcurrentCheckpoints(),
-                        this::rescheduleTrigger,
+                        this::rescheduleTrigger, // 核心代码入口
                         this.clock,
                         this.minPauseBetweenCheckpoints,
                         this.pendingCheckpoints::size,
                         this.checkpointsCleaner::getNumberOfCheckpointsToClean
                 );
+
+
+
 
         this.statsTracker = checkNotNull(statsTracker, "Statistic tracker can not be null");
         this.vertexFinishedStateCheckerFactory = checkNotNull(vertexFinishedStateCheckerFactory);
@@ -527,9 +534,13 @@ public class CheckpointCoordinator {
             boolean isPeriodic
     ) {
         CheckpointTriggerRequest request = new CheckpointTriggerRequest(props, externalSavepointLocation, isPeriodic);
+        // 核心代码
         chooseRequestToExecute(request).ifPresent(this::startTriggeringCheckpoint);
         return request.onCompletionPromise;
     }
+
+
+
 
 
 
@@ -544,14 +555,15 @@ public class CheckpointCoordinator {
             // we will actually trigger this checkpoint!
             Preconditions.checkState(!isTriggering);
             isTriggering = true;
-
             final long timestamp = System.currentTimeMillis();
 
+
+            // 1 计算ck计划
             CompletableFuture<CheckpointPlan> checkpointPlanFuture = checkpointPlanCalculator.calculateCheckpointPlan();
+
 
             boolean initializeBaseLocations = !baseLocationsForCheckpointInitialized;
             baseLocationsForCheckpointInitialized = true;
-
             CompletableFuture<Void> masterTriggerCompletionPromise = new CompletableFuture<>();
 
 
@@ -564,6 +576,7 @@ public class CheckpointCoordinator {
                                             // because it communicates with external services
                                             // (in HA mode) and may block for a while.
                                             long checkpointID = checkpointIdCounter.getAndIncrement();
+                                            // 为本次ck配置ck_id
                                             return new Tuple2<>(plan, checkpointID);
                                         } catch (Throwable e) {
                                             throw new CompletionException(e);
@@ -572,6 +585,7 @@ public class CheckpointCoordinator {
                                     executor
                             )
                             .thenApplyAsync(
+                                    // 2 创建 pendingCheckpoint
                                     (checkpointInfo) -> createPendingCheckpoint(
                                                     timestamp,
                                                     request.props,
@@ -589,6 +603,7 @@ public class CheckpointCoordinator {
                             .thenApplyAsync(
                                     pendingCheckpoint -> {
                                         try {
+                                            // 3 为 pendingCheckpoint 设置CK目录
                                             CheckpointStorageLocation checkpointStorageLocation = initializeCheckpointLocation(
                                                             pendingCheckpoint.getCheckpointID(),
                                                             request.props,
@@ -611,11 +626,12 @@ public class CheckpointCoordinator {
                                             return null;
                                         }
                                         synchronized (lock) {
+                                            // 为 pendingCheckpoint 设置ck路径
                                             pendingCheckpoint.setCheckpointTargetLocation(checkpointInfo.f1);
                                         }
 
-                                        return OperatorCoordinatorCheckpoints
-                                                .triggerAndAcknowledgeAllCoordinatorCheckpointsWithCompletion(
+                                        // 4 触发并确认所有协调器检查点完成
+                                        return OperatorCoordinatorCheckpoints.triggerAndAcknowledgeAllCoordinatorCheckpointsWithCompletion(
                                                         coordinatorsToCheckpoint,
                                                         pendingCheckpoint,
                                                         timer
@@ -649,6 +665,7 @@ public class CheckpointCoordinator {
                             timer
                     );
 
+
             FutureUtils.forward(
                     CompletableFuture.allOf(masterStatesComplete, coordinatorCheckpointsComplete),
                     masterTriggerCompletionPromise
@@ -675,7 +692,7 @@ public class CheckpointCoordinator {
                                             }
                                         } else {
 
-                                            // 如果没有异常 出发检查点请求
+                                            // 6 如果没有异常 触发检查点请求
                                             triggerCheckpointRequest(request, timestamp, checkpoint);
                                         }
                                         return null;
@@ -703,6 +720,13 @@ public class CheckpointCoordinator {
 
 
 
+
+
+
+
+
+
+
     private void triggerCheckpointRequest(
             CheckpointTriggerRequest request,
             long timestamp,
@@ -714,7 +738,7 @@ public class CheckpointCoordinator {
                     new CheckpointException(CheckpointFailureReason.TRIGGER_CHECKPOINT_FAILURE, checkpoint.getFailureCause())
             );
         } else {
-            triggerTasks(request, timestamp, checkpoint)
+            triggerTasks(request, timestamp, checkpoint) // 重点方法
                     .exceptionally(
                             failure -> {
                                 LOG.info(
@@ -772,8 +796,7 @@ public class CheckpointCoordinator {
             type = request.props.getCheckpointType();
         }
 
-        final CheckpointOptions checkpointOptions =
-                CheckpointOptions.forConfig(
+        final CheckpointOptions checkpointOptions = CheckpointOptions.forConfig(
                         type,
                         checkpoint.getCheckpointStorageLocation().getLocationReference(),
                         isExactlyOnceMode,
@@ -785,13 +808,9 @@ public class CheckpointCoordinator {
         List<CompletableFuture<Acknowledge>> acks = new ArrayList<>();
         for (Execution execution : checkpoint.getCheckpointPlan().getTasksToTrigger()) {
             if (request.props.isSynchronous()) {
-                acks.add(
-                        execution.triggerSynchronousSavepoint(checkpointId, timestamp, checkpointOptions)
-                );
+                acks.add(execution.triggerSynchronousSavepoint(checkpointId, timestamp, checkpointOptions));
             } else {
-                acks.add(
-                        execution.triggerCheckpoint(checkpointId, timestamp, checkpointOptions)
-                );
+                acks.add(execution.triggerCheckpoint(checkpointId, timestamp, checkpointOptions));
             }
         }
 
@@ -816,19 +835,16 @@ public class CheckpointCoordinator {
             long checkpointID,
             CheckpointProperties props,
             @Nullable String externalSavepointLocation,
-            boolean initializeBaseLocations)
-            throws Exception {
+            boolean initializeBaseLocations
+    ) throws Exception {
         final CheckpointStorageLocation checkpointStorageLocation;
         if (props.isSavepoint()) {
-            checkpointStorageLocation =
-                    checkpointStorageView.initializeLocationForSavepoint(
-                            checkpointID, externalSavepointLocation);
+            checkpointStorageLocation = checkpointStorageView.initializeLocationForSavepoint(checkpointID, externalSavepointLocation);
         } else {
             if (initializeBaseLocations) {
                 checkpointStorageView.initializeBaseLocationsForCheckpoint();
             }
-            checkpointStorageLocation =
-                    checkpointStorageView.initializeLocationForCheckpoint(checkpointID);
+            checkpointStorageLocation = checkpointStorageView.initializeLocationForCheckpoint(checkpointID);
         }
 
         return checkpointStorageLocation;
@@ -2316,7 +2332,9 @@ public class CheckpointCoordinator {
                 execution ->
                         pendingCheckpointStats.reportSubtaskStats(
                                 execution.getVertex().getJobvertexId(),
-                                new SubtaskStateStats(execution.getParallelSubtaskIndex(), now)));
+                                new SubtaskStateStats(execution.getParallelSubtaskIndex(), now)
+                        )
+        );
     }
 
     @Nullable

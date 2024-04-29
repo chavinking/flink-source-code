@@ -89,7 +89,8 @@ class ContainerRequestReflector {
     }
 
     public AMRMClient.ContainerRequest getContainerRequest(
-            Resource containerResource, Priority priority, String nodeLabel) {
+            Resource containerResource, Priority priority, String nodeLabel
+    ) {
         if (StringUtils.isNullOrWhitespaceOnly(nodeLabel) || defaultConstructor == null) {
             return new AMRMClient.ContainerRequest(containerResource, null, null, priority);
         }
@@ -99,8 +100,7 @@ class ContainerRequestReflector {
              * Set the param of relaxLocality to true, which tells the Yarn ResourceManager if the
              * application wants locality to be loose (i.e. allows fall-through to rack or any)
              */
-            return defaultConstructor.newInstance(
-                    containerResource, null, null, priority, true, nodeLabel);
+            return defaultConstructor.newInstance(containerResource, null, null, priority, true, nodeLabel);
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
             LOG.warn("Errors on creating Container Request.", e);
         }

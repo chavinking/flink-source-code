@@ -165,7 +165,8 @@ public abstract class AbstractDispatcherLeaderProcess implements DispatcherLeade
     }
 
     private void completeDispatcherSetupInternal(
-            DispatcherGatewayService createdDispatcherService) {
+            DispatcherGatewayService createdDispatcherService
+    ) {
         Preconditions.checkState(dispatcherService == null, "The DispatcherGatewayService can only be set once.");
         dispatcherService = createdDispatcherService;
         dispatcherGatewayFuture.complete(createdDispatcherService.getGateway());
@@ -176,7 +177,8 @@ public abstract class AbstractDispatcherLeaderProcess implements DispatcherLeade
     }
 
     private void handleUnexpectedDispatcherServiceTermination(
-            DispatcherGatewayService createdDispatcherService) {
+            DispatcherGatewayService createdDispatcherService
+    ) {
         createdDispatcherService
                 .getTerminationFuture()
                 .whenComplete(

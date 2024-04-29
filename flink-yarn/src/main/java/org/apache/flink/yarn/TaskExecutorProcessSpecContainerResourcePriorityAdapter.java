@@ -62,10 +62,10 @@ public class TaskExecutorProcessSpecContainerResourcePriorityAdapter {
     }
 
     Optional<PriorityAndResource> getPriorityAndResource(
-            final TaskExecutorProcessSpec taskExecutorProcessSpec) {
+            final TaskExecutorProcessSpec taskExecutorProcessSpec
+    ) {
         tryAdaptAndAddTaskExecutorResourceSpecIfNotExist(taskExecutorProcessSpec);
-        return Optional.ofNullable(
-                taskExecutorProcessSpecToPriorityAndResource.get(taskExecutorProcessSpec));
+        return Optional.ofNullable(taskExecutorProcessSpecToPriorityAndResource.get(taskExecutorProcessSpec));
     }
 
     Optional<TaskExecutorProcessSpecAndResource> getTaskExecutorProcessSpecAndResource(
@@ -101,7 +101,8 @@ public class TaskExecutorProcessSpecContainerResourcePriorityAdapter {
     }
 
     private void tryAdaptAndAddTaskExecutorResourceSpecIfNotExist(
-            final TaskExecutorProcessSpec taskExecutorProcessSpec) {
+            final TaskExecutorProcessSpec taskExecutorProcessSpec
+    ) {
         if (!taskExecutorProcessSpecToPriorityAndResource.containsKey(taskExecutorProcessSpec)) {
             tryAdaptResource(taskExecutorProcessSpec)
                     .ifPresent(

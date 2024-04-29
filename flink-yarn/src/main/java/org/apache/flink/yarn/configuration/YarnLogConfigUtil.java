@@ -41,8 +41,7 @@ public class YarnLogConfigUtil {
     public static final String CONFIG_FILE_LOG4J_NAME = "log4j.properties";
 
     @VisibleForTesting
-    public static Configuration setLogConfigFileInConfig(
-            final Configuration configuration, final String configurationDirectory) {
+    public static Configuration setLogConfigFileInConfig(final Configuration configuration, final String configurationDirectory) {
 
         if (configuration.get(YarnConfigOptionsInternal.APPLICATION_LOG_CONFIG_FILE) != null) {
             return configuration;

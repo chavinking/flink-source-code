@@ -39,8 +39,7 @@ public class StandaloneLeaderElectionService implements LeaderElectionService {
     public void start(LeaderContender newContender) throws Exception {
         if (contender != null) {
             // Service was already started
-            throw new IllegalArgumentException(
-                    "Leader election service cannot be started multiple times.");
+            throw new IllegalArgumentException("Leader election service cannot be started multiple times.");
         }
 
         contender = Preconditions.checkNotNull(newContender);

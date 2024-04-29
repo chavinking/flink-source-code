@@ -90,7 +90,8 @@ public final class CatalogManager {
             String defaultCatalogName,
             Catalog defaultCatalog,
             DataTypeFactory typeFactory,
-            ManagedTableListener managedTableListener) {
+            ManagedTableListener managedTableListener
+    ) {
         checkArgument(
                 !StringUtils.isNullOrWhitespaceOnly(defaultCatalogName),
                 "Default catalog name cannot be null or empty");
@@ -177,9 +178,10 @@ public final class CatalogManager {
      * @see TableEnvironmentImpl#create(EnvironmentSettings)
      */
     public void initSchemaResolver(
-            boolean isStreamingMode, ExpressionResolverBuilder expressionResolverBuilder) {
-        this.schemaResolver =
-                new DefaultSchemaResolver(isStreamingMode, typeFactory, expressionResolverBuilder);
+            boolean isStreamingMode,
+            ExpressionResolverBuilder expressionResolverBuilder
+    ) {
+        this.schemaResolver = new DefaultSchemaResolver(isStreamingMode, typeFactory, expressionResolverBuilder);
     }
 
     /** Returns a {@link SchemaResolver} for creating {@link ResolvedSchema} from {@link Schema}. */

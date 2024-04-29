@@ -54,7 +54,8 @@ public class PluginConfig {
     public static PluginConfig fromConfiguration(Configuration configuration) {
         return new PluginConfig(
                 getPluginsDir().map(File::toPath),
-                CoreOptions.getPluginParentFirstLoaderPatterns(configuration));
+                CoreOptions.getPluginParentFirstLoaderPatterns(configuration)
+        );
     }
 
     public static Optional<File> getPluginsDir() {

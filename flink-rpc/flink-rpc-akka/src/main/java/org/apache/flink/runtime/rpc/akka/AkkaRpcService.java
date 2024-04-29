@@ -203,8 +203,7 @@ public class AkkaRpcService implements RpcService {
 
     // this method does not mutate state and is thus thread-safe
     @Override
-    public <C extends RpcGateway> CompletableFuture<C> connect(
-            final String address, final Class<C> clazz) {
+    public <C extends RpcGateway> CompletableFuture<C> connect(final String address, final Class<C> clazz) {
 
         return connectInternal(
                 address,

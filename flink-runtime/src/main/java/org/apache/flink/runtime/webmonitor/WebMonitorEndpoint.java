@@ -231,8 +231,7 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
 
         this.executionGraphCache = executionGraphCache;
 
-        this.checkpointStatsCache =
-                new CheckpointStatsCache(restConfiguration.getMaxCheckpointStatisticCacheEntries());
+        this.checkpointStatsCache = new CheckpointStatsCache(restConfiguration.getMaxCheckpointStatisticCacheEntries());
 
         this.metricFetcher = metricFetcher;
 

@@ -56,25 +56,24 @@ public class DefaultContext {
     public DefaultContext(
             List<URL> dependencies,
             Configuration flinkConfig,
-            List<CustomCommandLine> commandLines) {
+            List<CustomCommandLine> commandLines
+    ) {
         this.dependencies = dependencies;
         this.flinkConfig = flinkConfig;
         Options commandLineOptions = collectCommandLineOptions(commandLines);
 
         // initialize default file system
-        FileSystem.initialize(
-                flinkConfig, PluginUtils.createPluginManagerFromRootFolder(flinkConfig));
+        FileSystem.initialize(flinkConfig, PluginUtils.createPluginManagerFromRootFolder(flinkConfig));
 
         try {
-            CommandLine deploymentCommandLine =
-                    CliFrontendParser.parse(commandLineOptions, new String[] {}, true);
-            flinkConfig.addAll(
-                    createExecutionConfig(
-                            deploymentCommandLine, commandLineOptions, commandLines, dependencies));
+            CommandLine deploymentCommandLine = CliFrontendParser.parse(commandLineOptions, new String[] {}, true);
+            flinkConfig.addAll(createExecutionConfig(deploymentCommandLine, commandLineOptions, commandLines, dependencies));
         } catch (Exception e) {
             throw new SqlExecutionException("Could not load available CLI.", e);
         }
     }
+
+
 
     public Configuration getFlinkConfig() {
         return flinkConfig;
@@ -90,16 +89,15 @@ public class DefaultContext {
             customCommandLine.addGeneralOptions(customOptions);
             customCommandLine.addRunOptions(customOptions);
         }
-        return CliFrontendParser.mergeOptions(
-                CliFrontendParser.getRunCommandOptions(), customOptions);
+        return CliFrontendParser.mergeOptions(CliFrontendParser.getRunCommandOptions(), customOptions);
     }
 
     private static Configuration createExecutionConfig(
             CommandLine commandLine,
             Options commandLineOptions,
             List<CustomCommandLine> availableCommandLines,
-            List<URL> dependencies)
-            throws FlinkException {
+            List<URL> dependencies
+    ) throws FlinkException {
         LOG.debug("Available commandline options: {}", commandLineOptions);
         List<String> options =
                 Stream.of(commandLine.getOptions())
@@ -110,8 +108,7 @@ public class DefaultContext {
                 commandLine.getArgList(),
                 options);
 
-        final CustomCommandLine activeCommandLine =
-                findActiveCommandLine(availableCommandLines, commandLine);
+        final CustomCommandLine activeCommandLine = findActiveCommandLine(availableCommandLines, commandLine);
         LOG.debug(
                 "Available commandlines: {}, active commandline: {}",
                 availableCommandLines,
@@ -121,8 +118,7 @@ public class DefaultContext {
 
         try {
             final ProgramOptions programOptions = ProgramOptions.create(commandLine);
-            final ExecutionConfigAccessor executionConfigAccessor =
-                    ExecutionConfigAccessor.fromProgramOptions(programOptions, dependencies);
+            final ExecutionConfigAccessor executionConfigAccessor = ExecutionConfigAccessor.fromProgramOptions(programOptions, dependencies);
             executionConfigAccessor.applyToConfiguration(executionConfig);
         } catch (CliArgsException e) {
             throw new SqlExecutionException("Invalid deployment run options.", e);
@@ -132,8 +128,10 @@ public class DefaultContext {
         return executionConfig;
     }
 
-    private static CustomCommandLine findActiveCommandLine(
-            List<CustomCommandLine> availableCommandLines, CommandLine commandLine) {
+
+
+
+    private static CustomCommandLine findActiveCommandLine(List<CustomCommandLine> availableCommandLines, CommandLine commandLine) {
         for (CustomCommandLine cli : availableCommandLines) {
             if (cli.isActive(commandLine)) {
                 return cli;

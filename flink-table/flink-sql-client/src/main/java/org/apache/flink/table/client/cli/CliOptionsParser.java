@@ -137,8 +137,7 @@ public class CliOptionsParser {
                                     + "auto-generate one under your user's home directory.")
                     .build();
 
-    private static final Options EMBEDDED_MODE_CLIENT_OPTIONS =
-            getEmbeddedModeClientOptions(new Options());
+    private static final Options EMBEDDED_MODE_CLIENT_OPTIONS = getEmbeddedModeClientOptions(new Options());
     private static final Options GATEWAY_MODE_CLIENT_OPTIONS =
             getGatewayModeClientOptions(new Options());
     private static final Options GATEWAY_MODE_GATEWAY_OPTIONS =
@@ -222,8 +221,7 @@ public class CliOptionsParser {
         formatter.setLeftPadding(5);
         formatter.setWidth(80);
 
-        System.out.println(
-                "\nMode \"embedded\" (default) submits Flink jobs from the local machine.");
+        System.out.println("\nMode \"embedded\" (default) submits Flink jobs from the local machine.");
         System.out.println("\n  Syntax: [embedded] [OPTIONS]");
         formatter.setSyntaxPrefix("  \"embedded\" mode options:");
         formatter.printHelp(" ", EMBEDDED_MODE_CLIENT_OPTIONS);
@@ -273,11 +271,14 @@ public class CliOptionsParser {
                     checkUrls(line, CliOptionsParser.OPTION_LIBRARY),
                     line.getOptionValue(CliOptionsParser.OPTION_UPDATE.getOpt()),
                     line.getOptionValue(CliOptionsParser.OPTION_HISTORY.getOpt()),
-                    getPythonConfiguration(line));
+                    getPythonConfiguration(line)
+            );
         } catch (ParseException e) {
             throw new SqlClientException(e.getMessage());
         }
     }
+
+
 
     public static CliOptions parseGatewayModeClient(String[] args) {
         try {

@@ -124,8 +124,7 @@ public class CliFrontend {
         this.customCommandLines = checkNotNull(customCommandLines);
         this.clusterClientServiceLoader = checkNotNull(clusterClientServiceLoader);
 
-        FileSystem.initialize(
-                configuration, PluginUtils.createPluginManagerFromRootFolder(configuration));
+        FileSystem.initialize(configuration, PluginUtils.createPluginManagerFromRootFolder(configuration));
 
         this.customCommandLineOptions = new Options();
 
@@ -225,16 +224,12 @@ public class CliFrontend {
             CliFrontendParser.printHelpForRun(customCommandLines);
             return;
         }
-
-        final CustomCommandLine activeCommandLine =
-                validateAndGetActiveCommandLine(checkNotNull(commandLine));
+        // flink per job ： GeneralCLI
+        final CustomCommandLine activeCommandLine = validateAndGetActiveCommandLine(checkNotNull(commandLine));
 
         final ProgramOptions programOptions = ProgramOptions.create(commandLine);
-
         final List<URL> jobJars = getJobJarAndDependencies(programOptions);
-
-        final Configuration effectiveConfiguration =
-                getEffectiveConfiguration(activeCommandLine, commandLine, programOptions, jobJars);
+        final Configuration effectiveConfiguration = getEffectiveConfiguration(activeCommandLine, commandLine, programOptions, jobJars);
 
         LOG.debug("Effective executor configuration: {}", effectiveConfiguration);
 
@@ -294,18 +289,18 @@ public class CliFrontend {
             final List<T> jobJars)
             throws FlinkException {
 
-        final Configuration effectiveConfiguration =
-                getEffectiveConfiguration(activeCustomCommandLine, commandLine);
+        final Configuration effectiveConfiguration = getEffectiveConfiguration(activeCustomCommandLine, commandLine);
 
         final ExecutionConfigAccessor executionParameters =
-                ExecutionConfigAccessor.fromProgramOptions(
-                        checkNotNull(programOptions), checkNotNull(jobJars));
+                ExecutionConfigAccessor.fromProgramOptions(checkNotNull(programOptions), checkNotNull(jobJars));
 
         executionParameters.applyToConfiguration(effectiveConfiguration);
 
         LOG.debug(
                 "Effective configuration after Flink conf, custom commandline, and program options: {}",
-                effectiveConfiguration);
+                effectiveConfiguration
+        );
+
         return effectiveConfiguration;
     }
 
@@ -705,11 +700,8 @@ public class CliFrontend {
         }
     }
 
-    public CommandLine getCommandLine(
-            final Options commandOptions, final String[] args, final boolean stopAtNonOptions)
-            throws CliArgsException {
-        final Options commandLineOptions =
-                CliFrontendParser.mergeOptions(commandOptions, customCommandLineOptions);
+    public CommandLine getCommandLine(final Options commandOptions, final String[] args, final boolean stopAtNonOptions) throws CliArgsException {
+        final Options commandLineOptions = CliFrontendParser.mergeOptions(commandOptions, customCommandLineOptions);
         return CliFrontendParser.parse(commandLineOptions, args, stopAtNonOptions);
     }
 
@@ -845,8 +837,7 @@ public class CliFrontend {
     // --------------------------------------------------------------------------------------------
 
     protected void executeProgram(final Configuration configuration, final PackagedProgram program) throws ProgramInvocationException {
-        ClientUtils.executeProgram(
-                new DefaultExecutorServiceLoader(), configuration, program, false, false);
+        ClientUtils.executeProgram(new DefaultExecutorServiceLoader(), configuration, program, false, false);
     }
 
     /**
@@ -865,14 +856,12 @@ public class CliFrontend {
      *
      * @return A PackagedProgram (upon success)
      */
-    PackagedProgram buildProgram(final ProgramOptions runOptions, final Configuration configuration)
-            throws FileNotFoundException, ProgramInvocationException, CliArgsException {
+    PackagedProgram buildProgram(final ProgramOptions runOptions, final Configuration configuration) throws FileNotFoundException, ProgramInvocationException, CliArgsException {
         runOptions.validate();
 
         String[] programArgs = runOptions.getProgramArgs();
         String jarFilePath = runOptions.getJarFilePath();
         List<URL> classpaths = runOptions.getClasspaths();
-
         // Get assembler class
         String entryPointClass = runOptions.getEntryPointClassName();
         File jarFile = jarFilePath != null ? getJarFile(jarFilePath) : null;
@@ -1157,18 +1146,17 @@ public class CliFrontend {
         final String configurationDirectory = getConfigurationDirectoryFromEnv();
 
         // 2. load the global configuration，从flink-yaml.conf加载配置
-        final Configuration configuration =
-                GlobalConfiguration.loadConfiguration(configurationDirectory);
+        final Configuration configuration = GlobalConfiguration.loadConfiguration(configurationDirectory);
 
-        // 3. load the custom command lines，加载命令行配置参数
-        final List<CustomCommandLine> customCommandLines =
-                loadCustomCommandLines(configuration, configurationDirectory);
+        // 3. load the custom command lines，创建命令行客户端：普通 yarn 默认
+        final List<CustomCommandLine> customCommandLines = loadCustomCommandLines(configuration, configurationDirectory);
 
         int retCode = 31;
         try {
             final CliFrontend cli = new CliFrontend(configuration, customCommandLines);
 
             SecurityUtils.install(new SecurityConfiguration(cli.configuration));
+
             // 运行flink程序
             retCode = SecurityUtils.getInstalledContext().runSecured(() -> cli.parseAndRun(args));
         } catch (Throwable t) {
@@ -1184,7 +1172,6 @@ public class CliFrontend {
     // --------------------------------------------------------------------------------------------
     //  Miscellaneous Utilities
     // --------------------------------------------------------------------------------------------
-
     public static String getConfigurationDirectoryFromEnv() {
         String location = System.getenv(ConfigConstants.ENV_FLINK_CONF_DIR);
 
@@ -1213,6 +1200,7 @@ public class CliFrontend {
         return location;
     }
 
+
     /**
      * Writes the given job manager address to the associated configuration object.
      *
@@ -1226,22 +1214,25 @@ public class CliFrontend {
         config.setInteger(RestOptions.PORT, address.getPort());
     }
 
-    public static List<CustomCommandLine> loadCustomCommandLines(
-            Configuration configuration, String configurationDirectory) {
+    public static List<CustomCommandLine> loadCustomCommandLines(Configuration configuration, String configurationDirectory) {
         List<CustomCommandLine> customCommandLines = new ArrayList<>();
+        // 1 普通客户端
         customCommandLines.add(new GenericCLI(configuration, configurationDirectory));
 
         //	Command line interface of the YARN session, with a special initialization here
         //	to prefix all options with y/yarn.
         final String flinkYarnSessionCLI = "org.apache.flink.yarn.cli.FlinkYarnSessionCli";
         try {
+            // 2 yarn客户端
             customCommandLines.add(
                     loadCustomCommandLine(
                             flinkYarnSessionCLI,
                             configuration,
                             configurationDirectory,
                             "y",
-                            "yarn"));
+                            "yarn"
+                    )
+            );
         } catch (NoClassDefFoundError | Exception e) {
             final String errorYarnSessionCLI = "org.apache.flink.yarn.cli.FallbackYarnSessionCli";
             try {
@@ -1255,6 +1246,7 @@ public class CliFrontend {
         //	Tips: DefaultCLI must be added at last, because getActiveCustomCommandLine(..) will get
         // the
         //	      active CustomCommandLine in order and DefaultCLI isActive always return true.
+        // 3 默认客户端
         customCommandLines.add(new DefaultCLI());
 
         return customCommandLines;
@@ -1273,8 +1265,7 @@ public class CliFrontend {
     public CustomCommandLine validateAndGetActiveCommandLine(CommandLine commandLine) {
         LOG.debug("Custom commandlines: {}", customCommandLines);
         for (CustomCommandLine cli : customCommandLines) {
-            LOG.debug(
-                    "Checking custom commandline {}, isActive: {}", cli, cli.isActive(commandLine));
+            LOG.debug("Checking custom commandline {}, isActive: {}", cli, cli.isActive(commandLine));
             if (cli.isActive(commandLine)) {
                 return cli;
             }
@@ -1282,17 +1273,17 @@ public class CliFrontend {
         throw new IllegalStateException("No valid command-line found.");
     }
 
+
+
     /**
      * Loads a class from the classpath that implements the CustomCommandLine interface.
      *
      * @param className The fully-qualified class name to load.
      * @param params The constructor parameters
      */
-    private static CustomCommandLine loadCustomCommandLine(String className, Object... params)
-            throws Exception {
+    private static CustomCommandLine loadCustomCommandLine(String className, Object... params) throws Exception {
 
-        Class<? extends CustomCommandLine> customCliClass =
-                Class.forName(className).asSubclass(CustomCommandLine.class);
+        Class<? extends CustomCommandLine> customCliClass = Class.forName(className).asSubclass(CustomCommandLine.class);
 
         // construct class types from the parameters
         Class<?>[] types = new Class<?>[params.length];
@@ -1305,6 +1296,9 @@ public class CliFrontend {
 
         return constructor.newInstance(params);
     }
+
+
+
 
     /**
      * Get client timeout from command line via effective configuration.

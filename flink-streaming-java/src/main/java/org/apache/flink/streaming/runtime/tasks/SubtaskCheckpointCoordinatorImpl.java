@@ -309,8 +309,13 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
 
         logCheckpointProcessingDelay(metadata);
 
-        // Step (0): Record the last triggered checkpointId and abort the sync phase of checkpoint
-        // if necessary.
+
+
+
+
+
+        // Step (0): Record the last triggered checkpointId and abort the sync phase of checkpoint if necessary.
+        // 记录最后一个触发的checkpointId，并在必要时中止检查点的同步阶段。
         lastCheckpointId = metadata.getCheckpointId();
         if (checkAndClearAbortedStatus(metadata.getCheckpointId())) {
             // broadcast cancel checkpoint marker to avoid downstream back-pressure due to
@@ -323,8 +328,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
             return;
         }
 
-        // if checkpoint has been previously unaligned, but was forced to be aligned (pointwise
-        // connection), revert it here so that it can jump over output data
+        // if checkpoint has been previously unaligned, but was forced to be aligned (pointwise connection), revert it here so that it can jump over output data
+        //如果检查点之前未对齐，但被强制对齐(点向连接)，在这里恢复它，以便它可以跳过输出数据
         if (options.getAlignment() == CheckpointOptions.AlignmentType.FORCED_ALIGNED) {
             options = options.withUnalignedSupported();
             initInputsCheckpoint(metadata.getCheckpointId(), options);
@@ -332,11 +337,12 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
 
 
 
-        // Step (1): Prepare the checkpoint, allow operators to do some pre-barrier work.
-        //           The pre-barrier work should be nothing or minimal in the common case.
+        // Step (1): Prepare the checkpoint, allow operators to do some pre-barrier work.The pre-barrier work should be nothing or minimal in the common case.
+        //步骤(1):准备检查点，允许操作员做一些屏障前的工作。通常情况下，屏障前的工作应该是零或最小的。
         operatorChain.prepareSnapshotPreBarrier(metadata.getCheckpointId());
 
         // Step (2): Send the checkpoint barrier downstream
+        //第(2)步:向下游发送检查点屏障
         LOG.debug(
                 "Task {} broadcastEvent at {}, triggerTime {}, passed time {}",
                 taskName,
@@ -347,16 +353,20 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         CheckpointBarrier checkpointBarrier = new CheckpointBarrier(metadata.getCheckpointId(), metadata.getTimestamp(), options);
         operatorChain.broadcastEvent(checkpointBarrier, options.isUnalignedCheckpoint());
 
+
         // Step (3): Register alignment timer to timeout aligned barrier to unaligned barrier
+        //步骤(3):将对齐计时器注册为超时对齐barrier到未对齐barrier
         registerAlignmentTimer(metadata.getCheckpointId(), operatorChain, checkpointBarrier);
 
         // Step (4): Prepare to spill the in-flight buffers for input and output
+        //步骤(4):准备溢出输入和输出的in-flight缓冲
         if (options.needsChannelState()) {
             // output data already written while broadcasting event
             channelStateWriter.finishOutput(metadata.getCheckpointId());
         }
 
         // Step (5): Take the state snapshot. This should be largely asynchronous, to not impact progress of the streaming topology
+        //步骤(5):获取状态快照这在很大程度上应该是异步的，以免影响流拓扑的进度
         Map<OperatorID, OperatorSnapshotFutures> snapshotFutures = new HashMap<>(operatorChain.getNumberOfOperators());
         try {
             if (takeSnapshotSync(snapshotFutures, metadata, metrics, options, operatorChain, isRunning)) {
@@ -701,8 +711,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
 
         registerAsyncCheckpointRunnable(asyncCheckpointRunnable.getCheckpointId(), asyncCheckpointRunnable);
 
-        // we are transferring ownership over snapshotInProgressList for cleanup to the thread,
-        // active on submit
+        // we are transferring ownership over snapshotInProgressList for cleanup to the thread, active on submit
+        // 我们正在将snapshotInProgressList清理的所有权转移到线程，在提交时激活
         asyncOperationsThreadPool.execute(asyncCheckpointRunnable);
     }
 

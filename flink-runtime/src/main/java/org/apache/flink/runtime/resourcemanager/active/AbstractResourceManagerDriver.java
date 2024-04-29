@@ -82,8 +82,8 @@ public abstract class AbstractResourceManagerDriver<WorkerType extends ResourceI
             ResourceEventHandler<WorkerType> resourceEventHandler,
             ScheduledExecutor mainThreadExecutor,
             Executor ioExecutor,
-            BlockedNodeRetriever blockedNodeRetriever)
-            throws Exception {
+            BlockedNodeRetriever blockedNodeRetriever
+    ) throws Exception {
         this.resourceEventHandler = Preconditions.checkNotNull(resourceEventHandler);
         this.mainThreadExecutor = Preconditions.checkNotNull(mainThreadExecutor);
         this.ioExecutor = Preconditions.checkNotNull(ioExecutor);

@@ -83,7 +83,8 @@ public final class FunctionCatalog {
             ReadableConfig config,
             ResourceManager resourceManager,
             CatalogManager catalogManager,
-            ModuleManager moduleManager) {
+            ModuleManager moduleManager
+    ) {
         this.config = checkNotNull(config);
         this.resourceManager = checkNotNull(resourceManager);
         this.catalogManager = checkNotNull(catalogManager);

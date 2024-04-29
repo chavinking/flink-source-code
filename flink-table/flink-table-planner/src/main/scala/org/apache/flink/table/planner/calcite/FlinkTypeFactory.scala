@@ -51,10 +51,9 @@ import scala.collection.mutable
  * Calcite's [[RelDataType]].
  */
 class FlinkTypeFactory(
-    classLoader: ClassLoader,
-    typeSystem: RelDataTypeSystem = FlinkTypeSystem.INSTANCE)
-  extends JavaTypeFactoryImpl(typeSystem)
-  with ExtendedRelTypeFactory {
+      classLoader: ClassLoader,
+      typeSystem: RelDataTypeSystem = FlinkTypeSystem.INSTANCE
+    ) extends JavaTypeFactoryImpl(typeSystem) with ExtendedRelTypeFactory {
 
   private val seenTypes = mutable.HashMap[LogicalType, RelDataType]()
 

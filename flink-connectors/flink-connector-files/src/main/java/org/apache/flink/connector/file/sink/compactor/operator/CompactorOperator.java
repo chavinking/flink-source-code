@@ -172,8 +172,7 @@ public class CompactorOperator
         // snapshot all compacting requests as well, including the requests that are not finished
         // when invoking prepareSnapshotPreBarrier but finished now, since they are not emitted yet
         Map<Long, List<CompactorRequest>> requests = new HashMap<>(checkpointRequests);
-        requests.computeIfAbsent(SUBMITTED_ID, id -> new ArrayList<>())
-                .addAll(compactingRequests.stream().map(r -> r.f0).collect(Collectors.toList()));
+        requests.computeIfAbsent(SUBMITTED_ID, id -> new ArrayList<>()).addAll(compactingRequests.stream().map(r -> r.f0).collect(Collectors.toList()));
         remainingRequestsState.update(Collections.singletonList(requests));
     }
 

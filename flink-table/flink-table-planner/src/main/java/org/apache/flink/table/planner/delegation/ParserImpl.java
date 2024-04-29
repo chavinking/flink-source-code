@@ -68,16 +68,21 @@ public class ParserImpl implements Parser {
     private final RexFactory rexFactory;
     private static final ExtendedParser EXTENDED_PARSER = ExtendedParser.INSTANCE;
 
+
+
     public ParserImpl(
             CatalogManager catalogManager,
             Supplier<FlinkPlannerImpl> validatorSupplier,
             Supplier<CalciteParser> calciteParserSupplier,
-            RexFactory rexFactory) {
+            RexFactory rexFactory
+    ) {
         this.catalogManager = catalogManager;
         this.validatorSupplier = validatorSupplier;
         this.calciteParserSupplier = calciteParserSupplier;
         this.rexFactory = rexFactory;
     }
+
+
 
     /**
      * When parsing statement, it first uses {@link ExtendedParser} to parse statements. If {@link
@@ -116,11 +121,14 @@ public class ParserImpl implements Parser {
         return Collections.singletonList(
 //                2-校验 将解析过的语法树转换为operator
                 SqlToOperationConverter.convert(
-                                planner,
-                                catalogManager,
-                                parsed.get(0)
+                                planner, // 校验器
+                                catalogManager, // 元数据
+                                parsed.get(0) // 语法树sqlNode
                         )
-                        .orElseThrow(() -> new TableException("Unsupported query: " + statement)));
+                        .orElseThrow(
+                                () -> new TableException("Unsupported query: " + statement)
+                        )
+        );
     }
 
 

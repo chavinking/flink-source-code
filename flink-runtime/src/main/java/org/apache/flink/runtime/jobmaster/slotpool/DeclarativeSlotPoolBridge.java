@@ -114,11 +114,13 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
         componentMainThreadExecutor.schedule(
                 this::checkIdleSlotTimeout,
                 idleSlotTimeout.toMilliseconds(),
-                TimeUnit.MILLISECONDS);
+                TimeUnit.MILLISECONDS
+        );
         componentMainThreadExecutor.schedule(
                 this::checkBatchSlotTimeout,
                 batchSlotTimeout.toMilliseconds(),
-                TimeUnit.MILLISECONDS);
+                TimeUnit.MILLISECONDS
+        );
     }
 
     @Override
@@ -200,9 +202,7 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
 
     @VisibleForTesting
     void newSlotsAreAvailable(Collection<? extends PhysicalSlot> newSlots) {
-        final Collection<RequestSlotMatchingStrategy.RequestSlotMatch> requestSlotMatches =
-                requestSlotMatchingStrategy.matchRequestsAndSlots(
-                        newSlots, pendingRequests.values());
+        final Collection<RequestSlotMatchingStrategy.RequestSlotMatch> requestSlotMatches = requestSlotMatchingStrategy.matchRequestsAndSlots(newSlots, pendingRequests.values());
 
         for (RequestSlotMatchingStrategy.RequestSlotMatch match : requestSlotMatches) {
             final PendingRequest pendingRequest = match.getPendingRequest();
@@ -231,6 +231,8 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
                     pendingRequest.fulfill(slot), "Pending requests must be fulfillable.");
         }
     }
+
+
 
     private void reserveFreeSlot(
             SlotRequestId slotRequestId,

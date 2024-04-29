@@ -85,17 +85,14 @@ public class DefaultLeaderRetrievalService
     @Override
     public void start(LeaderRetrievalListener listener) throws Exception {
         checkNotNull(listener, "Listener must not be null.");
-        Preconditions.checkState(
-                leaderListener == null,
-                "DefaultLeaderRetrievalService can " + "only be started once.");
+        Preconditions.checkState(leaderListener == null, "DefaultLeaderRetrievalService can " + "only be started once.");
 
         synchronized (lock) {
             leaderListener = listener;
-            leaderRetrievalDriver =
-                    leaderRetrievalDriverFactory.createLeaderRetrievalDriver(
-                            this, new LeaderRetrievalFatalErrorHandler());
-            LOG.info("Starting DefaultLeaderRetrievalService with {}.", leaderRetrievalDriver);
 
+            leaderRetrievalDriver = leaderRetrievalDriverFactory.createLeaderRetrievalDriver(this, new LeaderRetrievalFatalErrorHandler());
+
+            LOG.info("Starting DefaultLeaderRetrievalService with {}.", leaderRetrievalDriver);
             running = true;
         }
     }

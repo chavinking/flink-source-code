@@ -103,8 +103,7 @@ import static org.apache.flink.util.Preconditions.checkState;
 public class CliClient implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(CliClient.class);
-    public static final Supplier<Terminal> DEFAULT_TERMINAL_FACTORY =
-            TerminalUtils::createDefaultTerminal;
+    public static final Supplier<Terminal> DEFAULT_TERMINAL_FACTORY = TerminalUtils::createDefaultTerminal;
 
     private final Executor executor;
 
@@ -142,17 +141,18 @@ public class CliClient implements AutoCloseable {
             String sessionId,
             Executor executor,
             Path historyFilePath,
-            @Nullable MaskingCallback inputTransformer) {
+            @Nullable MaskingCallback inputTransformer
+    ) {
         this.terminalFactory = terminalFactory;
         this.sessionId = sessionId;
         this.executor = executor;
         this.inputTransformer = inputTransformer;
         this.historyFilePath = historyFilePath;
+
         this.parser = new SqlMultiLineParser(new SqlCommandParserImpl(executor, sessionId));
 
         // create prompt
-        prompt =
-                new AttributedStringBuilder()
+        prompt = new AttributedStringBuilder()
                         .style(AttributedStyle.DEFAULT.foreground(AttributedStyle.GREEN))
                         .append("Flink SQL")
                         .style(AttributedStyle.DEFAULT)
@@ -240,6 +240,12 @@ public class CliClient implements AutoCloseable {
         }
     }
 
+    /**
+     * 执行初始化文件内容
+     *
+     * @param content
+     * @return
+     */
     public boolean executeInitialization(String content) {
         try {
             OutputStream outputStream = new ByteArrayOutputStream(256);
@@ -251,6 +257,9 @@ public class CliClient implements AutoCloseable {
             closeTerminal();
         }
     }
+
+
+
 
     // --------------------------------------------------------------------------------------------
 
@@ -280,6 +289,8 @@ public class CliClient implements AutoCloseable {
         getAndExecuteStatements(lineReader, ExecutionMode.INTERACTIVE_EXECUTION);
     }
 
+
+
     private boolean getAndExecuteStatements(LineReader lineReader, ExecutionMode mode) {
         // begin reading loop
         boolean exitOnFailure = !mode.equals(ExecutionMode.INTERACTIVE_EXECUTION);
@@ -303,7 +314,8 @@ public class CliClient implements AutoCloseable {
                         line.equals(parser.getCommand()),
                         String.format(
                                 "This is a bug, please report to the flink community. Statement read[%s] isn't the same as statement parsed[%s]",
-                                line, parser.getCommand()));
+                                line, parser.getCommand())
+                );
             } catch (SqlExecutionException e) {
                 // print the detailed information on about the parse errors in the terminal.
                 printExecutionException(e);
@@ -336,6 +348,9 @@ public class CliClient implements AutoCloseable {
         return true;
     }
 
+
+
+
     /**
      * Execute content from Sql file and prints status information and/or errors on the terminal.
      *
@@ -345,8 +360,7 @@ public class CliClient implements AutoCloseable {
         terminal.writer().println(CliStrings.messageInfo(CliStrings.MESSAGE_EXECUTE_FILE).toAnsi());
 
         // append line delimiter
-        InputStream inputStream =
-                new ByteArrayInputStream(SqlMultiLineParser.formatSqlFile(content).getBytes());
+        InputStream inputStream = new ByteArrayInputStream(SqlMultiLineParser.formatSqlFile(content).getBytes());
         Terminal dumbTerminal = TerminalUtils.createDumbTerminal(inputStream, outputStream);
         try {
             LineReader lineReader = createLineReader(dumbTerminal, false);
@@ -363,11 +377,13 @@ public class CliClient implements AutoCloseable {
         }
     }
 
+
+
+
     private boolean executeOperation(Operation operation, ExecutionMode executionMode) {
         try {
             final Thread thread = Thread.currentThread();
-            final Terminal.SignalHandler previousHandler =
-                    terminal.handle(Terminal.Signal.INT, (signal) -> thread.interrupt());
+            final Terminal.SignalHandler previousHandler = terminal.handle(Terminal.Signal.INT, (signal) -> thread.interrupt());
             try {
                 callOperation(operation, executionMode);
             } finally {
@@ -379,6 +395,9 @@ public class CliClient implements AutoCloseable {
         }
         return true;
     }
+
+
+
 
     private void validate(Operation operation, ExecutionMode executionMode) {
         if (executionMode.equals(ExecutionMode.INITIALIZATION)) {
@@ -474,6 +493,8 @@ public class CliClient implements AutoCloseable {
         }
     }
 
+
+
     private void callRemoveJar(RemoveJarOperation operation) {
         String jarPath = operation.getPath();
         executor.removeJar(sessionId, jarPath);
@@ -542,8 +563,7 @@ public class CliClient implements AutoCloseable {
         final ResultDescriptor resultDesc = executor.executeQuery(sessionId, operation);
 
         if (resultDesc.isTableauMode()) {
-            try (CliTableauResultView tableauResultView =
-                    new CliTableauResultView(terminal, executor, sessionId, resultDesc)) {
+            try (CliTableauResultView tableauResultView = new CliTableauResultView(terminal, executor, sessionId, resultDesc)) {
                 tableauResultView.displayResults();
             }
         } else {
@@ -561,6 +581,8 @@ public class CliClient implements AutoCloseable {
             printInfo(CliStrings.MESSAGE_RESULT_QUIT);
         }
     }
+
+
 
     private void callInsert(ModifyOperation operation) {
         if (isStatementSetMode) {
@@ -685,8 +707,7 @@ public class CliClient implements AutoCloseable {
 
     private LineReader createLineReader(Terminal terminal, boolean enableSqlCompleter) {
         // initialize line lineReader
-        LineReaderBuilder builder =
-                LineReaderBuilder.builder()
+        LineReaderBuilder builder = LineReaderBuilder.builder()
                         .terminal(terminal)
                         .appName(CliStrings.CLI_NAME)
                         .parser(parser);

@@ -70,7 +70,8 @@ class DefaultSchemaResolver implements SchemaResolver {
     DefaultSchemaResolver(
             boolean isStreamingMode,
             DataTypeFactory dataTypeFactory,
-            ExpressionResolverBuilder resolverBuilder) {
+            ExpressionResolverBuilder resolverBuilder
+    ) {
         this.isStreamingMode = isStreamingMode;
         this.dataTypeFactory = dataTypeFactory;
         this.resolverBuilder = resolverBuilder;

@@ -62,7 +62,8 @@ public class YarnJobClusterEntrypoint extends JobClusterEntrypoint {
                 YarnResourceManagerFactory.getInstance(),
                 FileJobGraphRetriever.createFrom(
                         configuration,
-                        YarnEntrypointUtils.getUsrLibDir(configuration).orElse(null)));
+                        YarnEntrypointUtils.getUsrLibDir(configuration).orElse(null))
+        );
     }
 
     // ------------------------------------------------------------------------
@@ -72,8 +73,7 @@ public class YarnJobClusterEntrypoint extends JobClusterEntrypoint {
 
     public static void main(String[] args) {
 
-        LOG.warn(
-                "Job Clusters are deprecated since Flink 1.15. Please use an Application Cluster/Application Mode instead.");
+        LOG.warn("Job Clusters are deprecated since Flink 1.15. Please use an Application Cluster/Application Mode instead.");
 
         // startup checks and logging
         EnvironmentInformation.logEnvironmentInfo(LOG, YarnJobClusterEntrypoint.class.getSimpleName(), args);
@@ -86,7 +86,8 @@ public class YarnJobClusterEntrypoint extends JobClusterEntrypoint {
         Preconditions.checkArgument(
                 workingDirectory != null,
                 "Working directory variable (%s) not set",
-                ApplicationConstants.Environment.PWD.key());
+                ApplicationConstants.Environment.PWD.key()
+        );
 
         try {
             YarnEntrypointUtils.logYarnEnvironmentInformation(env, LOG);
@@ -98,9 +99,9 @@ public class YarnJobClusterEntrypoint extends JobClusterEntrypoint {
                 ClusterEntrypointUtils.parseParametersOrExit(
                         args,
                         new DynamicParametersConfigurationParserFactory(),
-                        YarnJobClusterEntrypoint.class);
-        final Configuration configuration =
-                YarnEntrypointUtils.loadConfiguration(workingDirectory, dynamicParameters, env);
+                        YarnJobClusterEntrypoint.class
+                );
+        final Configuration configuration = YarnEntrypointUtils.loadConfiguration(workingDirectory, dynamicParameters, env);
 
         YarnJobClusterEntrypoint yarnJobClusterEntrypoint = new YarnJobClusterEntrypoint(configuration);
 

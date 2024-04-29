@@ -144,38 +144,30 @@ public class DefaultDispatcherResourceManagerComponentFactory implements Dispatc
         DispatcherRunner dispatcherRunner = null;
 
         try {
-            dispatcherLeaderRetrievalService =
-                    highAvailabilityServices.getDispatcherLeaderRetriever();
-
-            resourceManagerRetrievalService =
-                    highAvailabilityServices.getResourceManagerLeaderRetriever();
+            dispatcherLeaderRetrievalService = highAvailabilityServices.getDispatcherLeaderRetriever();
+            resourceManagerRetrievalService = highAvailabilityServices.getResourceManagerLeaderRetriever();
 
             final LeaderGatewayRetriever<DispatcherGateway> dispatcherGatewayRetriever =
                     new RpcGatewayRetriever<>(
                             rpcService,
                             DispatcherGateway.class,
                             DispatcherId::fromUuid,
-                            new ExponentialBackoffRetryStrategy(
-                                    12, Duration.ofMillis(10), Duration.ofMillis(50)));
+                            new ExponentialBackoffRetryStrategy(12, Duration.ofMillis(10), Duration.ofMillis(50)));
 
             final LeaderGatewayRetriever<ResourceManagerGateway> resourceManagerGatewayRetriever =
                     new RpcGatewayRetriever<>(
                             rpcService,
                             ResourceManagerGateway.class,
                             ResourceManagerId::fromUuid,
-                            new ExponentialBackoffRetryStrategy(
-                                    12, Duration.ofMillis(10), Duration.ofMillis(50)));
+                            new ExponentialBackoffRetryStrategy(12, Duration.ofMillis(10), Duration.ofMillis(50)));
 
-            final ScheduledExecutorService executor =
-                    WebMonitorEndpoint.createExecutorService(
+            final ScheduledExecutorService executor = WebMonitorEndpoint.createExecutorService(
                             configuration.getInteger(RestOptions.SERVER_NUM_THREADS),
                             configuration.getInteger(RestOptions.SERVER_THREAD_PRIORITY),
                             "DispatcherRestEndpoint");
 
-            final long updateInterval =
-                    configuration.getLong(MetricOptions.METRIC_FETCHER_UPDATE_INTERVAL);
-            final MetricFetcher metricFetcher =
-                    updateInterval == 0
+            final long updateInterval = configuration.getLong(MetricOptions.METRIC_FETCHER_UPDATE_INTERVAL);
+            final MetricFetcher metricFetcher = updateInterval == 0
                             ? VoidMetricFetcher.INSTANCE
                             : MetricFetcherImpl.fromConfiguration(
                                     configuration,
@@ -184,9 +176,11 @@ public class DefaultDispatcherResourceManagerComponentFactory implements Dispatc
                                     executor);
 
 
+
+
+
 //          1 启动jobmanager的 WebMonitorEndpoint服务
-            webMonitorEndpoint =
-                    restEndpointFactory.createRestEndpoint( // 创建过程没有什么可观测内容
+            webMonitorEndpoint = restEndpointFactory.createRestEndpoint( // 创建过程没有什么可观测内容
                             configuration,
                             dispatcherGatewayRetriever,
                             resourceManagerGatewayRetriever,
@@ -199,14 +193,16 @@ public class DefaultDispatcherResourceManagerComponentFactory implements Dispatc
             log.debug("Starting Dispatcher REST endpoint.");
             webMonitorEndpoint.start();
 
+
             final String hostname = RpcUtils.getHostname(rpcService);
+
+
 
 //            2 启动jobmanager 的 resourcemanager服务
             /**
              * 通过实现类直接创建服务实例，这里仅有一些赋值操作，和前期版本存在差异化设计的嫌疑
              */
-            resourceManagerService =
-                    ResourceManagerServiceImpl.create(
+            resourceManagerService = ResourceManagerServiceImpl.create(
                             resourceManagerFactory,
                             configuration,
                             resourceId,
@@ -221,12 +217,11 @@ public class DefaultDispatcherResourceManagerComponentFactory implements Dispatc
                             hostname,
                             ioExecutor);
 
-            final HistoryServerArchivist historyServerArchivist = HistoryServerArchivist.createHistoryServerArchivist(configuration, webMonitorEndpoint, ioExecutor);
 
+            final HistoryServerArchivist historyServerArchivist = HistoryServerArchivist.createHistoryServerArchivist(configuration, webMonitorEndpoint, ioExecutor);
             final DispatcherOperationCaches dispatcherOperationCaches = new DispatcherOperationCaches(configuration.get(RestOptions.ASYNC_OPERATION_STORE_DURATION));
 
-            final PartialDispatcherServices partialDispatcherServices =
-                    new PartialDispatcherServices(
+            final PartialDispatcherServices partialDispatcherServices = new PartialDispatcherServices(
                             configuration,
                             highAvailabilityServices,
                             resourceManagerGatewayRetriever,
@@ -241,15 +236,22 @@ public class DefaultDispatcherResourceManagerComponentFactory implements Dispatc
                             dispatcherOperationCaches);
 
             log.debug("Starting Dispatcher.");
+
+
+
 //            3 启动dispatchor服务
-            dispatcherRunner =
-                    dispatcherRunnerFactory.createDispatcherRunner(
+            dispatcherRunner = dispatcherRunnerFactory.createDispatcherRunner(
                             highAvailabilityServices.getDispatcherLeaderElectionService(),
                             fatalErrorHandler,
                             new HaServicesJobPersistenceComponentFactory(highAvailabilityServices),
                             ioExecutor,
                             rpcService,
-                            partialDispatcherServices);
+                            partialDispatcherServices
+            );
+
+
+
+
 
             log.debug("Starting ResourceManagerService.");
 //            启动resourcemanager服务，这里封装了rm功能
@@ -266,7 +268,8 @@ public class DefaultDispatcherResourceManagerComponentFactory implements Dispatc
                     resourceManagerRetrievalService,
                     webMonitorEndpoint,
                     fatalErrorHandler,
-                    dispatcherOperationCaches);
+                    dispatcherOperationCaches
+            );
 
         } catch (Exception exception) {
             // clean up all started components

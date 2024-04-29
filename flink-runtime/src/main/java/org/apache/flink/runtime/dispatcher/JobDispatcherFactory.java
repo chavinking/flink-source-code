@@ -66,10 +66,12 @@ public enum JobDispatcherFactory implements DispatcherFactory {
                 DispatcherServices.from(
                         partialDispatcherServicesWithJobPersistenceComponents,
                         JobMasterServiceLeadershipRunnerFactory.INSTANCE,
-                        CheckpointResourcesCleanupRunnerFactory.INSTANCE),
+                        CheckpointResourcesCleanupRunnerFactory.INSTANCE
+                ),
                 recoveredJobGraph,
                 recoveredDirtyJob,
                 dispatcherBootstrapFactory,
-                executionMode);
+                executionMode
+        );
     }
 }

@@ -183,8 +183,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
         }
 
         shutDownHook =
-                ShutdownHookUtil.addShutdownHook(
-                        () -> this.closeAsync().join(), getClass().getSimpleName(), LOG);
+                ShutdownHookUtil.addShutdownHook(() -> this.closeAsync().join(), getClass().getSimpleName(), LOG);
     }
 
     public int getRestPort() {
@@ -240,8 +239,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                                 return null;
                             });
         } catch (Throwable t) {
-            final Throwable strippedThrowable =
-                    ExceptionUtils.stripException(t, UndeclaredThrowableException.class);
+            final Throwable strippedThrowable = ExceptionUtils.stripException(t, UndeclaredThrowableException.class);
 
             try {
                 // clean up any partial state
@@ -294,11 +292,10 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
             configuration.setInteger(JobManagerOptions.PORT, commonRpcService.getPort());
 
 //            创建工厂类的工厂，三大组件
-            final DispatcherResourceManagerComponentFactory
-                    dispatcherResourceManagerComponentFactory = createDispatcherResourceManagerComponentFactory(configuration);
+            final DispatcherResourceManagerComponentFactory dispatcherResourceManagerComponentFactory =
+                    createDispatcherResourceManagerComponentFactory(configuration);
 
-            clusterComponent =
-                    dispatcherResourceManagerComponentFactory.create(
+            clusterComponent = dispatcherResourceManagerComponentFactory.create(
                             configuration,
                             resourceId.unwrap(),
                             ioExecutor,
@@ -335,6 +332,10 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                             });
         }
     }
+
+
+
+
 
     /**
      * 初始化各种服务
@@ -786,6 +787,9 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                 throwable);
         System.exit(returnCode);
     }
+
+
+
 
     /** Execution mode of the {@link MiniDispatcher}. */
     public enum ExecutionMode {

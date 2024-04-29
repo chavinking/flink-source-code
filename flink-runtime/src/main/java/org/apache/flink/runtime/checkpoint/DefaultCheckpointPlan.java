@@ -69,10 +69,7 @@ public class DefaultCheckpointPlan implements CheckpointPlan {
         this.mayHaveFinishedTasks = mayHaveFinishedTasks;
 
         this.fullyFinishedOrFinishedOnRestoreVertices = new HashMap<>();
-        fullyFinishedJobVertex.forEach(
-                jobVertex ->
-                        fullyFinishedOrFinishedOnRestoreVertices.put(
-                                jobVertex.getJobVertexId(), jobVertex));
+        fullyFinishedJobVertex.forEach(jobVertex -> fullyFinishedOrFinishedOnRestoreVertices.put(jobVertex.getJobVertexId(), jobVertex));
 
         this.vertexOperatorsFinishedTasksCount = new IdentityHashMap<>();
     }

@@ -48,8 +48,7 @@ public enum JobRestEndpointFactory implements RestEndpointFactory<RestfulGateway
             LeaderElectionService leaderElectionService,
             FatalErrorHandler fatalErrorHandler)
             throws Exception {
-        final RestHandlerConfiguration restHandlerConfiguration =
-                RestHandlerConfiguration.fromConfiguration(configuration);
+        final RestHandlerConfiguration restHandlerConfiguration = RestHandlerConfiguration.fromConfiguration(configuration);
 
         return new MiniDispatcherRestEndpoint(
                 dispatcherGatewayRetriever,

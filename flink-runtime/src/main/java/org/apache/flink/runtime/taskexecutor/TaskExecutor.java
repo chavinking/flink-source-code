@@ -284,7 +284,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             @Nullable String metricQueryServiceAddress,
             TaskExecutorBlobService taskExecutorBlobService,
             FatalErrorHandler fatalErrorHandler,
-            TaskExecutorPartitionTracker partitionTracker) {
+            TaskExecutorPartitionTracker partitionTracker
+    ) {
 
         super(rpcService, RpcServiceUtils.createRandomName(TASK_MANAGER_NAME));
 
@@ -306,8 +307,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         this.taskSlotTable = taskExecutorServices.getTaskSlotTable();
         this.jobTable = taskExecutorServices.getJobTable();
         this.jobLeaderService = taskExecutorServices.getJobLeaderService();
-        this.unresolvedTaskManagerLocation =
-                taskExecutorServices.getUnresolvedTaskManagerLocation();
+        this.unresolvedTaskManagerLocation = taskExecutorServices.getUnresolvedTaskManagerLocation();
         this.localStateStoresManager = taskExecutorServices.getTaskManagerStateStore();
         this.changelogStoragesManager = taskExecutorServices.getTaskManagerChangelogManager();
         this.shuffleEnvironment = taskExecutorServices.getShuffleEnvironment();
@@ -325,38 +325,32 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         /**
          * 用来抽象管理硬件资源的类
          */
-        this.hardwareDescription =
-                HardwareDescription.extractFromSystem(taskExecutorServices.getManagedMemorySize());
-        this.memoryConfiguration =
-                TaskExecutorMemoryConfiguration.create(taskManagerConfiguration.getConfiguration());
+        this.hardwareDescription = HardwareDescription.extractFromSystem(taskExecutorServices.getManagedMemorySize());
+        this.memoryConfiguration = TaskExecutorMemoryConfiguration.create(taskManagerConfiguration.getConfiguration());
 
         this.resourceManagerAddress = null;
         this.resourceManagerConnection = null;
         this.currentRegistrationTimeoutId = null;
 
-        final ResourceID resourceId =
-                taskExecutorServices.getUnresolvedTaskManagerLocation().getResourceID();
+        final ResourceID resourceId = taskExecutorServices.getUnresolvedTaskManagerLocation().getResourceID();
 
         /**
          * 初始化两个心跳服务 ，依赖heartbeatServices 初始化
          */
-        this.jobManagerHeartbeatManager =
-                createJobManagerHeartbeatManager(heartbeatServices, resourceId);
-        this.resourceManagerHeartbeatManager =
-                createResourceManagerHeartbeatManager(heartbeatServices, resourceId);
+        this.jobManagerHeartbeatManager = createJobManagerHeartbeatManager(heartbeatServices, resourceId);
+        this.resourceManagerHeartbeatManager = createResourceManagerHeartbeatManager(heartbeatServices, resourceId);
 
 
-        ExecutorThreadFactory sampleThreadFactory =
-                new ExecutorThreadFactory.Builder()
-                        .setPoolName("flink-thread-info-sampler")
-                        .build();
-        ScheduledExecutorService sampleExecutor =
-                Executors.newSingleThreadScheduledExecutor(sampleThreadFactory);
+        ExecutorThreadFactory sampleThreadFactory = new ExecutorThreadFactory.Builder()
+                .setPoolName("flink-thread-info-sampler")
+                .build();
+        ScheduledExecutorService sampleExecutor = Executors.newSingleThreadScheduledExecutor(sampleThreadFactory);
         this.threadInfoSampleService = new ThreadInfoSampleService(sampleExecutor);
-
-        this.slotAllocationSnapshotPersistenceService =
-                taskExecutorServices.getSlotAllocationSnapshotPersistenceService();
+        this.slotAllocationSnapshotPersistenceService = taskExecutorServices.getSlotAllocationSnapshotPersistenceService();
     }
+
+
+
 
     private HeartbeatManager<Void, TaskExecutorHeartbeatPayload>
             createResourceManagerHeartbeatManager(
@@ -1178,6 +1172,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             ResourceProfile resourceProfile,
             String targetAddress)
             throws SlotAllocationException {
+
         allocateSlot(slotId, jobId, allocationId, resourceProfile);
 
         final JobTable.Job job;
@@ -1223,8 +1218,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     private void allocateSlot(
-            SlotID slotId, JobID jobId, AllocationID allocationId, ResourceProfile resourceProfile)
-            throws SlotAllocationException {
+            SlotID slotId, JobID jobId, AllocationID allocationId, ResourceProfile resourceProfile
+    ) throws SlotAllocationException {
         if (taskSlotTable.isSlotFree(slotId.getSlotNumber())) {
             if (taskSlotTable.allocateSlot(
                     slotId.getSlotNumber(),
@@ -1238,15 +1233,12 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 throw new SlotAllocationException("Could not allocate slot.");
             }
         } else if (!taskSlotTable.isAllocated(slotId.getSlotNumber(), jobId, allocationId)) {
-            final String message =
-                    "The slot " + slotId + " has already been allocated for a different job.";
+            final String message = "The slot " + slotId + " has already been allocated for a different job.";
 
             log.info(message);
 
-            final AllocationID allocationID =
-                    taskSlotTable.getCurrentAllocation(slotId.getSlotNumber());
-            throw new SlotOccupiedException(
-                    message, allocationID, taskSlotTable.getOwningJob(allocationID));
+            final AllocationID allocationID = taskSlotTable.getCurrentAllocation(slotId.getSlotNumber());
+            throw new SlotOccupiedException(message, allocationID, taskSlotTable.getOwningJob(allocationID));
         }
     }
 
@@ -1376,7 +1368,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     // ------------------------------------------------------------------------
 
     private void notifyOfNewResourceManagerLeader(
-            String newLeaderAddress, ResourceManagerId newResourceManagerId) {
+            String newLeaderAddress, ResourceManagerId newResourceManagerId
+    ) {
         resourceManagerAddress = createResourceManagerAddress(newLeaderAddress, newResourceManagerId);
         reconnectToResourceManager(
                 new FlinkException(
@@ -1430,8 +1423,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         log.info("Connecting to ResourceManager {}.", resourceManagerAddress);
 
         // 注册TaskExecutor
-        final TaskExecutorRegistration taskExecutorRegistration =
-                new TaskExecutorRegistration(
+        final TaskExecutorRegistration taskExecutorRegistration = new TaskExecutorRegistration(
                         getAddress(),
                         getResourceID(),
                         unresolvedTaskManagerLocation.getDataPort(),
@@ -1446,8 +1438,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                         unresolvedTaskManagerLocation.getNodeId());
 
 //        建立TaskExecutor到rm的连接实例
-        resourceManagerConnection =
-                new TaskExecutorToResourceManagerConnection(
+        resourceManagerConnection = new TaskExecutorToResourceManagerConnection(
                         log,
                         getRpcService(),
                         taskManagerConfiguration.getRetryingRegistrationConfiguration(),
@@ -1499,8 +1490,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         taskExecutorBlobService.setBlobServerAddress(blobServerAddress);
 
-        establishedResourceManagerConnection =
-                new EstablishedResourceManagerConnection(
+        establishedResourceManagerConnection = new EstablishedResourceManagerConnection(
                         resourceManagerGateway,
                         resourceManagerResourceId,
                         taskExecutorRegistrationId);
@@ -2163,8 +2153,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
      * filesystem in a best-effort manner.
      */
     private void tryLoadLocalAllocationSnapshots() {
-        Collection<SlotAllocationSnapshot> slotAllocationSnapshots =
-                slotAllocationSnapshotPersistenceService.loadAllocationSnapshots();
+        Collection<SlotAllocationSnapshot> slotAllocationSnapshots = slotAllocationSnapshotPersistenceService.loadAllocationSnapshots();
 
         log.debug("Recovered slot allocation snapshots {}.", slotAllocationSnapshots);
 
@@ -2176,7 +2165,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                         slotAllocationSnapshot.getSlotID(),
                         slotAllocationSnapshot.getAllocationId(),
                         slotAllocationSnapshot.getResourceProfile(),
-                        slotAllocationSnapshot.getJobTargetAddress());
+                        slotAllocationSnapshot.getJobTargetAddress()
+                );
 
             } catch (SlotAllocationException e) {
                 log.debug("Cannot reallocate restored slot {}.", slotAllocationSnapshot, e);
@@ -2346,10 +2336,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         @Override
         public void notifyLeaderAddress(final String leaderAddress, final UUID leaderSessionID) {
             runAsync(
-                    () ->
-                            notifyOfNewResourceManagerLeader(
-                                    leaderAddress,
-                                    ResourceManagerId.fromUuidOrNull(leaderSessionID)));
+                    () -> notifyOfNewResourceManagerLeader(leaderAddress, ResourceManagerId.fromUuidOrNull(leaderSessionID)));
         }
 
         @Override

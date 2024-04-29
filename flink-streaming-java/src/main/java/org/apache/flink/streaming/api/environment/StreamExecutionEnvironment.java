@@ -276,8 +276,7 @@ public class StreamExecutionEnvironment implements AutoCloseable {
             final ClassLoader userClassloader) {
         this.executorServiceLoader = checkNotNull(executorServiceLoader);
         this.configuration = new Configuration(checkNotNull(configuration));
-        this.userClassloader =
-                userClassloader == null ? getClass().getClassLoader() : userClassloader;
+        this.userClassloader = userClassloader == null ? getClass().getClassLoader() : userClassloader;
 
         // the configuration of a job or an operator can be specified at the following places:
         //     i) at the operator level via e.g. parallelism by using the
@@ -2196,8 +2195,10 @@ public class StreamExecutionEnvironment implements AutoCloseable {
          * 重要方法
          * 跳转到 AbstractSessionClusterExecutor.execute()方法执行
          */
-        CompletableFuture<JobClient> jobClientFuture =
-                executor.execute(streamGraph, configuration, userClassloader);
+        CompletableFuture<JobClient> jobClientFuture = executor.execute(streamGraph, configuration, userClassloader);
+
+
+
 
         try {
             JobClient jobClient = jobClientFuture.get();
@@ -2718,8 +2719,7 @@ public class StreamExecutionEnvironment implements AutoCloseable {
                 configuration.get(DeploymentOptions.TARGET),
                 "No execution.target specified in your configuration file.");
 
-        final PipelineExecutorFactory executorFactory =
-                executorServiceLoader.getExecutorFactory(configuration);
+        final PipelineExecutorFactory executorFactory = executorServiceLoader.getExecutorFactory(configuration);
 
         checkNotNull(
                 executorFactory,

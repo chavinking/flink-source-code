@@ -242,7 +242,8 @@ public class DefaultJobLeaderIdService implements JobLeaderIdService {
 
         @Override
         public void notifyLeaderAddress(
-                @Nullable String leaderAddress, @Nullable UUID leaderSessionId) {
+                @Nullable String leaderAddress, @Nullable UUID leaderSessionId
+        ) {
             if (running) {
                 UUID previousJobLeaderId = null;
 
@@ -281,8 +282,7 @@ public class DefaultJobLeaderIdService implements JobLeaderIdService {
 
                 if (previousJobLeaderId != null && !previousJobLeaderId.equals(leaderSessionId)) {
                     // we had a previous job leader, so notify about his lost leadership
-                    listenerJobLeaderIdActions.jobLeaderLostLeadership(
-                            jobId, new JobMasterId(previousJobLeaderId));
+                    listenerJobLeaderIdActions.jobLeaderLostLeadership(jobId, new JobMasterId(previousJobLeaderId));
 
                     if (null == leaderSessionId) {
                         // No current leader active ==> Set a timeout for the job

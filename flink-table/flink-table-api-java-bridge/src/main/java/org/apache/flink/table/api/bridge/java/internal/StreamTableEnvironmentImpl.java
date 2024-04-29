@@ -94,37 +94,37 @@ public final class StreamTableEnvironmentImpl extends AbstractStreamTableEnviron
     }
 
     public static StreamTableEnvironment create(
-            StreamExecutionEnvironment executionEnvironment, EnvironmentSettings settings) {
-        final MutableURLClassLoader userClassLoader =
-                FlinkUserCodeClassLoaders.create(
-                        new URL[0], settings.getUserClassLoader(), settings.getConfiguration());
+            StreamExecutionEnvironment executionEnvironment, EnvironmentSettings settings
+    ) {
+        // 实例化执行器
+        final MutableURLClassLoader userClassLoader = FlinkUserCodeClassLoaders.create(new URL[0], settings.getUserClassLoader(), settings.getConfiguration());
         final Executor executor = lookupExecutor(userClassLoader, executionEnvironment);
 
+        // 初始化配置信息
         final TableConfig tableConfig = TableConfig.getDefault();
         tableConfig.setRootConfiguration(executor.getConfiguration());
         tableConfig.addConfiguration(settings.getConfiguration());
 
-        final ResourceManager resourceManager =
-                new ResourceManager(settings.getConfiguration(), userClassLoader);
+        // 实例化SQL环境管理资源，包括 ResourceManager、ModuleManager、CatalogManager、FunctionCatalog
+        final ResourceManager resourceManager = new ResourceManager(settings.getConfiguration(), userClassLoader);
         final ModuleManager moduleManager = new ModuleManager();
-
-        final CatalogManager catalogManager =
-                CatalogManager.newBuilder()
+        final CatalogManager catalogManager = CatalogManager.newBuilder()
                         .classLoader(userClassLoader)
                         .config(tableConfig)
                         .defaultCatalog(
                                 settings.getBuiltInCatalogName(),
+                                // 内存Catalog
                                 new GenericInMemoryCatalog(
                                         settings.getBuiltInCatalogName(),
-                                        settings.getBuiltInDatabaseName()))
+                                        settings.getBuiltInDatabaseName()
+                                )
+                        )
                         .executionConfig(executionEnvironment.getConfig())
                         .build();
+        final FunctionCatalog functionCatalog = new FunctionCatalog(tableConfig, resourceManager, catalogManager, moduleManager);
 
-        final FunctionCatalog functionCatalog =
-                new FunctionCatalog(tableConfig, resourceManager, catalogManager, moduleManager);
-
-        final Planner planner =
-                PlannerFactoryUtil.createPlanner(
+        // 实例化SQL Planner，这里追踪Stream模式，因此是StreamPlanner
+        final Planner planner = PlannerFactoryUtil.createPlanner(
                         executor,
                         tableConfig,
                         userClassLoader,
@@ -132,6 +132,7 @@ public final class StreamTableEnvironmentImpl extends AbstractStreamTableEnviron
                         catalogManager,
                         functionCatalog);
 
+        // 创建 StreamTableEnvironment
         return new StreamTableEnvironmentImpl(
                 catalogManager,
                 moduleManager,
@@ -141,8 +142,12 @@ public final class StreamTableEnvironmentImpl extends AbstractStreamTableEnviron
                 executionEnvironment,
                 planner,
                 executor,
-                settings.isStreamingMode());
+                settings.isStreamingMode()
+        );
     }
+
+
+
 
     @Override
     public <T> void registerFunction(String name, TableFunction<T> tableFunction) {

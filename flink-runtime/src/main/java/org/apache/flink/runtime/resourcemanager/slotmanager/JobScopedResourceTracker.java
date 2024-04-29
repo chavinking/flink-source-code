@@ -74,7 +74,11 @@ class JobScopedResourceTracker {
 
 //        尝试分配slot资源
         tryAssigningExcessSlots();
+
     }
+
+
+
 
     public void notifyAcquiredResource(ResourceProfile resourceProfile) {
         Preconditions.checkNotNull(resourceProfile);

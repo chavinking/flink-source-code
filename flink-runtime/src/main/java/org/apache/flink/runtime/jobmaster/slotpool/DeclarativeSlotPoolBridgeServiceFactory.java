@@ -50,6 +50,7 @@ public class DeclarativeSlotPoolBridgeServiceFactory extends AbstractSlotPoolSer
                 rpcTimeout,
                 slotIdleTimeout,
                 batchSlotTimeout,
-                requestSlotMatchingStrategy);
+                requestSlotMatchingStrategy
+        );
     }
 }

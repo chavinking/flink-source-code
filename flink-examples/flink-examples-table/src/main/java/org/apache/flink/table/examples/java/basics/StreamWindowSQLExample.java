@@ -67,6 +67,7 @@ public class StreamWindowSQLExample {
                         + "  'format.type' = 'csv'\n"
                         + ")";
         tEnv.executeSql(ddl);
+        tEnv.sqlQuery(ddl);
 
         // run a SQL query on the table and retrieve the result as a new Table
         String query =
@@ -88,6 +89,8 @@ public class StreamWindowSQLExample {
         // +----+--------------------------------+--------------+--------------+-----------------+
 
     }
+
+
 
     /** Creates a temporary file with the contents and returns the absolute path. */
     private static String createTempFile(String contents) throws IOException {

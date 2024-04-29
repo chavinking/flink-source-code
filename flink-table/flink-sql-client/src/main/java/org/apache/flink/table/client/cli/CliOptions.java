@@ -50,7 +50,8 @@ public class CliOptions {
             List<URL> libraryDirs,
             String updateStatement,
             String historyFilePath,
-            Configuration pythonConfiguration) {
+            Configuration pythonConfiguration
+    ) {
         this.isPrintHelp = isPrintHelp;
         this.sessionId = sessionId;
         this.initFile = initFile;

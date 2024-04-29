@@ -61,6 +61,9 @@ public class YarnClusterClientFactory
         return getClusterDescriptor(configuration);
     }
 
+
+
+
     @Nullable
     @Override
     public ApplicationId getClusterId(Configuration configuration) {
@@ -92,6 +95,7 @@ public class YarnClusterClientFactory
                 yarnConfiguration,
                 yarnClient,
                 YarnClientYarnClusterInformationRetriever.create(yarnClient),
-                false);
+                false
+        );
     }
 }

@@ -880,7 +880,6 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
             final SavepointFormatType formatType,
             final Time timeout
     ) {
-
         return schedulerNG.triggerSavepoint(targetDirectory, cancelJob, formatType);
     }
 
@@ -1137,24 +1136,27 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         }
     }
 
-    private void notifyOfNewResourceManagerLeader(
-            final String newResourceManagerAddress, final ResourceManagerId resourceManagerId) {
-//        连接rm
-        resourceManagerAddress =
-                createResourceManagerAddress(newResourceManagerAddress, resourceManagerId);
+    private void notifyOfNewResourceManagerLeader(final String newResourceManagerAddress, final ResourceManagerId resourceManagerId) {
+
+//        连接rm,内部仅有赋值动作
+        resourceManagerAddress = createResourceManagerAddress(newResourceManagerAddress, resourceManagerId);
 
 
         reconnectToResourceManager(
                 new FlinkException(
                         String.format(
                                 "ResourceManager leader changed to new address %s",
-                                resourceManagerAddress)));
+                                resourceManagerAddress))
+        );
     }
+
+
 
     @Nullable
     private ResourceManagerAddress createResourceManagerAddress(
             @Nullable String newResourceManagerAddress,
-            @Nullable ResourceManagerId resourceManagerId) {
+            @Nullable ResourceManagerId resourceManagerId
+    ) {
         if (newResourceManagerAddress != null) {
             // the contract is: address == null <=> id == null
             checkNotNull(resourceManagerId);
@@ -1182,6 +1184,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
 
         log.info("Connecting to ResourceManager {}", resourceManagerAddress);
 
+
+        // 创建rm连接、赋值动作
         resourceManagerConnection =
                 new ResourceManagerConnection(
                         log,
@@ -1191,8 +1195,10 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                         getFencingToken(),
                         resourceManagerAddress.getAddress(),
                         resourceManagerAddress.getResourceManagerId(),
-                        futureExecutor);
+                        futureExecutor
+                );
 
+        // 启动rm连接
         resourceManagerConnection.start();
     }
 
@@ -1200,34 +1206,32 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         final ResourceManagerId resourceManagerId = success.getResourceManagerId();
 
         // verify the response with current connection
-        if (resourceManagerConnection != null
-                && Objects.equals(
-                        resourceManagerConnection.getTargetLeaderId(), resourceManagerId)) {
+        if (resourceManagerConnection != null && Objects.equals(resourceManagerConnection.getTargetLeaderId(), resourceManagerId)) {
 
             log.info(
                     "JobManager successfully registered at ResourceManager, leader id: {}.",
-                    resourceManagerId);
+                    resourceManagerId
+            );
 
-            final ResourceManagerGateway resourceManagerGateway =
-                    resourceManagerConnection.getTargetGateway();
+            final ResourceManagerGateway resourceManagerGateway = resourceManagerConnection.getTargetGateway();
 
             final ResourceID resourceManagerResourceId = success.getResourceManagerResourceId();
 
-            establishedResourceManagerConnection =
-                    new EstablishedResourceManagerConnection(
-                            resourceManagerGateway, resourceManagerResourceId);
+            establishedResourceManagerConnection = new EstablishedResourceManagerConnection(resourceManagerGateway, resourceManagerResourceId);
 
+            // 执行三个核心动作
             blocklistHandler.registerBlocklistListener(resourceManagerGateway);
             slotPoolService.connectToResourceManager(resourceManagerGateway);
             partitionTracker.connectToResourceManager(resourceManagerGateway);
 
+
+
             resourceManagerHeartbeatManager.monitorTarget(
                     resourceManagerResourceId,
-                    new ResourceManagerHeartbeatReceiver(resourceManagerGateway));
+                    new ResourceManagerHeartbeatReceiver(resourceManagerGateway)
+            );
         } else {
-            log.debug(
-                    "Ignoring resource manager connection to {} because it's duplicated or outdated.",
-                    resourceManagerId);
+            log.debug("Ignoring resource manager connection to {} because it's duplicated or outdated.", resourceManagerId);
         }
     }
 
@@ -1326,7 +1330,9 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                     () ->
                             notifyOfNewResourceManagerLeader(
                                     leaderAddress,
-                                    ResourceManagerId.fromUuidOrNull(leaderSessionID)));
+                                    ResourceManagerId.fromUuidOrNull(leaderSessionID)
+                            )
+            );
         }
 
         @Override
@@ -1386,13 +1392,15 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                     ResourceManagerGateway.class,
                     getTargetAddress(),
                     getTargetLeaderId(),
-                    jobMasterConfiguration.getRetryingRegistrationConfiguration()) {
+                    jobMasterConfiguration.getRetryingRegistrationConfiguration()
+            ) {
 
                 @Override
                 protected CompletableFuture<RegistrationResponse> invokeRegistration(
                         ResourceManagerGateway gateway,
                         ResourceManagerId fencingToken,
-                        long timeoutMillis) {
+                        long timeoutMillis
+                ) {
                     Time timeout = Time.milliseconds(timeoutMillis);
 
                     return gateway.registerJobMaster(
@@ -1400,7 +1408,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                             jobManagerResourceID,
                             jobManagerRpcAddress,
                             jobID,
-                            timeout);
+                            timeout
+                    );
                 }
             };
         }

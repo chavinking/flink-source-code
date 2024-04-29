@@ -58,15 +58,15 @@ class DefaultDispatcherGatewayServiceFactory
             Collection<JobGraph> recoveredJobs,
             Collection<JobResult> recoveredDirtyJobResults,
             JobGraphWriter jobGraphWriter,
-            JobResultStore jobResultStore) {
+            JobResultStore jobResultStore
+    ) {
 
         final Dispatcher dispatcher;
         try {
             /**
              * 创建dispatcher
              */
-            dispatcher =
-                    dispatcherFactory.createDispatcher(
+            dispatcher = dispatcherFactory.createDispatcher(
                             rpcService,
                             fencingToken,
                             recoveredJobs,

@@ -144,8 +144,7 @@ final class DataTypeFactoryImpl implements DataTypeFactory {
                         .getDefaultKryoSerializers()
                         .forEach(
                                 (c, s) ->
-                                        newExecutionConfig.addDefaultKryoSerializer(
-                                                c, s.getSerializer()));
+                                        newExecutionConfig.addDefaultKryoSerializer(c, s.getSerializer()));
 
                 executionConfig
                         .getDefaultKryoSerializerClasses()
@@ -163,8 +162,7 @@ final class DataTypeFactoryImpl implements DataTypeFactory {
                         .getRegisteredTypesWithKryoSerializers()
                         .forEach(
                                 (c, s) ->
-                                        newExecutionConfig.registerTypeWithKryoSerializer(
-                                                c, s.getSerializer()));
+                                        newExecutionConfig.registerTypeWithKryoSerializer(c, s.getSerializer()));
             }
 
             newExecutionConfig.configure(config, classLoader);

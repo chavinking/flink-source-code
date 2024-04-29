@@ -647,8 +647,7 @@ public class CliFrontendParser {
     //  Line Parsing
     // --------------------------------------------------------------------------------------------
 
-    public static CommandLine parse(Options options, String[] args, boolean stopAtNonOptions)
-            throws CliArgsException {
+    public static CommandLine parse(Options options, String[] args, boolean stopAtNonOptions) throws CliArgsException {
         final DefaultParser parser = new DefaultParser();
 
         try {

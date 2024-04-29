@@ -94,8 +94,7 @@ abstract class PlannerBase(
     val functionCatalog: FunctionCatalog,
     val catalogManager: CatalogManager,
     isStreamingMode: Boolean,
-    classLoader: ClassLoader)
-  extends Planner {
+    classLoader: ClassLoader) extends Planner {
 
   // temporary utility until we don't use planner expressions anymore
   functionCatalog.setPlannerTypeInferenceUtil(PlannerTypeInferenceUtilImpl.INSTANCE)
@@ -109,8 +108,7 @@ abstract class PlannerBase(
   private[flink] val extraTransformations = new util.ArrayList[Transformation[_]]()
 
   @VisibleForTesting
-  private[flink] val plannerContext: PlannerContext =
-    new PlannerContext(
+  private[flink] val plannerContext: PlannerContext = new PlannerContext(
       !isStreamingMode,
       tableConfig,
       moduleManager,
@@ -166,6 +164,8 @@ abstract class PlannerBase(
     dialectFactory
   }
 
+
+
   override def getParser: Parser = {
     if (parser == null || getTableConfig.getSqlDialect != currentDialect) {
       dialectFactory = getDialectFactory
@@ -173,6 +173,9 @@ abstract class PlannerBase(
     }
     parser
   }
+
+
+
 
   override def getExtendedOperationExecutor: ExtendedOperationExecutor = {
     if (extendedOperationExecutor == null || getTableConfig.getSqlDialect != currentDialect) {
@@ -191,6 +194,9 @@ abstract class PlannerBase(
    * 包含了从Operation获取关系表达式，优化，生成执行节点图和转换为Flink Transformation的步骤
    * 执行翻译工作，将SQL转换得到的Operation转换为Stream环境变量属性 transformations
    * 然后根据翻译得到的 transformations 就可以进行任务的部署提交流程，这些工作就进入到了flink核心算子内部进行
+   *
+   * modifyOperations ：封装后的Operation，其中保存了RelNode信息
+   *  - modifyOperations = CollectModifyOperation(PlannerQueryOperation extend QueryOperation extend Operation)
    */
   override def translate(modifyOperations: util.List[ModifyOperation]): util.List[Transformation[_]] = {
 
@@ -201,6 +207,12 @@ abstract class PlannerBase(
     if (modifyOperations.isEmpty) {
       return List.empty[Transformation[_]]
     }
+
+
+
+
+
+
 
     // 转换Operation为Calcite的relation expression（关系表达式）
     // modifyOperations被包装成了 CollectModifyOperation 类型
@@ -220,6 +232,11 @@ abstract class PlannerBase(
     // 重要代码部分 **********************************************************************************
 
 
+
+
+
+
+
 //    执行转换后的清理等工作
     afterTranslation()
 
@@ -227,6 +244,8 @@ abstract class PlannerBase(
     transformations
 
   }
+
+
 
 
 
@@ -240,6 +259,7 @@ abstract class PlannerBase(
 
     val dataTypeFactory = catalogManager.getDataTypeFactory
 
+    // CollectModifyOperation(PlannerQueryOperation extend QueryOperation extend Operation)
     modifyOperation match {
 
       case s: UnregisteredSinkModifyOperation[_] =>
@@ -262,6 +282,7 @@ abstract class PlannerBase(
 
 
 
+
 //        查询分支，如果提交的是查询请求，走这个分支
       case collectModifyOperation: CollectModifyOperation =>
         // 拿到算子树RelNode，这里的relNode是最原始的SQL转换来的RelNode对象
@@ -273,6 +294,7 @@ abstract class PlannerBase(
           getTableConfig,
           getFlinkContext.getClassLoader
         )
+
 
 
 
@@ -359,6 +381,8 @@ abstract class PlannerBase(
 
 
 
+
+
   @VisibleForTesting
   private[flink] def optimize(relNodes: Seq[RelNode]): Seq[RelNode] = {
     // 进行执行计划优化
@@ -401,7 +425,9 @@ abstract class PlannerBase(
     // process the graph
     val context = new ProcessorContext(this)
     val processors = getExecNodeGraphProcessors
-    processors.foldLeft(execGraph)((graph, processor) => processor.process(graph, context))
+    processors.foldLeft(execGraph)(
+      (graph, processor) => processor.process(graph, context)
+    )
   }
 
 
@@ -553,6 +579,9 @@ abstract class PlannerBase(
     CompileUtils.cleanUp()
     extraTransformations.clear()
   }
+
+
+
 
   /** Returns all the graphs required to execute EXPLAIN */
   private[flink] def getExplainGraphs(operations: util.List[Operation])

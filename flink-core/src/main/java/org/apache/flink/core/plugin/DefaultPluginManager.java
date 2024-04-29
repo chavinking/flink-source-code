@@ -55,7 +55,8 @@ public class DefaultPluginManager implements PluginManager {
     }
 
     public DefaultPluginManager(
-            Collection<PluginDescriptor> pluginDescriptors, String[] alwaysParentFirstPatterns) {
+            Collection<PluginDescriptor> pluginDescriptors, String[] alwaysParentFirstPatterns
+    ) {
         this(
                 pluginDescriptors,
                 DefaultPluginManager.class.getClassLoader(),

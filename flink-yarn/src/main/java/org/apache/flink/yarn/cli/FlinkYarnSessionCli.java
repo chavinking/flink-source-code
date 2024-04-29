@@ -371,8 +371,7 @@ public class FlinkYarnSessionCli extends AbstractYarnCli {
     @Override
     public boolean isActive(CommandLine commandLine) {
         if (!super.isActive(commandLine)) {
-            return (isYarnPropertiesFileMode(commandLine)
-                    && yarnApplicationIdFromYarnProperties != null);
+            return (isYarnPropertiesFileMode(commandLine) && yarnApplicationIdFromYarnProperties != null);
         }
         return true;
     }

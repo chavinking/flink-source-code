@@ -67,15 +67,11 @@ public class JobManagerProcessUtils {
 
     private JobManagerProcessUtils() {}
 
-    public static JobManagerProcessSpec processSpecFromConfigWithNewOptionToInterpretLegacyHeap(
-            Configuration config, ConfigOption<MemorySize> newOptionToInterpretLegacyHeap) {
+    public static JobManagerProcessSpec processSpecFromConfigWithNewOptionToInterpretLegacyHeap(Configuration config, ConfigOption<MemorySize> newOptionToInterpretLegacyHeap) {
         try {
-            return processSpecFromConfig(
-                    getConfigurationWithLegacyHeapSizeMappedToNewConfigOption(
-                            config, newOptionToInterpretLegacyHeap));
+            return processSpecFromConfig(getConfigurationWithLegacyHeapSizeMappedToNewConfigOption(config, newOptionToInterpretLegacyHeap));
         } catch (IllegalConfigurationException e) {
-            throw new IllegalConfigurationException(
-                    "JobManager memory configuration failed: " + e.getMessage(), e);
+            throw new IllegalConfigurationException("JobManager memory configuration failed: " + e.getMessage(), e);
         }
     }
 
@@ -91,8 +87,7 @@ public class JobManagerProcessUtils {
 
     static Configuration getConfigurationWithLegacyHeapSizeMappedToNewConfigOption(
             Configuration configuration, ConfigOption<MemorySize> configOption) {
-        return LEGACY_MEMORY_UTILS.getConfWithLegacyHeapSizeMappedToNewConfigOption(
-                configuration, configOption);
+        return LEGACY_MEMORY_UTILS.getConfWithLegacyHeapSizeMappedToNewConfigOption(configuration, configOption);
     }
 
     @VisibleForTesting

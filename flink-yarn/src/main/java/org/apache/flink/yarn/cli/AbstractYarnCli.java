@@ -65,6 +65,7 @@ abstract class AbstractYarnCli extends AbstractCustomCommandLine {
         return hasYarnExecutor || yarnJobManager || hasYarnAppId;
     }
 
+
     @Override
     public void addGeneralOptions(Options baseOptions) {
         super.addGeneralOptions(baseOptions);

@@ -253,8 +253,7 @@ public class TaskManagerRunner implements FatalErrorHandler {
                             configuration, pluginManager);
 
 //            taskExecutorService服务，在这个内的实现内部初始化了taskexecutor
-            taskExecutorService =
-                    taskExecutorServiceFactory.createTaskExecutor(
+            taskExecutorService = taskExecutorServiceFactory.createTaskExecutor(
                             this.configuration,
                             this.resourceId.unwrap(),
                             rpcService,
@@ -265,7 +264,8 @@ public class TaskManagerRunner implements FatalErrorHandler {
                             false,
                             externalResourceInfoProvider,
                             workingDirectory.unwrap(),
-                            this);
+                            this
+                    );
 
             handleUnexpectedTaskExecutorServiceTermination();
 
@@ -488,8 +488,7 @@ public class TaskManagerRunner implements FatalErrorHandler {
     }
 
     public static Configuration loadConfiguration(String[] args) throws FlinkParseException {
-        return ConfigurationParserUtils.loadCommonConfiguration(
-                args, TaskManagerRunner.class.getSimpleName());
+        return ConfigurationParserUtils.loadCommonConfiguration(args, TaskManagerRunner.class.getSimpleName());
     }
 
 
@@ -527,6 +526,7 @@ public class TaskManagerRunner implements FatalErrorHandler {
                     ExceptionUtils.stripExecutionException(t));
         }
     }
+
 
     public static void runTaskManagerProcessSecurely(String[] args) {
         Configuration configuration = null;
@@ -608,11 +608,11 @@ public class TaskManagerRunner implements FatalErrorHandler {
             boolean localCommunicationOnly,
             ExternalResourceInfoProvider externalResourceInfoProvider,
             WorkingDirectory workingDirectory,
-            FatalErrorHandler fatalErrorHandler) throws Exception {
+            FatalErrorHandler fatalErrorHandler
+    ) throws Exception {
 
 //       2 实例化taskExecutor ----------------------------------------------------------------------------------------------------------------
-        final TaskExecutor taskExecutor =
-                startTaskManager( // 内部实例化taskManagerService
+        final TaskExecutor taskExecutor = startTaskManager( // 内部实例化taskManagerService
                         configuration,
                         resourceID,
                         rpcService,
@@ -681,7 +681,8 @@ public class TaskManagerRunner implements FatalErrorHandler {
                         externalAddress,
                         localCommunicationOnly,
                         taskExecutorResourceSpec,
-                        workingDirectory);
+                        workingDirectory
+                );
 
         Tuple2<TaskManagerMetricGroup, MetricGroup> taskManagerMetricGroup =
                 MetricUtils.instantiateTaskManagerMetricGroup(
@@ -695,25 +696,25 @@ public class TaskManagerRunner implements FatalErrorHandler {
                         taskManagerServicesConfiguration.getNumIoThreads(),
                         new ExecutorThreadFactory("flink-taskexecutor-io"));
 
+
         /**
-         * 实例化 taskManagerServices ，这内部包含实例化了一堆flink运行时依赖的组件信息
+         * 1 实例化 taskManagerServices ，这内部包含实例化了一堆flink运行时依赖的组件信息
          */
-        TaskManagerServices taskManagerServices =
-                TaskManagerServices.fromConfiguration(
+        TaskManagerServices taskManagerServices = TaskManagerServices.fromConfiguration(
                         taskManagerServicesConfiguration,
                         taskExecutorBlobService.getPermanentBlobService(),
                         taskManagerMetricGroup.f1,
                         ioExecutor,
                         fatalErrorHandler,
-                        workingDirectory);
+                        workingDirectory
+        );
 
         MetricUtils.instantiateFlinkMemoryMetricGroup(
                 taskManagerMetricGroup.f1,
                 taskManagerServices.getTaskSlotTable(),
                 taskManagerServices::getManagedMemorySize);
 
-        TaskManagerConfiguration taskManagerConfiguration =
-                TaskManagerConfiguration.fromConfiguration(
+        TaskManagerConfiguration taskManagerConfiguration = TaskManagerConfiguration.fromConfiguration(
                         configuration,
                         taskExecutorResourceSpec,
                         externalAddress,
@@ -721,6 +722,9 @@ public class TaskManagerRunner implements FatalErrorHandler {
 
         String metricQueryServiceAddress = metricRegistry.getMetricQueryServiceGatewayRpcAddress();
 
+        /**
+         * 2 创建TaskExecutor
+         */
         return new TaskExecutor(
                 rpcService,
                 taskManagerConfiguration,
@@ -732,7 +736,8 @@ public class TaskManagerRunner implements FatalErrorHandler {
                 metricQueryServiceAddress,
                 taskExecutorBlobService,
                 fatalErrorHandler,
-                new TaskExecutorPartitionTrackerImpl(taskManagerServices.getShuffleEnvironment()));
+                new TaskExecutorPartitionTrackerImpl(taskManagerServices.getShuffleEnvironment())
+        );
     }
 
     /**

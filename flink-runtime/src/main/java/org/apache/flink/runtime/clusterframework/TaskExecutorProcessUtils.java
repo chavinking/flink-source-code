@@ -168,15 +168,13 @@ public class TaskExecutorProcessUtils {
     }
 
     public static TaskExecutorProcessSpec processSpecFromWorkerResourceSpec(
-            final Configuration config, final WorkerResourceSpec workerResourceSpec) {
+            final Configuration config, final WorkerResourceSpec workerResourceSpec
+    ) {
 
-        final MemorySize frameworkHeapMemorySize =
-                TaskExecutorFlinkMemoryUtils.getFrameworkHeapMemorySize(config);
-        final MemorySize frameworkOffHeapMemorySize =
-                TaskExecutorFlinkMemoryUtils.getFrameworkOffHeapMemorySize(config);
+        final MemorySize frameworkHeapMemorySize = TaskExecutorFlinkMemoryUtils.getFrameworkHeapMemorySize(config);
+        final MemorySize frameworkOffHeapMemorySize = TaskExecutorFlinkMemoryUtils.getFrameworkOffHeapMemorySize(config);
 
-        final TaskExecutorFlinkMemory flinkMemory =
-                new TaskExecutorFlinkMemory(
+        final TaskExecutorFlinkMemory flinkMemory = new TaskExecutorFlinkMemory(
                         frameworkHeapMemorySize,
                         frameworkOffHeapMemorySize,
                         workerResourceSpec.getTaskHeapSize(),
@@ -184,9 +182,9 @@ public class TaskExecutorProcessUtils {
                         workerResourceSpec.getNetworkMemSize(),
                         workerResourceSpec.getManagedMemSize());
 
-        final JvmMetaspaceAndOverhead jvmMetaspaceAndOverhead =
-                PROCESS_MEMORY_UTILS.deriveJvmMetaspaceAndOverheadFromTotalFlinkMemory(
-                        config, flinkMemory.getTotalFlinkMemorySize());
+        final JvmMetaspaceAndOverhead jvmMetaspaceAndOverhead = PROCESS_MEMORY_UTILS.deriveJvmMetaspaceAndOverheadFromTotalFlinkMemory(
+                        config, flinkMemory.getTotalFlinkMemorySize()
+        );
 
         return new TaskExecutorProcessSpec(
                 workerResourceSpec.getCpuCores(),

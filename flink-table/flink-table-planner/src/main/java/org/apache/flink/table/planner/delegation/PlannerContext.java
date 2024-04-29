@@ -92,6 +92,8 @@ public class PlannerContext {
     private final List<RelTraitDef> traitDefs;
     private final FrameworkConfig frameworkConfig;
 
+
+
     public PlannerContext(
             boolean isBatchMode,
             TableConfig tableConfig,
@@ -100,11 +102,12 @@ public class PlannerContext {
             CatalogManager catalogManager,
             CalciteSchema rootSchema,
             List<RelTraitDef> traitDefs,
-            ClassLoader classLoader) {
+            ClassLoader classLoader
+    ) {
         this.typeSystem = FlinkTypeSystem.INSTANCE;
         this.typeFactory = new FlinkTypeFactory(classLoader, typeSystem);
-        this.context =
-                new FlinkContextImpl(
+
+        this.context = new FlinkContextImpl(
                         isBatchMode,
                         tableConfig,
                         moduleManager,
@@ -114,23 +117,28 @@ public class PlannerContext {
                                 typeFactory,
                                 this::createFlinkPlanner,
                                 this::getCalciteSqlDialect,
-                                this::createRelBuilder),
-                        classLoader);
+                                this::createRelBuilder
+                        ),
+                        classLoader
+        );
+
         this.rootSchema = rootSchema;
         this.traitDefs = traitDefs;
+
         // Make a framework config to initialize the RelOptCluster instance,
         // caution that we can only use the attributes that can not be overwritten/configured
         // by user.
         this.frameworkConfig = createFrameworkConfig();
-
-        RelOptPlanner planner =
-                new VolcanoPlanner(frameworkConfig.getCostFactory(), frameworkConfig.getContext());
+        RelOptPlanner planner = new VolcanoPlanner(frameworkConfig.getCostFactory(), frameworkConfig.getContext());
         planner.setExecutor(frameworkConfig.getExecutor());
         for (RelTraitDef traitDef : frameworkConfig.getTraitDefs()) {
             planner.addRelTraitDef(traitDef);
         }
         this.cluster = FlinkRelOptClusterFactory.create(planner, new FlinkRexBuilder(typeFactory));
     }
+
+
+
 
     public RexFactory getRexFactory() {
         return context.getRexFactory();
@@ -165,9 +173,15 @@ public class PlannerContext {
         return createRelBuilder(planner);
     }
 
+    /**
+     * 创建 FlinkPlanner
+     *
+     * @return
+     */
     public FlinkPlannerImpl createFlinkPlanner() {
         return new FlinkPlannerImpl(createFrameworkConfig(), this::createCatalogReader, typeFactory, cluster);
     }
+
 
     public CalciteParser createCalciteParser() {
         return new CalciteParser(getSqlParserConfig());
@@ -191,13 +205,15 @@ public class PlannerContext {
         final CatalogManager catalogManager = context.getCatalogManager();
         return new FlinkCalciteCatalogReader(
                 CalciteSchema.from(finalRootSchema),
-                asList(
-                        asList(
+                asList(asList(
                                 catalogManager.getCurrentCatalog(),
-                                catalogManager.getCurrentDatabase()),
-                        singletonList(catalogManager.getCurrentCatalog())),
+                                catalogManager.getCurrentDatabase()
+                        ),
+                        singletonList(catalogManager.getCurrentCatalog())
+                ),
                 typeFactory,
-                CalciteConfig$.MODULE$.connectionConfig(newSqlParserConfig));
+                CalciteConfig$.MODULE$.connectionConfig(newSqlParserConfig)
+        );
     }
 
     public RelOptCluster getCluster() {
@@ -212,6 +228,9 @@ public class PlannerContext {
 
         return FlinkRelBuilder.of(chain, cluster, calciteCatalogReader);
     }
+
+
+
 
     private SchemaPlus getRootSchema(SchemaPlus schema) {
         if (schema.getParentSchema() == null) {
@@ -229,8 +248,7 @@ public class PlannerContext {
      * Returns the SQL parser config for this environment including a custom Calcite configuration.
      */
     private SqlParser.Config getSqlParserConfig() {
-        return JavaScalaConversionUtil.<SqlParser.Config>toJava(
-                        getCalciteConfig().getSqlParserConfig())
+        return JavaScalaConversionUtil.<SqlParser.Config>toJava(getCalciteConfig().getSqlParserConfig())
                 .orElseGet(
                         // we use Java lex because back ticks are easier than double quotes in
                         // programming and cases are preserved
@@ -256,6 +274,9 @@ public class PlannerContext {
         }
     }
 
+
+
+
     private FlinkSqlConformance getSqlConformance() {
         SqlDialect sqlDialect = context.getTableConfig().getSqlDialect();
         switch (sqlDialect) {
@@ -275,18 +296,15 @@ public class PlannerContext {
      * [[org.apache.calcite.rex.RexSubQuery]].
      */
     private SqlToRelConverter.Config getSqlToRelConverterConfig() {
-        return JavaScalaConversionUtil.<SqlToRelConverter.Config>toJava(
-                        getCalciteConfig().getSqlToRelConverterConfig())
+        return JavaScalaConversionUtil.<SqlToRelConverter.Config>toJava(getCalciteConfig().getSqlToRelConverterConfig())
                 .orElseGet(
                         () ->
                                 SqlToRelConverter.config()
                                         .withTrimUnusedFields(false)
-                                        .withHintStrategyTable(
-                                                FlinkHintStrategies.createHintStrategyTable())
+                                        .withHintStrategyTable(FlinkHintStrategies.createHintStrategyTable())
                                         .withInSubQueryThreshold(Integer.MAX_VALUE)
                                         .withExpand(false)
-                                        .withRelBuilderFactory(
-                                                FlinkRelFactories.FLINK_REL_BUILDER()));
+                                        .withRelBuilderFactory(FlinkRelFactories.FLINK_REL_BUILDER()));
     }
 
     /** Returns the operator table for this environment including a custom Calcite configuration. */
@@ -297,8 +315,7 @@ public class PlannerContext {
                             if (calciteConfig.replacesSqlOperatorTable()) {
                                 return operatorTable;
                             } else {
-                                return SqlOperatorTables.chain(
-                                        getBuiltinSqlOperatorTable(), operatorTable);
+                                return SqlOperatorTables.chain(getBuiltinSqlOperatorTable(), operatorTable);
                             }
                         })
                 .orElseGet(this::getBuiltinSqlOperatorTable);

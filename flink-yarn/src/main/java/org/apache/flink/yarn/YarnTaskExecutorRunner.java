@@ -64,7 +64,7 @@ public class YarnTaskExecutorRunner {
         EnvironmentInformation.logEnvironmentInfo(LOG, "YARN TaskExecutor runner", args);
         SignalHandler.register(LOG);
         JvmShutdownSafeguard.installAsShutdownHook(LOG);
-
+        // 启动TaskManager
         runTaskManagerSecurely(args);
     }
 
@@ -94,10 +94,13 @@ public class YarnTaskExecutorRunner {
         TaskManagerRunner.runTaskManagerProcessSecurely(Preconditions.checkNotNull(configuration));
     }
 
+
+
+
     @VisibleForTesting
     static void setupAndModifyConfiguration(
-            Configuration configuration, String currDir, Map<String, String> variables)
-            throws Exception {
+            Configuration configuration, String currDir, Map<String, String> variables
+    ) throws Exception {
         final String localDirs = variables.get(Environment.LOCAL_DIRS.key());
         LOG.info("Current working/local Directory: {}", localDirs);
 
@@ -107,8 +110,8 @@ public class YarnTaskExecutorRunner {
     }
 
     private static void setupConfigurationFromVariables(
-            Configuration configuration, String currDir, Map<String, String> variables)
-            throws IOException {
+            Configuration configuration, String currDir, Map<String, String> variables
+    ) throws IOException {
         final String yarnClientUsername = variables.get(YarnConfigKeys.ENV_HADOOP_USER_NAME);
 
         final String localKeytabPath = variables.get(YarnConfigKeys.LOCAL_KEYTAB_PATH);
@@ -135,12 +138,10 @@ public class YarnTaskExecutorRunner {
         }
 
         // use the hostname passed by job manager
-        final String taskExecutorHostname =
-                variables.get(YarnResourceManagerDriver.ENV_FLINK_NODE_ID);
+        final String taskExecutorHostname = variables.get(YarnResourceManagerDriver.ENV_FLINK_NODE_ID);
         if (taskExecutorHostname != null) {
             configuration.setString(TaskManagerOptions.HOST, taskExecutorHostname);
-            configuration.setString(
-                    TaskManagerOptionsInternal.TASK_MANAGER_NODE_ID, taskExecutorHostname);
+            configuration.setString(TaskManagerOptionsInternal.TASK_MANAGER_NODE_ID, taskExecutorHostname);
         }
     }
 }

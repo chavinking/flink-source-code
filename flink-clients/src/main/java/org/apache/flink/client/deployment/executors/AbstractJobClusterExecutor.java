@@ -62,6 +62,17 @@ public class AbstractJobClusterExecutor<
         this.clusterClientFactory = checkNotNull(clusterClientFactory);
     }
 
+
+
+    /**
+     * 这个方法一共执行三件事
+     *
+     * @param pipeline the {@link Pipeline} to execute
+     * @param configuration the {@link Configuration} with the required execution parameters
+     * @param userCodeClassloader the {@link ClassLoader} to deserialize usercode
+     * @return
+     * @throws Exception
+     */
     @Override
     public CompletableFuture<JobClient> execute(
             @Nonnull final Pipeline pipeline, // 流图
@@ -69,11 +80,12 @@ public class AbstractJobClusterExecutor<
             @Nonnull final ClassLoader userCodeClassloader
     ) throws Exception {
 
-        final JobGraph jobGraph =
-                PipelineExecutorUtils.getJobGraph(pipeline, configuration, userCodeClassloader);
+        // 1. 转换StreamGraph为JobGraph
+        final JobGraph jobGraph = PipelineExecutorUtils.getJobGraph(pipeline, configuration, userCodeClassloader);
+
 
         /**
-         * 创建集群描述器中进行yarn初始化 clusterClientFactory.createClusterDescriptor(configuration)
+         * 2. 创建集群描述器中进行yarn初始化 clusterClientFactory.createClusterDescriptor(configuration)
          */
         try (final ClusterDescriptor<ClusterID> clusterDescriptor = clusterClientFactory.createClusterDescriptor(configuration)) {
 
@@ -81,6 +93,8 @@ public class AbstractJobClusterExecutor<
 
             final ClusterSpecification clusterSpecification = clusterClientFactory.getClusterSpecification(configuration);
 
+
+            // 3. 部署任务
             final ClusterClientProvider<ClusterID> clusterClientProvider =
                     clusterDescriptor.deployJobCluster(
                             clusterSpecification,

@@ -40,8 +40,7 @@ public abstract class AbstractContainerizedClusterClientFactory<ClusterID>
         checkNotNull(configuration);
 
         final int jobManagerMemoryMB =
-                JobManagerProcessUtils.processSpecFromConfigWithNewOptionToInterpretLegacyHeap(
-                                configuration, JobManagerOptions.TOTAL_PROCESS_MEMORY)
+                JobManagerProcessUtils.processSpecFromConfigWithNewOptionToInterpretLegacyHeap(configuration, JobManagerOptions.TOTAL_PROCESS_MEMORY)
                         .getTotalProcessMemorySize()
                         .getMebiBytes();
 

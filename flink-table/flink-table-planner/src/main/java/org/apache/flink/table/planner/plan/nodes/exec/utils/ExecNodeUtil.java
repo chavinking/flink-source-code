@@ -176,8 +176,7 @@ public class ExecNodeUtil {
             TwoInputStreamOperator<IN1, IN2, O> operator,
             TypeInformation<O> outputType,
             int parallelism) {
-        return createTwoInputTransformation(
-                input1, input2, transformationMeta, operator, outputType, parallelism, 0);
+        return createTwoInputTransformation(input1, input2, transformationMeta, operator, outputType, parallelism, 0);
     }
 
     /** Create a {@link TwoInputTransformation} with memoryBytes. */
@@ -215,7 +214,8 @@ public class ExecNodeUtil {
                 SimpleOperatorFactory.of(operator),
                 outputType,
                 parallelism,
-                memoryBytes);
+                memoryBytes
+        );
     }
 
     /** Create a {@link TwoInputTransformation} with memoryBytes. */
@@ -247,14 +247,15 @@ public class ExecNodeUtil {
             TypeInformation<O> outputType,
             int parallelism,
             long memoryBytes) {
-        TwoInputTransformation<I1, I2, O> transformation =
-                new TwoInputTransformation<>(
+        TwoInputTransformation<I1, I2, O> transformation = new TwoInputTransformation<>(
                         input1,
                         input2,
                         transformationMeta.getName(),
                         operatorFactory,
                         outputType,
-                        parallelism);
+                        parallelism
+        );
+
         setManagedMemoryWeight(transformation, memoryBytes);
         transformationMeta.fill(transformation);
         return transformation;

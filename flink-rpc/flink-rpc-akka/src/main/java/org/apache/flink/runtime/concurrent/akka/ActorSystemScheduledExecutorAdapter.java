@@ -81,10 +81,10 @@ public final class ActorSystemScheduledExecutorAdapter implements ScheduledExecu
     @Override
     @Nonnull
     public ScheduledFuture<?> scheduleAtFixedRate(
-            @Nonnull Runnable command, long initialDelay, long period, @Nonnull TimeUnit unit) {
+            @Nonnull Runnable command, long initialDelay, long period, @Nonnull TimeUnit unit
+    ) {
         ScheduledFutureTask<Void> scheduledFutureTask =
-                new ScheduledFutureTask<>(
-                        command, triggerTime(unit.toNanos(initialDelay)), unit.toNanos(period));
+                new ScheduledFutureTask<>(command, triggerTime(unit.toNanos(initialDelay)), unit.toNanos(period));
 
         Cancellable cancellable =
                 actorSystem
@@ -92,8 +92,7 @@ public final class ActorSystemScheduledExecutorAdapter implements ScheduledExecu
                         .schedule(
                                 new FiniteDuration(initialDelay, unit),
                                 new FiniteDuration(period, unit),
-                                ClassLoadingUtils.withContextClassLoader(
-                                        scheduledFutureTask, flinkClassLoader),
+                                ClassLoadingUtils.withContextClassLoader(scheduledFutureTask, flinkClassLoader),
                                 actorSystem.dispatcher());
 
         scheduledFutureTask.setCancellable(cancellable);

@@ -45,15 +45,13 @@ public class PlannerFactoryUtil {
             CatalogManager catalogManager,
             FunctionCatalog functionCatalog
     ) {
-        final PlannerFactory plannerFactory =
-                FactoryUtil.discoverFactory(
+        final PlannerFactory plannerFactory = FactoryUtil.discoverFactory(
                         Thread.currentThread().getContextClassLoader(),
                         PlannerFactory.class,
                         PlannerFactory.DEFAULT_IDENTIFIER
                 );
 
-        final Context context =
-                new DefaultPlannerContext(
+        final Context context = new DefaultPlannerContext(
                         executor,
                         tableConfig,
                         userClassLoader,
@@ -62,6 +60,7 @@ public class PlannerFactoryUtil {
                         functionCatalog
                 );
 
+        // 实例化planner
         return plannerFactory.create(context);
     }
 

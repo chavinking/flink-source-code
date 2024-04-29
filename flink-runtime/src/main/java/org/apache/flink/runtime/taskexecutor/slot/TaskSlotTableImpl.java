@@ -150,11 +150,13 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
 
     @Override
     public void start(
-            SlotActions initialSlotActions, ComponentMainThreadExecutor mainThreadExecutor) {
+            SlotActions initialSlotActions, ComponentMainThreadExecutor mainThreadExecutor
+    ) {
         Preconditions.checkState(
                 state == State.CREATED,
                 "The %s has to be just created before starting",
                 TaskSlotTableImpl.class.getSimpleName());
+
         this.slotActions = Preconditions.checkNotNull(initialSlotActions);
         this.mainThreadExecutor = Preconditions.checkNotNull(mainThreadExecutor);
 
@@ -292,8 +294,7 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
         // The negative requestIndex indicate that the SlotManager allocate a dynamic slot, we
         // transfer the index to an increasing number not less than the numberSlots.
         int index = requestedIndex < 0 ? nextDynamicSlotIndex() : requestedIndex;
-        ResourceProfile effectiveResourceProfile =
-                resourceProfile.equals(ResourceProfile.UNKNOWN)
+        ResourceProfile effectiveResourceProfile = resourceProfile.equals(ResourceProfile.UNKNOWN)
                         ? defaultSlotResourceProfile
                         : resourceProfile;
 
@@ -318,8 +319,7 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
             return false;
         }
 
-        taskSlot =
-                new TaskSlot<>(
+        taskSlot = new TaskSlot<>(
                         index,
                         effectiveResourceProfile,
                         memoryPageSize,

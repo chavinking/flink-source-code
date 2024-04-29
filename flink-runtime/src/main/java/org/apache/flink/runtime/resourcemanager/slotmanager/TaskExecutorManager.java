@@ -253,7 +253,8 @@ class TaskExecutorManager implements AutoCloseable {
      *     was allocated
      */
     public Optional<ResourceRequirement> allocateWorker(
-            ResourceProfile requestedSlotResourceProfile) {
+            ResourceProfile requestedSlotResourceProfile
+    ) {
         final int numRegisteredSlots = getNumberRegisteredSlots();
         final int numPendingSlots = getNumberPendingTaskManagerSlots();
         if (isMaxSlotNumExceededAfterAdding(numSlotsPerWorker)) {

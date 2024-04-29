@@ -110,16 +110,16 @@ public class DeclarativeSlotPoolService implements SlotPoolService {
 
     @Override
     public final void start(
-            JobMasterId jobMasterId, String address, ComponentMainThreadExecutor mainThreadExecutor)
-            throws Exception {
-        Preconditions.checkState(
-                state == State.CREATED, "The DeclarativeSlotPoolService can only be started once.");
+            JobMasterId jobMasterId,
+            String address,
+            ComponentMainThreadExecutor mainThreadExecutor
+    ) throws Exception {
+        Preconditions.checkState(state == State.CREATED, "The DeclarativeSlotPoolService can only be started once.");
 
         this.jobMasterId = Preconditions.checkNotNull(jobMasterId);
         this.jobManagerAddress = Preconditions.checkNotNull(address);
-
-        this.resourceRequirementServiceConnectionManager =
-                DefaultDeclareResourceRequirementServiceConnectionManager.create(mainThreadExecutor);
+        // 内部仅有赋值动作
+        this.resourceRequirementServiceConnectionManager = DefaultDeclareResourceRequirementServiceConnectionManager.create(mainThreadExecutor);
 
         onStart(mainThreadExecutor);
 
@@ -291,12 +291,16 @@ public class DeclarativeSlotPoolService implements SlotPoolService {
          * 连接rm
          */
         resourceRequirementServiceConnectionManager.connect(
-                resourceRequirements ->
-                        resourceManagerGateway.declareRequiredResources(jobMasterId, resourceRequirements, rpcTimeout)
+                resourceRequirements -> resourceManagerGateway.declareRequiredResources(jobMasterId, resourceRequirements, rpcTimeout)
         );
 
         declareResourceRequirements(declarativeSlotPool.getResourceRequirements());
     }
+
+
+
+
+
 
     private void declareResourceRequirements(Collection<ResourceRequirement> resourceRequirements) {
         assertHasBeenStarted();

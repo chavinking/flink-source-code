@@ -80,7 +80,8 @@ class DefaultDeclareResourceRequirementServiceConnectionManager
                 triggerResourceRequirementsSubmission(
                         Duration.ofMillis(1L),
                         Duration.ofMillis(10000L),
-                        currentResourceRequirements);
+                        currentResourceRequirements
+                );
             }
         }
     }

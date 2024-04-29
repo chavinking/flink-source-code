@@ -230,10 +230,8 @@ public class StreamContextEnvironment extends StreamExecutionEnvironment {
             final boolean suppressSysout) {
         final StreamExecutionEnvironmentFactory factory =
                 envInitConfig -> {
-                    final boolean programConfigEnabled =
-                            clusterConfiguration.get(DeploymentOptions.PROGRAM_CONFIG_ENABLED);
-                    final List<String> programConfigWildcards =
-                            clusterConfiguration.get(DeploymentOptions.PROGRAM_CONFIG_WILDCARDS);
+                    final boolean programConfigEnabled = clusterConfiguration.get(DeploymentOptions.PROGRAM_CONFIG_ENABLED);
+                    final List<String> programConfigWildcards = clusterConfiguration.get(DeploymentOptions.PROGRAM_CONFIG_WILDCARDS);
                     final Configuration mergedEnvConfig = new Configuration();
                     mergedEnvConfig.addAll(clusterConfiguration);
                     mergedEnvConfig.addAll(envInitConfig);
@@ -245,7 +243,8 @@ public class StreamContextEnvironment extends StreamExecutionEnvironment {
                             enforceSingleJobExecution,
                             suppressSysout,
                             programConfigEnabled,
-                            programConfigWildcards);
+                            programConfigWildcards
+                    );
                 };
         initializeContextEnvironment(factory);
     }

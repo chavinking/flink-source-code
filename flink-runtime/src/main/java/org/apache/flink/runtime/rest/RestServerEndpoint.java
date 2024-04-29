@@ -235,12 +235,8 @@ public abstract class RestServerEndpoint implements RestService {
                     };
 
 //            启动netty服务
-            NioEventLoopGroup bossGroup =
-                    new NioEventLoopGroup(
-                            1, new ExecutorThreadFactory("flink-rest-server-netty-boss"));
-            NioEventLoopGroup workerGroup =
-                    new NioEventLoopGroup(
-                            0, new ExecutorThreadFactory("flink-rest-server-netty-worker"));
+            NioEventLoopGroup bossGroup = new NioEventLoopGroup(1, new ExecutorThreadFactory("flink-rest-server-netty-boss"));
+            NioEventLoopGroup workerGroup = new NioEventLoopGroup(0, new ExecutorThreadFactory("flink-rest-server-netty-worker"));
 
             bootstrap = new ServerBootstrap();
             bootstrap
@@ -311,7 +307,6 @@ public abstract class RestServerEndpoint implements RestService {
             /**
              * 启动netty服务端，绑定了各种handler服务用来响应客户端页面请求服务
              */
-
             startInternal();
         }
     }

@@ -102,12 +102,10 @@ public final class GlobalConfiguration {
      * @param dynamicProperties configuration file containing the dynamic properties. Null if none.
      * @return The configuration loaded from the given configuration directory
      */
-    public static Configuration loadConfiguration(
-            final String configDir, @Nullable final Configuration dynamicProperties) {
+    public static Configuration loadConfiguration(final String configDir, @Nullable final Configuration dynamicProperties) {
 
         if (configDir == null) {
-            throw new IllegalArgumentException(
-                    "Given configuration directory is null, cannot load configuration");
+            throw new IllegalArgumentException("Given configuration directory is null, cannot load configuration");
         }
 
         final File confDirFile = new File(configDir);
@@ -119,6 +117,7 @@ public final class GlobalConfiguration {
                             + confDirFile.getAbsolutePath()
                             + ") does not describe an existing directory.");
         }
+
 
         // get Flink yaml configuration file
         final File yamlConfigFile = new File(confDirFile, FLINK_CONF_FILENAME);
@@ -132,6 +131,7 @@ public final class GlobalConfiguration {
                             + ") does not exist.");
         }
 
+        // 加载yaml配置文件
         Configuration configuration = loadYAMLResource(yamlConfigFile);
 
         logConfiguration("Loading", configuration);
@@ -143,6 +143,8 @@ public final class GlobalConfiguration {
 
         return configuration;
     }
+
+
 
     private static void logConfiguration(String prefix, Configuration config) {
         config.confData.forEach(
@@ -178,9 +180,7 @@ public final class GlobalConfiguration {
      */
     private static Configuration loadYAMLResource(File file) {
         final Configuration config = new Configuration();
-
-        try (BufferedReader reader =
-                new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
 
             String line;
             int lineNo = 0;
@@ -232,6 +232,9 @@ public final class GlobalConfiguration {
 
         return config;
     }
+
+
+
 
     /**
      * Check whether the key is a hidden key.

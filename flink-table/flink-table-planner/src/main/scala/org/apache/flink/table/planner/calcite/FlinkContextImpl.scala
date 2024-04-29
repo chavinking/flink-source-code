@@ -28,8 +28,7 @@ class FlinkContextImpl(
     functionCatalog: FunctionCatalog,
     catalogManager: CatalogManager,
     rexFactory: RexFactory,
-    classLoader: ClassLoader)
-  extends FlinkContext {
+    classLoader: ClassLoader) extends FlinkContext {
 
   override def isBatchMode: Boolean = inBatchMode
 

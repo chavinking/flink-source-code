@@ -101,8 +101,7 @@ public class TaskManagerServices {
             LibraryCacheManager libraryCacheManager,
             SlotAllocationSnapshotPersistenceService slotAllocationSnapshotPersistenceService) {
 
-        this.unresolvedTaskManagerLocation =
-                Preconditions.checkNotNull(unresolvedTaskManagerLocation);
+        this.unresolvedTaskManagerLocation = Preconditions.checkNotNull(unresolvedTaskManagerLocation);
         this.managedMemorySize = managedMemorySize;
         this.ioManager = Preconditions.checkNotNull(ioManager);
         this.shuffleEnvironment = Preconditions.checkNotNull(shuffleEnvironment);
@@ -118,6 +117,7 @@ public class TaskManagerServices {
         this.libraryCacheManager = Preconditions.checkNotNull(libraryCacheManager);
         this.slotAllocationSnapshotPersistenceService = slotAllocationSnapshotPersistenceService;
     }
+
 
     // --------------------------------------------------------------------------------------------
     //  Getter/Setter
@@ -293,20 +293,19 @@ public class TaskManagerServices {
         /**
          * 实例化shuffer组件
          */
-        final ShuffleEnvironment<?, ?> shuffleEnvironment =
-                createShuffleEnvironment(
+        final ShuffleEnvironment<?, ?> shuffleEnvironment = createShuffleEnvironment(
                         taskManagerServicesConfiguration,
                         taskEventDispatcher,
                         taskManagerMetricGroup,
                         ioExecutor);
         final int listeningDataPort = shuffleEnvironment.start();
 
-        final KvStateService kvStateService =
-                KvStateService.fromConfiguration(taskManagerServicesConfiguration);
+
+        final KvStateService kvStateService = KvStateService.fromConfiguration(taskManagerServicesConfiguration);
         kvStateService.start();
 
-        final UnresolvedTaskManagerLocation unresolvedTaskManagerLocation =
-                new UnresolvedTaskManagerLocation(
+
+        final UnresolvedTaskManagerLocation unresolvedTaskManagerLocation = new UnresolvedTaskManagerLocation(
                         taskManagerServicesConfiguration.getResourceID(),
                         taskManagerServicesConfiguration.getExternalAddress(),
                         // we expose the task manager location with the listening port
@@ -314,52 +313,48 @@ public class TaskManagerServices {
                         taskManagerServicesConfiguration.getExternalDataPort() > 0
                                 ? taskManagerServicesConfiguration.getExternalDataPort()
                                 : listeningDataPort,
-                        taskManagerServicesConfiguration.getNodeId());
+                        taskManagerServicesConfiguration.getNodeId()
+        );
 
         final BroadcastVariableManager broadcastVariableManager = new BroadcastVariableManager();
 
         /**
          * 用于管理 slot 与 task对应关系
          */
-        final TaskSlotTable<Task> taskSlotTable =
-                createTaskSlotTable(
+        final TaskSlotTable<Task> taskSlotTable = createTaskSlotTable(
                         taskManagerServicesConfiguration.getNumberOfSlots(),
                         taskManagerServicesConfiguration.getTaskExecutorResourceSpec(),
                         taskManagerServicesConfiguration.getTimerServiceShutdownTimeout(),
                         taskManagerServicesConfiguration.getPageSize(),
-                        ioExecutor);
+                        ioExecutor
+        );
 
         /**
          * 用于管理运行的job信息
          */
         final JobTable jobTable = DefaultJobTable.create();
 
-        final JobLeaderService jobLeaderService =
-                new DefaultJobLeaderService(
+        final JobLeaderService jobLeaderService = new DefaultJobLeaderService(
                         unresolvedTaskManagerLocation,
                         taskManagerServicesConfiguration.getRetryingRegistrationConfiguration()
                 );
 
-        final TaskExecutorLocalStateStoresManager taskStateManager =
-                new TaskExecutorLocalStateStoresManager(
+        final TaskExecutorLocalStateStoresManager taskStateManager = new TaskExecutorLocalStateStoresManager(
                         taskManagerServicesConfiguration.isLocalRecoveryEnabled(),
                         taskManagerServicesConfiguration.getLocalRecoveryStateDirectories(),
                         ioExecutor
                 );
 
-        final TaskExecutorStateChangelogStoragesManager changelogStoragesManager =
-                new TaskExecutorStateChangelogStoragesManager();
+        final TaskExecutorStateChangelogStoragesManager changelogStoragesManager = new TaskExecutorStateChangelogStoragesManager();
 
-        final boolean failOnJvmMetaspaceOomError =
-                taskManagerServicesConfiguration
+        final boolean failOnJvmMetaspaceOomError = taskManagerServicesConfiguration
                         .getConfiguration()
                         .getBoolean(CoreOptions.FAIL_ON_USER_CLASS_LOADING_METASPACE_OOM);
-        final boolean checkClassLoaderLeak =
-                taskManagerServicesConfiguration
+        final boolean checkClassLoaderLeak = taskManagerServicesConfiguration
                         .getConfiguration()
                         .getBoolean(CoreOptions.CHECK_LEAKED_CLASSLOADER);
-        final LibraryCacheManager libraryCacheManager =
-                new BlobLibraryCacheManager(
+
+        final LibraryCacheManager libraryCacheManager = new BlobLibraryCacheManager(
                         permanentBlobService,
                         BlobLibraryCacheManager.defaultClassLoaderFactory(
                                 taskManagerServicesConfiguration.getClassLoaderResolveOrder(),
@@ -372,11 +367,9 @@ public class TaskManagerServices {
         final SlotAllocationSnapshotPersistenceService slotAllocationSnapshotPersistenceService;
 
         if (taskManagerServicesConfiguration.isLocalRecoveryEnabled()) {
-            slotAllocationSnapshotPersistenceService =
-                    new FileSlotAllocationSnapshotPersistenceService(workingDirectory.getSlotAllocationSnapshotDirectory());
+            slotAllocationSnapshotPersistenceService = new FileSlotAllocationSnapshotPersistenceService(workingDirectory.getSlotAllocationSnapshotDirectory());
         } else {
-            slotAllocationSnapshotPersistenceService =
-                    NoOpSlotAllocationSnapshotPersistenceService.INSTANCE;
+            slotAllocationSnapshotPersistenceService = NoOpSlotAllocationSnapshotPersistenceService.INSTANCE;
         }
 
         /**
@@ -397,7 +390,8 @@ public class TaskManagerServices {
                 taskEventDispatcher,
                 ioExecutor,
                 libraryCacheManager,
-                slotAllocationSnapshotPersistenceService);
+                slotAllocationSnapshotPersistenceService
+        );
     }
 
     private static TaskSlotTable<Task> createTaskSlotTable(
@@ -405,30 +399,28 @@ public class TaskManagerServices {
             final TaskExecutorResourceSpec taskExecutorResourceSpec,
             final long timerServiceShutdownTimeout,
             final int pageSize,
-            final Executor memoryVerificationExecutor) {
+            final Executor memoryVerificationExecutor
+    ) {
         final TimerService<AllocationID> timerService =
-                new DefaultTimerService<>(
-                        new ScheduledThreadPoolExecutor(1), timerServiceShutdownTimeout);
+                new DefaultTimerService<>(new ScheduledThreadPoolExecutor(1), timerServiceShutdownTimeout);
         return new TaskSlotTableImpl<>(
                 numberOfSlots,
-                TaskExecutorResourceUtils.generateTotalAvailableResourceProfile(
-                        taskExecutorResourceSpec),
-                TaskExecutorResourceUtils.generateDefaultSlotResourceProfile(
-                        taskExecutorResourceSpec, numberOfSlots),
+                TaskExecutorResourceUtils.generateTotalAvailableResourceProfile(taskExecutorResourceSpec),
+                TaskExecutorResourceUtils.generateDefaultSlotResourceProfile(taskExecutorResourceSpec, numberOfSlots),
                 pageSize,
                 timerService,
-                memoryVerificationExecutor);
+                memoryVerificationExecutor
+        );
     }
 
     private static ShuffleEnvironment<?, ?> createShuffleEnvironment(
             TaskManagerServicesConfiguration taskManagerServicesConfiguration,
             TaskEventDispatcher taskEventDispatcher,
             MetricGroup taskManagerMetricGroup,
-            Executor ioExecutor)
-            throws FlinkException {
+            Executor ioExecutor
+    ) throws FlinkException {
 
-        final ShuffleEnvironmentContext shuffleEnvironmentContext =
-                new ShuffleEnvironmentContext(
+        final ShuffleEnvironmentContext shuffleEnvironmentContext = new ShuffleEnvironmentContext(
                         taskManagerServicesConfiguration.getConfiguration(),
                         taskManagerServicesConfiguration.getResourceID(),
                         taskManagerServicesConfiguration.getNetworkMemorySize(),

@@ -90,6 +90,9 @@ public class CheckpointBarrierTracker extends CheckpointBarrierHandler {
         this.pendingCheckpoints = new ArrayDeque<>();
     }
 
+
+
+
     @Override
     public void processBarrier(
             CheckpointBarrier receivedBarrier,
@@ -161,6 +164,7 @@ public class CheckpointBarrierTracker extends CheckpointBarrierHandler {
             }
         }
     }
+
 
 
 

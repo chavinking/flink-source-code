@@ -1366,8 +1366,7 @@ public class Task
 
             try {
 
-                ((CheckpointableTask) invokable)
-                        .triggerCheckpointAsync(checkpointMetaData, checkpointOptions)
+                ((CheckpointableTask) invokable).triggerCheckpointAsync(checkpointMetaData, checkpointOptions)
                         .handle(
                                 (triggerResult, exception) -> {
                                     if (exception != null || !triggerResult) {

@@ -176,30 +176,30 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
     protected void initializeInternal() throws Exception {
         final YarnContainerEventHandler yarnContainerEventHandler = new YarnContainerEventHandler();
         try {
-            resourceManagerClient =
-                    yarnResourceManagerClientFactory.createResourceManagerClient(
-                            yarnHeartbeatIntervalMillis, yarnContainerEventHandler);
+            resourceManagerClient = yarnResourceManagerClientFactory.createResourceManagerClient(yarnHeartbeatIntervalMillis, yarnContainerEventHandler);
             resourceManagerClient.init(yarnConfig);
             resourceManagerClient.start();
 
-            final RegisterApplicationMasterResponse registerApplicationMasterResponse =
-                    registerApplicationMaster();
+            final RegisterApplicationMasterResponse registerApplicationMasterResponse = registerApplicationMaster();
             getContainersFromPreviousAttempts(registerApplicationMasterResponse);
             taskExecutorProcessSpecContainerResourcePriorityAdapter =
                     new TaskExecutorProcessSpecContainerResourcePriorityAdapter(
                             registerApplicationMasterResponse.getMaximumResourceCapability(),
                             ExternalResourceUtils.getExternalResourceConfigurationKeys(
                                     flinkConfig,
-                                    YarnConfigOptions.EXTERNAL_RESOURCE_YARN_CONFIG_KEY_SUFFIX));
+                                    YarnConfigOptions.EXTERNAL_RESOURCE_YARN_CONFIG_KEY_SUFFIX
+                            )
+                    );
         } catch (Exception e) {
             throw new ResourceManagerException("Could not start resource manager client.", e);
         }
 
-        nodeManagerClient =
-                yarnNodeManagerClientFactory.createNodeManagerClient(yarnContainerEventHandler);
+        nodeManagerClient = yarnNodeManagerClientFactory.createNodeManagerClient(yarnContainerEventHandler);
         nodeManagerClient.init(yarnConfig);
         nodeManagerClient.start();
     }
+
+
 
     @Override
     public void terminate() throws Exception {
@@ -245,8 +245,7 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
         final String appTrackingUrl = historyServerURL.map(URL::toString).orElse("");
 
         try {
-            resourceManagerClient.unregisterApplicationMaster(
-                    yarnStatus, optionalDiagnostics, appTrackingUrl);
+            resourceManagerClient.unregisterApplicationMaster(yarnStatus, optionalDiagnostics, appTrackingUrl);
         } catch (YarnException | IOException e) {
             log.error("Could not unregister the application master.", e);
         }
@@ -256,15 +255,14 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
 
     @Override
     public CompletableFuture<YarnWorkerNode> requestResource(
-            TaskExecutorProcessSpec taskExecutorProcessSpec) {
+            TaskExecutorProcessSpec taskExecutorProcessSpec
+    ) {
         checkInitialized();
 
         final CompletableFuture<YarnWorkerNode> requestResourceFuture = new CompletableFuture<>();
 
         final Optional<TaskExecutorProcessSpecContainerResourcePriorityAdapter.PriorityAndResource>
-                priorityAndResourceOpt =
-                        taskExecutorProcessSpecContainerResourcePriorityAdapter
-                                .getPriorityAndResource(taskExecutorProcessSpec);
+                priorityAndResourceOpt = taskExecutorProcessSpecContainerResourcePriorityAdapter.getPriorityAndResource(taskExecutorProcessSpec);
 
         if (!priorityAndResourceOpt.isPresent()) {
             requestResourceFuture.completeExceptionally(
@@ -276,6 +274,7 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
         } else {
             final Priority priority = priorityAndResourceOpt.get().getPriority();
             final Resource resource = priorityAndResourceOpt.get().getResource();
+
             addContainerRequest(resource, priority);
 
             // make sure we transmit the request fast and receive fast news of granted allocations
@@ -293,6 +292,9 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
 
         return requestResourceFuture;
     }
+
+
+
 
     private void tryUpdateApplicationBlockList() {
         Set<String> currentBlockedNodes = getBlockedNodeRetriever().getAllBlockedNodeIds();
@@ -373,8 +375,7 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
                 requestResourceFutures.remove(taskExecutorProcessSpec);
             }
 
-            startTaskExecutorInContainerAsync(
-                    container, taskExecutorProcessSpec, resourceId, requestResourceFuture);
+            startTaskExecutorInContainerAsync(container, taskExecutorProcessSpec, resourceId, requestResourceFuture);
             removeContainerRequest(pendingRequest);
 
             numAccepted++;
@@ -401,9 +402,7 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
     private void addContainerRequest(Resource resource, Priority priority) {
         // update blocklist
         tryUpdateApplicationBlockList();
-        AMRMClient.ContainerRequest containerRequest =
-                ContainerRequestReflector.INSTANCE.getContainerRequest(
-                        resource, priority, taskManagerNodeLabel);
+        AMRMClient.ContainerRequest containerRequest = ContainerRequestReflector.INSTANCE.getContainerRequest(resource, priority, taskManagerNodeLabel);
         resourceManagerClient.addContainerRequest(containerRequest);
     }
 
@@ -421,7 +420,8 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
             Container container,
             TaskExecutorProcessSpec taskExecutorProcessSpec,
             ResourceID resourceId,
-            CompletableFuture<YarnWorkerNode> requestResourceFuture) {
+            CompletableFuture<YarnWorkerNode> requestResourceFuture
+    ) {
         final CompletableFuture<ContainerLaunchContext> containerLaunchContextFuture =
                 FutureUtils.supplyAsync(
                         () ->
@@ -466,8 +466,8 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
     }
 
     private ContainerLaunchContext createTaskExecutorLaunchContext(
-            ResourceID containerId, String host, TaskExecutorProcessSpec taskExecutorProcessSpec)
-            throws Exception {
+            ResourceID containerId, String host, TaskExecutorProcessSpec taskExecutorProcessSpec
+    ) throws Exception {
 
         // init the ContainerLaunchContext
         final String currDir = configuration.getCurrentDir();
@@ -493,8 +493,7 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
 
         log.debug("TaskManager configuration: {}", taskManagerConfig);
 
-        final ContainerLaunchContext taskExecutorLaunchContext =
-                Utils.createTaskExecutorContext(
+        final ContainerLaunchContext taskExecutorLaunchContext = Utils.createTaskExecutorContext(
                         flinkConfig,
                         yarnConfig,
                         configuration,
@@ -524,9 +523,9 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
     private RegisterApplicationMasterResponse registerApplicationMaster() throws Exception {
         return resourceManagerClient.registerApplicationMaster(
                 configuration.getRpcAddress(),
-                ResourceManagerUtils.parseRestBindPortFromWebInterfaceUrl(
-                        configuration.getWebInterfaceUrl()),
-                configuration.getWebInterfaceUrl());
+                ResourceManagerUtils.parseRestBindPortFromWebInterfaceUrl(configuration.getWebInterfaceUrl()),
+                configuration.getWebInterfaceUrl()
+        );
     }
 
     private void getContainersFromPreviousAttempts(
@@ -596,8 +595,7 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
     //  Event handlers
     // ------------------------------------------------------------------------
 
-    class YarnContainerEventHandler
-            implements AMRMClientAsync.CallbackHandler, NMClientAsync.CallbackHandler {
+    class YarnContainerEventHandler implements AMRMClientAsync.CallbackHandler, NMClientAsync.CallbackHandler {
 
         @Override
         public void onContainersCompleted(List<ContainerStatus> statuses) {
@@ -618,6 +616,11 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
                     });
         }
 
+        /**
+         * 这个方法有yarn内部的方法进行回调处理
+         *
+         * @param containers
+         */
         @Override
         public void onContainersAllocated(List<Container> containers) {
             runAsyncWithFatalHandler(
@@ -625,8 +628,7 @@ public class YarnResourceManagerDriver extends AbstractResourceManagerDriver<Yar
                         checkInitialized();
                         log.info("Received {} containers.", containers.size());
 
-                        for (Map.Entry<Priority, List<Container>> entry :
-                                groupContainerByPriority(containers).entrySet()) {
+                        for (Map.Entry<Priority, List<Container>> entry : groupContainerByPriority(containers).entrySet()) {
                             onContainersOfPriorityAllocated(entry.getKey(), entry.getValue());
                         }
 

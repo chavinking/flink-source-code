@@ -87,8 +87,8 @@ public class TaskExecutorLocalStateStoresManager {
     public TaskExecutorLocalStateStoresManager(
             boolean localRecoveryEnabled,
             @Nonnull Reference<File[]> localStateRootDirectories,
-            @Nonnull Executor discardExecutor)
-            throws IOException {
+            @Nonnull Executor discardExecutor
+    ) throws IOException {
 
         LOG.debug(
                 "Start {} with local state root directories {}.",

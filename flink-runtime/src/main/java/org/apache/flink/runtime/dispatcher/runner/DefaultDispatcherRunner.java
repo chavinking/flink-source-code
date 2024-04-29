@@ -70,8 +70,7 @@ public final class DefaultDispatcherRunner implements DispatcherRunner, LeaderCo
 
         this.running = true;
         this.dispatcherLeaderProcess = StoppedDispatcherLeaderProcess.INSTANCE;
-        this.previousDispatcherLeaderProcessTerminationFuture =
-                CompletableFuture.completedFuture(null);
+        this.previousDispatcherLeaderProcessTerminationFuture = CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -131,6 +130,10 @@ public final class DefaultDispatcherRunner implements DispatcherRunner, LeaderCo
         // 启动服务
         FutureUtils.assertNoException(previousDispatcherLeaderProcessTerminationFuture.thenRun(newDispatcherLeaderProcess::start));
     }
+
+
+
+
 
     private void stopDispatcherLeaderProcess() {
         final CompletableFuture<Void> terminationFuture = dispatcherLeaderProcess.closeAsync();
@@ -231,8 +234,7 @@ public final class DefaultDispatcherRunner implements DispatcherRunner, LeaderCo
             FatalErrorHandler fatalErrorHandler,
             DispatcherLeaderProcessFactory dispatcherLeaderProcessFactory)
             throws Exception {
-        final DefaultDispatcherRunner dispatcherRunner =
-                new DefaultDispatcherRunner(
+        final DefaultDispatcherRunner dispatcherRunner = new DefaultDispatcherRunner(
                         leaderElectionService,
                         fatalErrorHandler,
                         dispatcherLeaderProcessFactory

@@ -884,8 +884,7 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
             stopCheckpointScheduler();
         }
 
-        return checkpointCoordinator
-                .triggerSavepoint(targetDirectory, formatType)
+        return checkpointCoordinator.triggerSavepoint(targetDirectory, formatType)
                 .thenApply(CompletedCheckpoint::getExternalPointer)
                 .handleAsync(
                         (path, throwable) -> {

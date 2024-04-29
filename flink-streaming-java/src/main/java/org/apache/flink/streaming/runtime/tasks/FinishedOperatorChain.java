@@ -104,9 +104,11 @@ public class FinishedOperatorChain<OUT, OP extends StreamOperator<OUT>>
             ChannelStateWriter.ChannelStateWriteResult channelStateWriteResult,
             CheckpointStreamFactory storage
     ) throws Exception {
+
         for (StreamOperatorWrapper<?, ?> operatorWrapper : getAllOperators(true)) {
             StreamOperator<?> operator = operatorWrapper.getStreamOperator();
             if (operator == getMainOperator() || operator == getTailOperator()) {
+
                 OperatorSnapshotFutures snapshotInProgress = new OperatorSnapshotFutures();
 
                 snapshotChannelStates(operator, channelStateWriteResult, snapshotInProgress);
@@ -115,6 +117,7 @@ public class FinishedOperatorChain<OUT, OP extends StreamOperator<OUT>>
             }
         }
 
+        // 向 协调器 发送消息
         sendAcknowledgeCheckpointEvent(checkpointMetaData.getCheckpointId());
     }
 }

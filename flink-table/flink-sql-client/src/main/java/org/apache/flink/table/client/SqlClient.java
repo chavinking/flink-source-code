@@ -76,6 +76,8 @@ public class SqlClient {
         this.terminalFactory = terminalFactory;
     }
 
+
+
     private void start() {
         if (isEmbedded) {
             // create local executor with default environment
@@ -88,9 +90,7 @@ public class SqlClient {
             String sessionId = executor.openSession(options.getSessionId());
             try {
                 // add shutdown hook
-                Runtime.getRuntime()
-                        .addShutdownHook(new EmbeddedShutdownThread(sessionId, executor));
-
+                Runtime.getRuntime().addShutdownHook(new EmbeddedShutdownThread(sessionId, executor));
                 // do the actual work
                 openCli(sessionId, executor);
             } finally {
@@ -101,6 +101,8 @@ public class SqlClient {
         }
     }
 
+
+
     /**
      * Opens the CLI client for executing SQL statements.
      *
@@ -108,14 +110,12 @@ public class SqlClient {
      * @param executor executor
      */
     private void openCli(String sessionId, Executor executor) {
+        // 获取历史文件
         Path historyFilePath;
         if (options.getHistoryFilePath() != null) {
             historyFilePath = Paths.get(options.getHistoryFilePath());
         } else {
-            historyFilePath =
-                    Paths.get(
-                            System.getProperty("user.home"),
-                            SystemUtils.IS_OS_WINDOWS ? "flink-sql-history" : ".flink-sql-history");
+            historyFilePath = Paths.get(System.getProperty("user.home"), SystemUtils.IS_OS_WINDOWS ? "flink-sql-history" : ".flink-sql-history");
         }
 
         boolean hasSqlFile = options.getSqlFile() != null;
@@ -130,9 +130,12 @@ public class SqlClient {
                             CliOptionsParser.OPTION_FILE.getOpt()));
         }
 
+
+
         try (CliClient cli = new CliClient(terminalFactory, sessionId, executor, historyFilePath)) {
             if (options.getInitFile() != null) {
                 boolean success = cli.executeInitialization(readFromURL(options.getInitFile()));
+
                 if (!success) {
                     System.out.println(
                             String.format(
@@ -152,14 +155,21 @@ public class SqlClient {
             } else {
                 cli.executeInNonInteractiveMode(readExecutionContent());
             }
+
         }
+
+
     }
+
+
 
     // --------------------------------------------------------------------------------------------
 
     public static void main(String[] args) {
         startClient(args, DEFAULT_TERMINAL_FACTORY);
     }
+
+
 
     @VisibleForTesting
     protected static void startClient(String[] args, Supplier<Terminal> terminalFactory) {
@@ -175,6 +185,7 @@ public class SqlClient {
             // remove mode
             modeArgs = Arrays.copyOfRange(args, 1, args.length);
         }
+
 
         switch (mode) {
             case MODE_EMBEDDED:
@@ -195,12 +206,8 @@ public class SqlClient {
                         // make space in terminal
                         System.out.println();
                         System.out.println();
-                        LOG.error(
-                                "SQL Client must stop. Unexpected exception. This is a bug. Please consider filing an issue.",
-                                t);
-                        throw new SqlClientException(
-                                "Unexpected exception. This is a bug. Please consider filing an issue.",
-                                t);
+                        LOG.error("SQL Client must stop. Unexpected exception. This is a bug. Please consider filing an issue.", t);
+                        throw new SqlClientException("Unexpected exception. This is a bug. Please consider filing an issue.", t);
                     }
                 }
                 break;
@@ -208,10 +215,13 @@ public class SqlClient {
             case MODE_GATEWAY:
                 throw new SqlClientException("Gateway mode is not supported yet.");
 
-            default:
+            default: // 打印帮助
                 CliOptionsParser.printHelpClient();
         }
     }
+
+
+
 
     // --------------------------------------------------------------------------------------------
 

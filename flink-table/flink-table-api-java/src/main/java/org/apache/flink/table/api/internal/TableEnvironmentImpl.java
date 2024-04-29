@@ -222,17 +222,17 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
             Executor executor,
             FunctionCatalog functionCatalog,
             Planner planner,
-            boolean isStreamingMode) {
+            boolean isStreamingMode
+    ) {
         this.catalogManager = catalogManager;
         this.moduleManager = moduleManager;
         this.resourceManager = resourceManager;
         this.execEnv = executor;
-
         this.tableConfig = tableConfig;
-
         this.functionCatalog = functionCatalog;
         this.planner = planner;
         this.isStreamingMode = isStreamingMode;
+
         this.operationTreeBuilder = OperationTreeBuilder.create(
                         tableConfig,
                         resourceManager.getUserClassLoader(),
@@ -240,12 +240,9 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
                         catalogManager.getDataTypeFactory(),
                         path -> {
                             try {
-                                UnresolvedIdentifier unresolvedIdentifier =
-                                        getParser().parseIdentifier(path);
-                                Optional<SourceQueryOperation> catalogQueryOperation =
-                                        scanInternal(unresolvedIdentifier);
-                                return catalogQueryOperation.map(
-                                        t -> ApiExpressionUtils.tableRef(path, t));
+                                UnresolvedIdentifier unresolvedIdentifier = getParser().parseIdentifier(path);
+                                Optional<SourceQueryOperation> catalogQueryOperation = scanInternal(unresolvedIdentifier);
+                                return catalogQueryOperation.map(t -> ApiExpressionUtils.tableRef(path, t));
                             } catch (SqlParserException ex) {
                                 // The TableLookup is used during resolution of expressions and it
                                 // actually might not be an
@@ -264,6 +261,8 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
         catalogManager.initSchemaResolver(isStreamingMode, operationTreeBuilder.getResolverBuilder());
     }
 
+
+
     public static TableEnvironmentImpl create(Configuration configuration) {
         return create(EnvironmentSettings.newInstance().withConfiguration(configuration).build());
     }
@@ -280,9 +279,15 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
      */
     public static TableEnvironmentImpl create(EnvironmentSettings settings) {
 
+        /**
+         * 这行代码的作用是创建一个用于加载用户自定义类的类加载器，并将其存储在 userClassLoader 变量中。
+         * 这个类加载器在 Flink 任务的执行期间可能用于加载用户编写的自定义代码，例如用户自定义的函数、算子等。
+         * 这种机制允许用户在不重新启动 Flink 任务的情况下动态更新和加载他们的代码。
+         */
         final MutableURLClassLoader userClassLoader = FlinkUserCodeClassLoaders.create(new URL[0], settings.getUserClassLoader(), settings.getConfiguration());
         final ExecutorFactory executorFactory = FactoryUtil.discoverFactory(userClassLoader, ExecutorFactory.class, ExecutorFactory.DEFAULT_IDENTIFIER);
         final Executor executor = executorFactory.create(settings.getConfiguration());
+
 
         // use configuration to init table config
         final TableConfig tableConfig = TableConfig.getDefault();
@@ -303,8 +308,8 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
                                 )
                         )
                         .build();
-
         final FunctionCatalog functionCatalog = new FunctionCatalog(tableConfig, resourceManager, catalogManager, moduleManager);
+
 
 //        创建SQL解析器对象
         final Planner planner =
@@ -581,7 +586,6 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
 
     private Optional<SourceQueryOperation> scanInternal(UnresolvedIdentifier identifier) {
         ObjectIdentifier tableIdentifier = catalogManager.qualifyIdentifier(identifier);
-
         return catalogManager.getTable(tableIdentifier).map(SourceQueryOperation::new);
     }
 
@@ -717,7 +721,6 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
         if (operations.size() != 1) {
             throw new ValidationException("Unsupported SQL query! sqlQuery() only accepts a single SQL query.");
         }
-
         Operation operation = operations.get(0);
 
         if (operation instanceof QueryOperation && !(operation instanceof ModifyOperation)) {
@@ -731,22 +734,28 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
 
 
 
+
+
     @Override
     public TableResult executeSql(String statement) {
         // 解析 -> 校验
         // 解析SQL成Operation，Operation封装了算术语法树和schema信息
         List<Operation> operations = getParser().parse(statement);
 
+
         if (operations.size() != 1) {
             throw new TableException(UNSUPPORTED_QUERY_IN_EXECUTE_SQL_MSG);
         }
-
         Operation operation = operations.get(0);
+
+
 
         // 优化 -> 执行
         // 执行转换后的Operation
         return executeInternal(operation);
     }
+
+
 
 
 
@@ -933,7 +942,6 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
             ResultProvider resultProvider = sinkOperation.getSelectResultProvider();
             resultProvider.setJobClient(jobClient);
 
-
             // 构建TableResultImpl对象
             return TableResultImpl.builder()
                     .jobClient(jobClient)
@@ -951,7 +959,6 @@ public class TableEnvironmentImpl implements TableEnvironmentInternal {
                             )
                     )
                     .build();
-
 
         } catch (Exception e) {
             throw new TableException("Failed to execute sql", e);

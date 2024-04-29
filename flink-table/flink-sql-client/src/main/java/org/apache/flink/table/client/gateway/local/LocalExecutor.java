@@ -83,12 +83,10 @@ public class LocalExecutor implements Executor {
 
     @Override
     public String openSession(@Nullable String sessionId) throws SqlExecutionException {
-        SessionContext sessionContext =
-                LocalContextUtils.buildSessionContext(sessionId, defaultContext);
+        SessionContext sessionContext = LocalContextUtils.buildSessionContext(sessionId, defaultContext);
         sessionId = sessionContext.getSessionId();
         if (this.contextMap.containsKey(sessionId)) {
-            throw new SqlExecutionException(
-                    "Found another session with the same session identifier: " + sessionId);
+            throw new SqlExecutionException("Found another session with the same session identifier: " + sessionId);
         } else {
             this.contextMap.put(sessionId, sessionContext);
         }
@@ -197,8 +195,7 @@ public class LocalExecutor implements Executor {
     }
 
     @Override
-    public TableResultInternal executeOperation(String sessionId, Operation operation)
-            throws SqlExecutionException {
+    public TableResultInternal executeOperation(String sessionId, Operation operation) throws SqlExecutionException {
         final ExecutionContext context = getExecutionContext(sessionId);
         final TableEnvironmentInternal tEnv =
                 (TableEnvironmentInternal) context.getTableEnvironment();
@@ -223,8 +220,7 @@ public class LocalExecutor implements Executor {
     }
 
     @Override
-    public ResultDescriptor executeQuery(String sessionId, QueryOperation query)
-            throws SqlExecutionException {
+    public ResultDescriptor executeQuery(String sessionId, QueryOperation query) throws SqlExecutionException {
         final TableResultInternal tableResult = executeOperation(sessionId, query);
         final SessionContext context = getSessionContext(sessionId);
         final ReadableConfig config = context.getReadableConfig();

@@ -167,10 +167,11 @@ public abstract class RetryingRegistration<
                                 register(
                                         rpcGateway,
                                         1, // 初始次数1 ，重试次数
-                                        retryingRegistrationConfiguration
-                                                .getInitialRegistrationTimeoutMillis());
+                                        retryingRegistrationConfiguration.getInitialRegistrationTimeoutMillis()
+                                );
                             },
-                            rpcService.getScheduledExecutor());
+                            rpcService.getScheduledExecutor()
+                    );
 
             // upon failure, retry, unless this is cancelled
             rpcGatewayAcceptFuture.whenCompleteAsync(

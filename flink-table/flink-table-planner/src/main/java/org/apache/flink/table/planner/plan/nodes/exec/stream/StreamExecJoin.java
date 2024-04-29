@@ -127,17 +127,20 @@ public class StreamExecJoin extends ExecNodeBase<RowData>
         this.rightUpsertKeys = rightUpsertKeys;
     }
 
+
+
+
+
     @Override
     @SuppressWarnings("unchecked")
     protected Transformation<RowData> translateToPlanInternal(
-            PlannerBase planner, ExecNodeConfig config) {
+            PlannerBase planner, ExecNodeConfig config
+    ) {
         final ExecEdge leftInputEdge = getInputEdges().get(0);
         final ExecEdge rightInputEdge = getInputEdges().get(1);
 
-        final Transformation<RowData> leftTransform =
-                (Transformation<RowData>) leftInputEdge.translateToPlan(planner);
-        final Transformation<RowData> rightTransform =
-                (Transformation<RowData>) rightInputEdge.translateToPlan(planner);
+        final Transformation<RowData> leftTransform = (Transformation<RowData>) leftInputEdge.translateToPlan(planner);
+        final Transformation<RowData> rightTransform = (Transformation<RowData>) rightInputEdge.translateToPlan(planner);
 
         final RowType leftType = (RowType) leftInputEdge.getOutputType();
         final RowType rightType = (RowType) rightInputEdge.getOutputType();
@@ -147,23 +150,21 @@ public class StreamExecJoin extends ExecNodeBase<RowData>
         final int[] rightJoinKey = joinSpec.getRightKeys();
 
         final InternalTypeInfo<RowData> leftTypeInfo = InternalTypeInfo.of(leftType);
-        final JoinInputSideSpec leftInputSpec =
-                JoinUtil.analyzeJoinInput(
+        final JoinInputSideSpec leftInputSpec = JoinUtil.analyzeJoinInput(
                         planner.getFlinkContext().getClassLoader(),
                         leftTypeInfo,
                         leftJoinKey,
-                        leftUpsertKeys);
+                        leftUpsertKeys
+        );
 
         final InternalTypeInfo<RowData> rightTypeInfo = InternalTypeInfo.of(rightType);
-        final JoinInputSideSpec rightInputSpec =
-                JoinUtil.analyzeJoinInput(
+        final JoinInputSideSpec rightInputSpec = JoinUtil.analyzeJoinInput(
                         planner.getFlinkContext().getClassLoader(),
                         rightTypeInfo,
                         rightJoinKey,
                         rightUpsertKeys);
 
-        GeneratedJoinCondition generatedCondition =
-                JoinUtil.generateConditionFunction(
+        GeneratedJoinCondition generatedCondition = JoinUtil.generateConditionFunction(
                         config,
                         planner.getFlinkContext().getClassLoader(),
                         joinSpec,
@@ -175,8 +176,7 @@ public class StreamExecJoin extends ExecNodeBase<RowData>
         AbstractStreamingJoinOperator operator;
         FlinkJoinType joinType = joinSpec.getJoinType();
         if (joinType == FlinkJoinType.ANTI || joinType == FlinkJoinType.SEMI) {
-            operator =
-                    new StreamingSemiAntiJoinOperator(
+            operator = new StreamingSemiAntiJoinOperator(
                             joinType == FlinkJoinType.ANTI,
                             leftTypeInfo,
                             rightTypeInfo,
@@ -187,10 +187,8 @@ public class StreamExecJoin extends ExecNodeBase<RowData>
                             minRetentionTime);
         } else {
             boolean leftIsOuter = joinType == FlinkJoinType.LEFT || joinType == FlinkJoinType.FULL;
-            boolean rightIsOuter =
-                    joinType == FlinkJoinType.RIGHT || joinType == FlinkJoinType.FULL;
-            operator =
-                    new StreamingJoinOperator(
+            boolean rightIsOuter = joinType == FlinkJoinType.RIGHT || joinType == FlinkJoinType.FULL;
+            operator = new StreamingJoinOperator(
                             leftTypeInfo,
                             rightTypeInfo,
                             generatedCondition,
@@ -199,28 +197,27 @@ public class StreamExecJoin extends ExecNodeBase<RowData>
                             leftIsOuter,
                             rightIsOuter,
                             joinSpec.getFilterNulls(),
-                            minRetentionTime);
+                            minRetentionTime
+                    );
         }
 
         final RowType returnType = (RowType) getOutputType();
-        final TwoInputTransformation<RowData, RowData, RowData> transform =
-                ExecNodeUtil.createTwoInputTransformation(
+        final TwoInputTransformation<RowData, RowData, RowData> transform = ExecNodeUtil.createTwoInputTransformation(
                         leftTransform,
                         rightTransform,
                         createTransformationMeta(JOIN_TRANSFORMATION, config),
                         operator,
                         InternalTypeInfo.of(returnType),
-                        leftTransform.getParallelism());
+                        leftTransform.getParallelism()
+        );
 
         // set KeyType and Selector for state
-        RowDataKeySelector leftSelect =
-                KeySelectorUtil.getRowDataSelector(
-                        planner.getFlinkContext().getClassLoader(), leftJoinKey, leftTypeInfo);
-        RowDataKeySelector rightSelect =
-                KeySelectorUtil.getRowDataSelector(
-                        planner.getFlinkContext().getClassLoader(), rightJoinKey, rightTypeInfo);
+        RowDataKeySelector leftSelect = KeySelectorUtil.getRowDataSelector(planner.getFlinkContext().getClassLoader(), leftJoinKey, leftTypeInfo);
+        RowDataKeySelector rightSelect = KeySelectorUtil.getRowDataSelector(planner.getFlinkContext().getClassLoader(), rightJoinKey, rightTypeInfo);
         transform.setStateKeySelectors(leftSelect, rightSelect);
         transform.setStateKeyType(leftSelect.getProducedType());
+
         return transform;
     }
+
 }

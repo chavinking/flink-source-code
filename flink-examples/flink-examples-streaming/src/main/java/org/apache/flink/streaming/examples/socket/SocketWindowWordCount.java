@@ -63,6 +63,8 @@ public class SocketWindowWordCount {
         // get the execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+
+
         // get input data by connecting to the socket
         DataStream<String> text = env.socketTextStream(hostname, port, "\n");
 
@@ -75,7 +77,8 @@ public class SocketWindowWordCount {
                                                 out.collect(new WordWithCount(word, 1L));
                                             }
                                         },
-                                Types.POJO(WordWithCount.class))
+                                Types.POJO(WordWithCount.class)
+                        )
                         .keyBy(value -> value.word)
                         .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
                         .reduce((a, b) -> new WordWithCount(a.word, a.count + b.count))
@@ -84,7 +87,7 @@ public class SocketWindowWordCount {
         // print the results with a single thread, rather than in parallel
         windowCounts.print().setParallelism(1);
 
-        env.execute("Socket Window WordCount");
+        env.execute();
     }
 
     // ------------------------------------------------------------------------

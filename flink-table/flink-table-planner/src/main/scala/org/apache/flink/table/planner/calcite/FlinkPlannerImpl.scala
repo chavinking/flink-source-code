@@ -95,6 +95,7 @@ class FlinkPlannerImpl(
     validator
   }
 
+
   private def createSqlValidator(catalogReader: CalciteCatalogReader) = {
     val validator = new FlinkCalciteSqlValidator(
       operatorTable,
@@ -105,11 +106,12 @@ class FlinkPlannerImpl(
         .withDefaultNullCollation(FlinkPlannerImpl.defaultNullCollation)
         .withTypeCoercionEnabled(false)
     ) // Disable implicit type coercion for now.
+
     validator
   }
 
   def validate(sqlNode: SqlNode): SqlNode = {
-    // 创建校验器
+    // 创建校验器，由 SqlValidatorImpl 实现
     val validator = getOrCreateSqlValidator()
 
     // 校验SQL语法树
@@ -129,6 +131,7 @@ class FlinkPlannerImpl(
         case node: ExtendedSqlNode => node.validate()
         case _ =>
       }
+
       // no need to validate row type for DDL and insert nodes.
       // DDL和这些类型的语句无需校验
       if (

@@ -91,7 +91,8 @@ public class TaskExecutorToResourceManagerConnection
                 getTargetAddress(),
                 getTargetLeaderId(),
                 retryingRegistrationConfiguration,
-                taskExecutorRegistration);
+                taskExecutorRegistration
+        );
     }
 
     @Override

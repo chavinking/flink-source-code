@@ -284,7 +284,8 @@ public class BootstrapTools {
      * @param defaultDirs in case no tmp directories is set, next directories will be applied
      */
     public static void updateTmpDirectoriesInConfiguration(
-            Configuration configuration, @Nullable String defaultDirs) {
+            Configuration configuration, @Nullable String defaultDirs
+    ) {
         if (configuration.contains(CoreOptions.TMP_DIRS)) {
             LOG.info(
                     "Overriding Flink's temporary file directories with those "

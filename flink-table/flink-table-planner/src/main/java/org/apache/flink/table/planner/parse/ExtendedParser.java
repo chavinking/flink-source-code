@@ -58,6 +58,8 @@ public class ExtendedParser {
         return Optional.empty();
     }
 
+
+
     /**
      * Returns completion hints for the given statement at the given cursor position. The completion
      * happens case insensitively.

@@ -285,15 +285,19 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                     getFencingToken(),
                     getMainThreadExecutor(),
                     new ResourceActionsImpl(),
-                    blocklistHandler::isBlockedTaskManager);
+                    blocklistHandler::isBlockedTaskManager
+            );
 
             delegationTokenManager.start();
 
+            // 执行初始化动作
             initialize();
         } catch (Exception e) {
             handleStartResourceManagerServicesException(e);
         }
     }
+
+
 
     private void handleStartResourceManagerServicesException(Exception e) throws Exception {
         try {
@@ -373,7 +377,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
             final ResourceID jobManagerResourceId,
             final String jobManagerAddress,
             final JobID jobId,
-            final Time timeout) {
+            final Time timeout
+    ) {
 
         checkNotNull(jobMasterId);
         checkNotNull(jobManagerResourceId);
@@ -396,8 +401,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
             }
         }
 
-        log.info(
-                "Registering job manager {}@{} for job {}.", jobMasterId, jobManagerAddress, jobId);
+        log.info("Registering job manager {}@{} for job {}.", jobMasterId, jobManagerAddress, jobId);
 
         CompletableFuture<JobMasterId> jobMasterIdFuture;
 
@@ -420,19 +424,20 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
             return FutureUtils.completedExceptionally(exception);
         }
 
-        CompletableFuture<JobMasterGateway> jobMasterGatewayFuture =
-                getRpcService().connect(jobManagerAddress, jobMasterId, JobMasterGateway.class);
+        CompletableFuture<JobMasterGateway> jobMasterGatewayFuture = getRpcService().connect(jobManagerAddress, jobMasterId, JobMasterGateway.class);
 
         CompletableFuture<RegistrationResponse> registrationResponseFuture =
                 jobMasterGatewayFuture.thenCombineAsync(
                         jobMasterIdFuture,
                         (JobMasterGateway jobMasterGateway, JobMasterId leadingJobMasterId) -> {
                             if (Objects.equals(leadingJobMasterId, jobMasterId)) {
+                                // 注册动作
                                 return registerJobMasterInternal(
                                         jobMasterGateway,
                                         jobId,
                                         jobManagerAddress,
-                                        jobManagerResourceId);
+                                        jobManagerResourceId
+                                );
                             } else {
                                 final String declineMessage =
                                         String.format(
@@ -440,8 +445,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                                                         + "This indicates that a JobMaster leader change has happened.",
                                                 leadingJobMasterId, jobMasterId);
                                 log.debug(declineMessage);
-                                return new RegistrationResponse.Failure(
-                                        new FlinkException(declineMessage));
+                                return new RegistrationResponse.Failure(new FlinkException(declineMessage));
                             }
                         },
                         getMainThreadExecutor());
@@ -485,8 +489,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                         .connect(
                                 taskExecutorRegistration.getTaskExecutorAddress(),
                                 TaskExecutorGateway.class);
-        taskExecutorGatewayFutures.put(
-                taskExecutorRegistration.getResourceId(), taskExecutorGatewayFuture);
+        taskExecutorGatewayFutures.put(taskExecutorRegistration.getResourceId(), taskExecutorGatewayFuture);
 
         return taskExecutorGatewayFuture.handleAsync(
                 (TaskExecutorGateway taskExecutorGateway, Throwable throwable) -> {
@@ -519,15 +522,16 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
             InstanceID taskManagerRegistrationId,
             SlotReport slotReport,
             Time timeout) {
-        final WorkerRegistration<WorkerType> workerTypeWorkerRegistration =
-                taskExecutors.get(taskManagerResourceId);
+        final WorkerRegistration<WorkerType> workerTypeWorkerRegistration = taskExecutors.get(taskManagerResourceId);
 
         if (workerTypeWorkerRegistration.getInstanceID().equals(taskManagerRegistrationId)) {
-            if (slotManager.registerTaskManager(
+            if (
+                    slotManager.registerTaskManager(
                     workerTypeWorkerRegistration,
                     slotReport,
                     workerTypeWorkerRegistration.getTotalResourceProfile(),
-                    workerTypeWorkerRegistration.getDefaultSlotResourceProfile())) {
+                    workerTypeWorkerRegistration.getDefaultSlotResourceProfile())
+            ) {
                 onWorkerRegistered(workerTypeWorkerRegistration.getWorker());
             }
             return CompletableFuture.completedFuture(Acknowledge.get());
@@ -571,7 +575,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
     }
 
     /**
-     * rm开始处理申请请求
+     * rm开始处理申请资源请求
      *
      * @param jobMasterId id of the JobMaster
      * @param resourceRequirements resource requirements
@@ -609,6 +613,11 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                             "Could not find registered job manager for job " + jobId + '.'));
         }
     }
+
+
+
+
+
 
     @Override
     public void notifySlotAvailable(
@@ -943,7 +952,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
             final JobMasterGateway jobMasterGateway,
             JobID jobId,
             String jobManagerAddress,
-            ResourceID jobManagerResourceId) {
+            ResourceID jobManagerResourceId
+    ) {
         if (jobManagerRegistrations.containsKey(jobId)) {
             JobManagerRegistration oldJobManagerRegistration = jobManagerRegistrations.get(jobId);
 
@@ -962,16 +972,14 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                         ResourceRequirementHandling.RETAIN,
                         new Exception("New job leader for job " + jobId + " found."));
 
-                JobManagerRegistration jobManagerRegistration =
-                        new JobManagerRegistration(jobId, jobManagerResourceId, jobMasterGateway);
+                JobManagerRegistration jobManagerRegistration = new JobManagerRegistration(jobId, jobManagerResourceId, jobMasterGateway);
                 jobManagerRegistrations.put(jobId, jobManagerRegistration);
                 jmResourceIdRegistrations.put(jobManagerResourceId, jobManagerRegistration);
                 blocklistHandler.registerBlocklistListener(jobMasterGateway);
             }
         } else {
             // new registration for the job
-            JobManagerRegistration jobManagerRegistration =
-                    new JobManagerRegistration(jobId, jobManagerResourceId, jobMasterGateway);
+            JobManagerRegistration jobManagerRegistration = new JobManagerRegistration(jobId, jobManagerResourceId, jobMasterGateway);
             jobManagerRegistrations.put(jobId, jobManagerRegistration);
             jmResourceIdRegistrations.put(jobManagerResourceId, jobManagerRegistration);
             blocklistHandler.registerBlocklistListener(jobMasterGateway);
@@ -983,8 +991,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                 jobManagerAddress,
                 jobId);
 
-        jobManagerHeartbeatManager.monitorTarget(
-                jobManagerResourceId, new JobMasterHeartbeatSender(jobMasterGateway));
+        jobManagerHeartbeatManager.monitorTarget(jobManagerResourceId, new JobMasterHeartbeatSender(jobMasterGateway));
 
         return new JobMasterRegistrationSuccess(getFencingToken(), resourceId);
     }

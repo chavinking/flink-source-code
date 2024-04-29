@@ -42,9 +42,9 @@ public class FlinkUserCodeClassLoaders {
             URL[] urls,
             ClassLoader parent,
             Consumer<Throwable> classLoadingExceptionHandler,
-            boolean checkClassLoaderLeak) {
-        FlinkUserCodeClassLoader classLoader =
-                new ParentFirstClassLoader(urls, parent, classLoadingExceptionHandler);
+            boolean checkClassLoaderLeak
+    ) {
+        FlinkUserCodeClassLoader classLoader = new ParentFirstClassLoader(urls, parent, classLoadingExceptionHandler);
         return wrapWithSafetyNet(classLoader, checkClassLoaderLeak);
     }
 
@@ -54,8 +54,7 @@ public class FlinkUserCodeClassLoaders {
             String[] alwaysParentFirstPatterns,
             Consumer<Throwable> classLoadingExceptionHandler,
             boolean checkClassLoaderLeak) {
-        FlinkUserCodeClassLoader classLoader =
-                new ChildFirstClassLoader(urls, parent, alwaysParentFirstPatterns, classLoadingExceptionHandler);
+        FlinkUserCodeClassLoader classLoader = new ChildFirstClassLoader(urls, parent, alwaysParentFirstPatterns, classLoadingExceptionHandler);
         return wrapWithSafetyNet(classLoader, checkClassLoaderLeak);
     }
 
@@ -137,8 +136,7 @@ public class FlinkUserCodeClassLoaders {
     @Internal
     public static class ParentFirstClassLoader extends FlinkUserCodeClassLoader {
 
-        ParentFirstClassLoader(
-                URL[] urls, ClassLoader parent, Consumer<Throwable> classLoadingExceptionHandler) {
+        ParentFirstClassLoader(URL[] urls, ClassLoader parent, Consumer<Throwable> classLoadingExceptionHandler) {
             super(urls, parent, classLoadingExceptionHandler);
         }
 

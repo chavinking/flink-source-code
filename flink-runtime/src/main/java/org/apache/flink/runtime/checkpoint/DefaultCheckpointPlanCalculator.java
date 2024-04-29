@@ -95,6 +95,7 @@ public class DefaultCheckpointPlanCalculator implements CheckpointPlanCalculator
                                     CheckpointFailureReason.NOT_ALL_REQUIRED_TASKS_RUNNING);
                         }
 
+                        // 检查
                         checkAllTasksInitiated();
 
                         CheckpointPlan result =
@@ -102,6 +103,7 @@ public class DefaultCheckpointPlanCalculator implements CheckpointPlanCalculator
                                         ? calculateAfterTasksFinished()
                                         : calculateWithAllTasksRunning();
 
+                        // 检查
                         checkTasksStarted(result.getTasksToWaitFor());
 
                         return result;
@@ -109,7 +111,8 @@ public class DefaultCheckpointPlanCalculator implements CheckpointPlanCalculator
                         throw new CompletionException(throwable);
                     }
                 },
-                context.getMainExecutor());
+                context.getMainExecutor()
+        );
     }
 
     /**
@@ -208,8 +211,7 @@ public class DefaultCheckpointPlanCalculator implements CheckpointPlanCalculator
 
             // this is an optimization: we determine at the JobVertex level if some tasks can even
             // be eligible for being in the "triggerTo" set.
-            boolean someTasksMustBeTriggered =
-                    someTasksMustBeTriggered(taskRunningStatusByVertex, prevJobEdges);
+            boolean someTasksMustBeTriggered = someTasksMustBeTriggered(taskRunningStatusByVertex, prevJobEdges);
 
             for (int i = 0; i < jobVertex.getTaskVertices().length; ++i) {
                 ExecutionVertex task = jobVertex.getTaskVertices()[i];
@@ -218,9 +220,7 @@ public class DefaultCheckpointPlanCalculator implements CheckpointPlanCalculator
                     tasksToCommitTo.add(task);
 
                     if (someTasksMustBeTriggered) {
-                        boolean hasRunningPrecedentTasks =
-                                hasRunningPrecedentTasks(
-                                        task, prevJobEdges, taskRunningStatusByVertex);
+                        boolean hasRunningPrecedentTasks = hasRunningPrecedentTasks(task, prevJobEdges, taskRunningStatusByVertex);
 
                         if (!hasRunningPrecedentTasks) {
                             tasksToTrigger.add(task.getCurrentExecutionAttempt());
@@ -242,7 +242,8 @@ public class DefaultCheckpointPlanCalculator implements CheckpointPlanCalculator
     }
 
     private boolean someTasksMustBeTriggered(
-            Map<JobVertexID, BitSet> runningTasksByVertex, List<JobEdge> prevJobEdges) {
+            Map<JobVertexID, BitSet> runningTasksByVertex, List<JobEdge> prevJobEdges
+    ) {
 
         for (JobEdge jobEdge : prevJobEdges) {
             DistributionPattern distributionPattern = jobEdge.getDistributionPattern();
@@ -281,20 +282,18 @@ public class DefaultCheckpointPlanCalculator implements CheckpointPlanCalculator
     private boolean hasRunningPrecedentTasks(
             ExecutionVertex vertex,
             List<JobEdge> prevJobEdges,
-            Map<JobVertexID, BitSet> taskRunningStatusByVertex) {
+            Map<JobVertexID, BitSet> taskRunningStatusByVertex
+    ) {
 
         InternalExecutionGraphAccessor executionGraphAccessor = vertex.getExecutionGraphAccessor();
 
         for (int i = 0; i < prevJobEdges.size(); ++i) {
             if (prevJobEdges.get(i).getDistributionPattern() == DistributionPattern.POINTWISE) {
-                for (IntermediateResultPartitionID consumedPartitionId :
-                        vertex.getConsumedPartitionGroup(i)) {
-                    ExecutionVertex precedentTask =
-                            executionGraphAccessor
+                for (IntermediateResultPartitionID consumedPartitionId : vertex.getConsumedPartitionGroup(i)) {
+                    ExecutionVertex precedentTask = executionGraphAccessor
                                     .getResultPartitionOrThrow(consumedPartitionId)
                                     .getProducer();
-                    BitSet precedentVertexRunningStatus =
-                            taskRunningStatusByVertex.get(precedentTask.getJobvertexId());
+                    BitSet precedentVertexRunningStatus = taskRunningStatusByVertex.get(precedentTask.getJobvertexId());
 
                     if (precedentVertexRunningStatus.get(precedentTask.getParallelSubtaskIndex())) {
                         return true;

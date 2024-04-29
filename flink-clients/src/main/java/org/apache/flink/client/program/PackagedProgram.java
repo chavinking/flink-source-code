@@ -226,6 +226,8 @@ public class PackagedProgram implements AutoCloseable {
         }
     }
 
+
+
     /**
      * Returns the classpaths that are required by the program.
      *
@@ -329,10 +331,10 @@ public class PackagedProgram implements AutoCloseable {
      * @throws ProgramInvocationException
      */
     private static void callMainMethod(Class<?> entryClass, String[] args) throws ProgramInvocationException {
+
         Method mainMethod;
         if (!Modifier.isPublic(entryClass.getModifiers())) {
-            throw new ProgramInvocationException(
-                    "The class " + entryClass.getName() + " must be public.");
+            throw new ProgramInvocationException("The class " + entryClass.getName() + " must be public.");
         }
 
         try {
@@ -350,8 +352,7 @@ public class PackagedProgram implements AutoCloseable {
         }
 
         if (!Modifier.isStatic(mainMethod.getModifiers())) {
-            throw new ProgramInvocationException(
-                    "The class " + entryClass.getName() + " declares a non-static main method.");
+            throw new ProgramInvocationException("The class " + entryClass.getName() + " declares a non-static main method.");
         }
         if (!Modifier.isPublic(mainMethod.getModifiers())) {
             throw new ProgramInvocationException(
@@ -389,6 +390,8 @@ public class PackagedProgram implements AutoCloseable {
                     t);
         }
     }
+
+
 
     private static String getEntryPointClassNameFromJar(URL jarFile)
             throws ProgramInvocationException {

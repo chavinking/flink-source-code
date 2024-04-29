@@ -195,6 +195,7 @@ public class RegularOperatorChain<OUT, OP extends StreamOperator<OUT>>
             ChannelStateWriter.ChannelStateWriteResult channelStateWriteResult,
             CheckpointStreamFactory storage
     ) throws Exception {
+
         for (StreamOperatorWrapper<?, ?> operatorWrapper : getAllOperators(true)) {
             if (!operatorWrapper.isClosed()) {
                 operatorSnapshotsInProgress.put(
@@ -212,6 +213,8 @@ public class RegularOperatorChain<OUT, OP extends StreamOperator<OUT>>
         }
         sendAcknowledgeCheckpointEvent(checkpointMetaData.getCheckpointId());
     }
+
+
 
     private OperatorSnapshotFutures buildOperatorSnapshotFutures(
             CheckpointMetaData checkpointMetaData,

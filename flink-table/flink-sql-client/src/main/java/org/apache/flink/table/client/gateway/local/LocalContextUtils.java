@@ -49,6 +49,7 @@ public class LocalContextUtils {
 
     private static final String DEFAULT_SESSION_ID = "default";
 
+
     public static DefaultContext buildDefaultContext(CliOptions options) {
 
         final List<URL> jars;
@@ -64,6 +65,7 @@ public class LocalContextUtils {
             libDirs = Collections.emptyList();
         }
 
+
         // 1. find the configuration directory
         String flinkConfigDir = CliFrontend.getConfigurationDirectoryFromEnv();
 
@@ -71,17 +73,19 @@ public class LocalContextUtils {
         Configuration configuration = GlobalConfiguration.loadConfiguration(flinkConfigDir);
 
         // 3. load the custom command lines
-        List<CustomCommandLine> commandLines =
-                CliFrontend.loadCustomCommandLines(configuration, flinkConfigDir);
+        List<CustomCommandLine> commandLines = CliFrontend.loadCustomCommandLines(configuration, flinkConfigDir);
 
         configuration.addAll(options.getPythonConfiguration());
+
         final List<URL> dependencies = discoverDependencies(jars, libDirs);
 
         return new DefaultContext(dependencies, configuration, commandLines);
     }
 
-    public static SessionContext buildSessionContext(
-            @Nullable String sessionId, DefaultContext defaultContext) {
+
+
+
+    public static SessionContext buildSessionContext(@Nullable String sessionId, DefaultContext defaultContext) {
         final SessionContext context;
         if (sessionId == null) {
             context = SessionContext.create(defaultContext, DEFAULT_SESSION_ID);

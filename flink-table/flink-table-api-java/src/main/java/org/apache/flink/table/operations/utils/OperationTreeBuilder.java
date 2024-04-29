@@ -392,8 +392,7 @@ public final class OperationTreeBuilder {
         return resolveSingleExpression(expression, resolver);
     }
 
-    public ExpressionResolver.ExpressionResolverBuilder getResolverBuilder(
-            QueryOperation... tableOperation) {
+    public ExpressionResolver.ExpressionResolverBuilder getResolverBuilder(QueryOperation... tableOperation) {
         return ExpressionResolver.resolverFor(
                 tableConfig,
                 userClassLoader,

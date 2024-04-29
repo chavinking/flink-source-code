@@ -84,7 +84,8 @@ public interface PlannerFactory extends Factory {
                 ClassLoader classLoader,
                 ModuleManager moduleManager,
                 CatalogManager catalogManager,
-                FunctionCatalog functionCatalog) {
+                FunctionCatalog functionCatalog
+        ) {
             this.executor = executor;
             this.tableConfig = tableConfig;
             this.classLoader = classLoader;
